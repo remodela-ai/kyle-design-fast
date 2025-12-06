@@ -18,6 +18,9 @@ interface KyleContextType {
   error: string | null;
   messages: ConversationMessage[];
   designSummary: string | null;
+  voiceCommandDetected: boolean;
+  isGeneratingFromVoice: boolean;
+  setIsGeneratingFromVoice: (value: boolean) => void;
   startConversation: () => Promise<void>;
   stopConversation: () => Promise<void>;
   toggleConversation: () => Promise<void>;
@@ -33,6 +36,8 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [designSummary, setDesignSummary] = useState<string | null>(null);
   const [onGenerateDesign, setOnGenerateDesign] = useState<(() => void) | null>(null);
+  const [voiceCommandDetected, setVoiceCommandDetected] = useState(false);
+  const [isGeneratingFromVoice, setIsGeneratingFromVoice] = useState(false);
   const navigate = useNavigate();
 
   // Extract design-related keywords from messages
@@ -66,7 +71,16 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   // Reference to track if we should trigger generation
   const onGenerateDesignRef = useCallback(() => {
     if (onGenerateDesign) {
+      setVoiceCommandDetected(true);
+      setIsGeneratingFromVoice(true);
+      
+      // Reset command detected after a short delay
+      setTimeout(() => setVoiceCommandDetected(false), 3000);
+      
       onGenerateDesign();
+      
+      // Reset generating state after generation completes (estimated time)
+      setTimeout(() => setIsGeneratingFromVoice(false), 15000);
     }
   }, [onGenerateDesign]);
 
@@ -213,6 +227,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     error,
     messages,
     designSummary,
+    voiceCommandDetected,
+    isGeneratingFromVoice,
+    setIsGeneratingFromVoice,
     startConversation,
     stopConversation,
     toggleConversation,

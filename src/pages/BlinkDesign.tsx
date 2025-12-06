@@ -13,7 +13,7 @@ import { useKyle } from "@/contexts/KyleContext";
 
 const BlinkDesign = () => {
   const navigate = useNavigate();
-  const { designSummary, setOnGenerateDesign } = useKyle();
+  const { designSummary, setOnGenerateDesign, setIsGeneratingFromVoice } = useKyle();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -59,8 +59,9 @@ const BlinkDesign = () => {
       toast.error("An unexpected error occurred");
     } finally {
       setIsGenerating(false);
+      setIsGeneratingFromVoice(false);
     }
-  }, [prompt]);
+  }, [prompt, setIsGeneratingFromVoice]);
 
   // Register the voice-triggered generation callback
   useEffect(() => {
