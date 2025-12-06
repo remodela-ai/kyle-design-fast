@@ -37,7 +37,7 @@ export function VoiceInput() {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask Kyle anything..."
+            placeholder="Click to talk..."
             className="w-full h-10 md:h-12 px-4 md:px-5 pr-12 md:pr-14 rounded-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-sm md:text-base"
           />
           
