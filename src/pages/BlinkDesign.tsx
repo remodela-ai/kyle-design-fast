@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { VoiceInput } from "@/components/VoiceInput";
+import { ConversationSummary } from "@/components/ConversationSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -58,6 +59,11 @@ const BlinkDesign = () => {
     }
   };
 
+  const handleUseAsPrompt = (conversationPrompt: string) => {
+    setPrompt(conversationPrompt);
+    toast.success("Prompt updated from conversation!");
+  };
+
   const downloadImage = () => {
     if (!generatedImage) return;
     
@@ -105,55 +111,20 @@ const BlinkDesign = () => {
         </p>
 
         {/* Voice Input */}
-        <div className="w-full max-w-2xl mb-8">
+        <div className="w-full max-w-2xl mb-6">
           <VoiceInput />
         </div>
 
-        {/* How It Works Card */}
-        <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:shadow-primary/10 dark:hover:shadow-[0_0_30px_rgba(220,38,38,0.25)] transition-all duration-300 mb-8">
-          {/* Section Header */}
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-xl md:text-2xl font-semibold text-foreground">
-              How It Works
-            </h2>
-          </div>
-          <p className="text-muted-foreground text-sm md:text-base mb-8">
-            Lightning-fast AI-powered inspiration engine that generates unique and personalized ideas
-          </p>
-
-          {/* Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center text-center">
-              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-primary text-primary text-xs font-medium mb-3 shadow-lg shadow-primary/20 dark:shadow-[0_0_10px_rgba(220,38,38,0.3)]">
-                Step 1
-              </span>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Describe
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Simply type what you want to see - the image generates automatically
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex flex-col items-center text-center">
-              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-primary text-primary text-xs font-medium mb-3 shadow-lg shadow-primary/20 dark:shadow-[0_0_10px_rgba(220,38,38,0.3)]">
-                Step 2
-              </span>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Save & Use
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Download, save to favorites or select as reference for other agents
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Conversation Summary */}
+        <ConversationSummary onUseAsPrompt={handleUseAsPrompt} />
 
         {/* Design Generation Area */}
         <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Generate Design</h2>
+          </div>
+
           {/* Input */}
           <div className="flex gap-3 mb-6">
             <Input
@@ -243,6 +214,51 @@ const BlinkDesign = () => {
               <p className="text-sm">Your generated design will appear here</p>
             </div>
           )}
+        </div>
+
+        {/* How It Works Card */}
+        <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:shadow-primary/10 dark:hover:shadow-[0_0_30px_rgba(220,38,38,0.25)] transition-all duration-300 mt-8">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="h-5 w-5 text-primary" />
+            <h2 className="text-xl md:text-2xl font-semibold text-foreground">
+              How It Works
+            </h2>
+          </div>
+          <p className="text-muted-foreground text-sm md:text-base mb-8">
+            Talk to Kyle about your design vision - he'll capture your preferences and create a prompt for inspiration
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div className="flex flex-col items-center text-center">
+              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-primary text-primary text-xs font-medium mb-3 shadow-lg shadow-primary/20 dark:shadow-[0_0_10px_rgba(220,38,38,0.3)]">
+                Step 1
+              </span>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Talk to Kyle</h3>
+              <p className="text-muted-foreground text-sm">
+                Describe your dream space - room type, style, colors, atmosphere
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-primary text-primary text-xs font-medium mb-3 shadow-lg shadow-primary/20 dark:shadow-[0_0_10px_rgba(220,38,38,0.3)]">
+                Step 2
+              </span>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Review Summary</h3>
+              <p className="text-muted-foreground text-sm">
+                Kyle summarizes your preferences into a design prompt
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <span className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-primary text-primary text-xs font-medium mb-3 shadow-lg shadow-primary/20 dark:shadow-[0_0_10px_rgba(220,38,38,0.3)]">
+                Step 3
+              </span>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Generate & Save</h3>
+              <p className="text-muted-foreground text-sm">
+                Create AI-powered design inspiration and save your favorites
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
