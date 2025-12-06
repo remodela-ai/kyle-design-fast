@@ -6,12 +6,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useKyle } from "@/contexts/KyleContext";
+import { useShazam2Agent } from "@/hooks/useShazam2Agent";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Shazam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [shazam2Started, setShazam2Started] = useState(false);
   
   const { 
     isConnected, 
@@ -21,6 +23,8 @@ export default function Shazam() {
     setOnGenerateDesign,
     setIsGeneratingFromVoice
   } = useKyle();
+
+  const shazam2 = useShazam2Agent();
 
   const buildPromptFromConversation = useMemo(() => {
     if (messages.length === 0) return null;
@@ -49,6 +53,16 @@ export default function Shazam() {
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
         toast.success("Design created!");
+        
+        // Auto-start Shazam 2 agent after image generation
+        setTimeout(async () => {
+          try {
+            await shazam2.startConversation();
+            setShazam2Started(true);
+          } catch (err) {
+            console.error("Failed to start Shazam 2:", err);
+          }
+        }, 1500);
       }
     } catch (error) {
       console.error('Error generating design:', error);
@@ -57,7 +71,7 @@ export default function Shazam() {
       setIsGenerating(false);
       setIsGeneratingFromVoice(false);
     }
-  }, [setIsGeneratingFromVoice]);
+  }, [setIsGeneratingFromVoice, shazam2]);
 
   // Register the voice generate callback
   useEffect(() => {
@@ -114,8 +128,8 @@ export default function Shazam() {
           
           {/* Audio Waves - Fixed height container */}
           <div className="h-12 flex items-center justify-center">
-            <div className={`transition-opacity duration-300 ${isConnected ? 'opacity-100' : 'opacity-0'}`}>
-              <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />
+            <div className={`transition-opacity duration-300 ${(isConnected || shazam2.isConnected) ? 'opacity-100' : 'opacity-0'}`}>
+              <AudioWaves isActive={isConnected || shazam2.isConnected} isSpeaking={isSpeaking || shazam2.isSpeaking} />
             </div>
           </div>
           

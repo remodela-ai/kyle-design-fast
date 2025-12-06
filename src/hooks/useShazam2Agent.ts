@@ -1,8 +1,7 @@
 import { useConversation } from "@11labs/react";
 import { useCallback, useState } from "react";
 
-// TODO: Replace with actual agent ID after creation
-const SHAZAM2_AGENT_ID = "PLACEHOLDER_AGENT_ID";
+const SHAZAM2_AGENT_ID = "agent_9301kbtp61qqf0hbtzpjkgjypazk";
 
 export function useShazam2Agent() {
   const [error, setError] = useState<string | null>(null);
