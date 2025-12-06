@@ -101,19 +101,42 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             return updated;
           });
 
-          // Detect specific generation command from user messages
+          // Detect generation command variations from user messages
           if (msg.source === "user") {
             const messageText = msg.message.toLowerCase();
             
-            // Check for the specific command: "Hey Kyle, generate the image"
-            const isGenerateCommand = 
-              messageText.includes("hey kyle") && 
-              (messageText.includes("generate") || messageText.includes("genera")) &&
-              (messageText.includes("image") || messageText.includes("imagen"));
+            // Check if message mentions Kyle and generation intent
+            const mentionsKyle = messageText.includes("kyle");
+            const hasGenerateIntent = 
+              messageText.includes("generate") || 
+              messageText.includes("genera") ||
+              messageText.includes("create") ||
+              messageText.includes("make") ||
+              messageText.includes("show") ||
+              messageText.includes("render") ||
+              messageText.includes("produce") ||
+              messageText.includes("build") ||
+              messageText.includes("design") ||
+              messageText.includes("visualize") ||
+              messageText.includes("crea") ||
+              messageText.includes("haz") ||
+              messageText.includes("muestra");
+            
+            const hasImageIntent = 
+              messageText.includes("image") || 
+              messageText.includes("imagen") ||
+              messageText.includes("picture") ||
+              messageText.includes("visual") ||
+              messageText.includes("render") ||
+              messageText.includes("design") ||
+              messageText.includes("photo") ||
+              messageText.includes("graphic");
+
+            // Trigger if mentions Kyle + generate intent + image intent
+            const isGenerateCommand = mentionsKyle && hasGenerateIntent && hasImageIntent;
 
             if (isGenerateCommand) {
               console.log("Generation command detected:", msg.message);
-              // Delay to allow conversation to process
               setTimeout(() => {
                 onGenerateDesignRef();
               }, 1500);
