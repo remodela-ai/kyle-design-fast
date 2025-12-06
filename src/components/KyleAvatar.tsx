@@ -3,7 +3,7 @@ import kylePhoto from "@/assets/kyle-avatar.jpeg";
 import { useKyle } from "@/contexts/KyleContext";
 
 interface KyleAvatarProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "xxl";
 }
 
 export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
@@ -14,6 +14,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
     md: "w-24 h-24",
     lg: "w-36 h-36",
     xl: "w-48 h-48",
+    xxl: "w-64 h-64",
   };
 
   const speaking = isConnected && isSpeaking;
@@ -26,18 +27,36 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
       {/* Outer glow ring */}
       <div
         className={cn(
-          "absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 to-transparent",
-          speaking && "animate-pulse-glow",
+          "absolute inset-0 rounded-full bg-gradient-to-br from-primary/60 to-primary/20 blur-sm",
+          speaking && "animate-pulse-glow from-primary/80 to-primary/40",
+          size === "xxl" && "-inset-6",
+          size === "xl" && "-inset-4",
           size === "lg" && "-inset-3",
           size === "md" && "-inset-2",
           size === "sm" && "-inset-1"
         )}
       />
       
+      {/* Secondary glow layer for more impact */}
+      <div
+        className={cn(
+          "absolute inset-0 rounded-full bg-primary/20 blur-xl",
+          speaking && "bg-primary/40 animate-pulse",
+          size === "xxl" && "-inset-10",
+          size === "xl" && "-inset-6",
+          size === "lg" && "-inset-4",
+          size === "md" && "-inset-3",
+          size === "sm" && "-inset-2"
+        )}
+      />
+      
       {/* Inner ring */}
       <div
         className={cn(
-          "absolute rounded-full border-2 border-primary/30",
+          "absolute rounded-full border-2 border-primary/40",
+          speaking && "border-primary/60",
+          size === "xxl" && "-inset-3",
+          size === "xl" && "-inset-2.5",
           size === "lg" && "-inset-2",
           size === "md" && "-inset-1.5",
           size === "sm" && "-inset-1"
@@ -65,6 +84,8 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
         className={cn(
           "absolute bottom-1 right-1 rounded-full border-2 border-background",
           isConnected ? "bg-green-500" : "bg-primary",
+          size === "xxl" && "w-6 h-6 bottom-2 right-2",
+          size === "xl" && "w-5 h-5 bottom-1.5 right-1.5",
           size === "lg" && "w-4 h-4",
           size === "md" && "w-3 h-3",
           size === "sm" && "w-2 h-2",

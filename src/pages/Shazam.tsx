@@ -111,7 +111,7 @@ export default function Shazam() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 pb-8 gap-6">
         {/* Kyle Avatar - Central Element */}
         <div className="flex flex-col items-center gap-4">
-          <KyleAvatar size="xl" />
+          <KyleAvatar size="xxl" />
           
           {/* Audio Waves */}
           <div className={`transition-opacity duration-300 ${isConnected ? 'opacity-100' : 'opacity-0'}`}>
