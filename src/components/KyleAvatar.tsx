@@ -3,7 +3,7 @@ import kylePhoto from "@/assets/kyle-avatar.jpeg";
 import { useKyle } from "@/contexts/KyleContext";
 
 interface KyleAvatarProps {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
@@ -13,6 +13,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
     sm: "w-16 h-16",
     md: "w-24 h-24",
     lg: "w-36 h-36",
+    xl: "w-48 h-48",
   };
 
   const speaking = isConnected && isSpeaking;
