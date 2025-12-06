@@ -53,7 +53,7 @@ export function PipelineSection() {
       {/* Header */}
       <div className="text-center mb-6 md:mb-8">
         {/* Logo icon */}
-        <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-full border-2 border-primary dark:bg-primary bg-background flex items-center justify-center">
+        <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-full border-2 border-primary dark:bg-primary bg-background flex items-center justify-center shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all duration-300">
           <div className="w-6 h-6 md:w-8 md:h-8 dark:text-primary-foreground text-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -125,8 +125,8 @@ export function PipelineSection() {
             >
               {/* Step indicator with icon */}
               <div className="relative mb-2 md:mb-3">
-                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full dark:bg-primary bg-background border-2 border-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 dark:glow-red-subtle">
-                  <item.icon className="w-4 h-4 md:w-6 md:h-6 dark:text-primary-foreground text-primary" />
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full dark:bg-primary bg-background border-2 border-primary flex items-center justify-center shadow-lg dark:glow-red-subtle shadow-primary/20 group-hover:scale-110 group-hover:shadow-primary/40 transition-all duration-300">
+                  <item.icon className="w-4 h-4 md:w-6 md:h-6 dark:text-primary-foreground text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
               </div>
 
