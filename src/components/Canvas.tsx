@@ -3,13 +3,16 @@ import { VoiceInput } from "./VoiceInput";
 import { PipelineSection } from "./PipelineSection";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CanvasProps {
   onMenuClick?: () => void;
 }
 
 export function Canvas({ onMenuClick }: CanvasProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex-1 flex flex-col items-center p-4 md:p-8 relative overflow-y-auto">
       {/* Background gradient effect */}
@@ -50,6 +53,21 @@ export function Canvas({ onMenuClick }: CanvasProps) {
           get complete interior design proposals with floor plans, moodboards, measurements, 
           and professional documents delivered to your email.
         </p>
+
+        {/* Blink Design Quick Access */}
+        <Button
+          variant="outline"
+          onClick={() => navigate("/blink-design")}
+          className="flex items-center gap-2 px-6 py-3 h-auto border-primary/30 hover:border-primary hover:bg-primary/10 shadow-lg shadow-primary/20 dark:shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-primary/40 dark:hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] hover:scale-105 transition-all duration-300"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary flex items-center justify-center">
+            <Zap className="h-4 w-4 text-primary dark:text-white" />
+          </div>
+          <div className="text-left">
+            <span className="font-semibold text-foreground">Blink Design</span>
+            <p className="text-xs text-muted-foreground">Instant AI inspiration</p>
+          </div>
+        </Button>
 
         {/* Voice Input */}
         <div className="w-full px-4">
