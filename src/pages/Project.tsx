@@ -62,11 +62,22 @@ export default function Project() {
 
   // Start Shazam 3 when page loads
   useEffect(() => {
-    const timer = setTimeout(() => {
-      shazam3.startConversation();
-      setShazam3Started(true);
+    let mounted = true;
+    const timer = setTimeout(async () => {
+      if (mounted) {
+        try {
+          await shazam3.startConversation();
+          setShazam3Started(true);
+        } catch (err) {
+          console.error("Failed to start Shazam 3:", err);
+        }
+      }
     }, 1000);
-    return () => clearTimeout(timer);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Detect magic command from Shazam 3
