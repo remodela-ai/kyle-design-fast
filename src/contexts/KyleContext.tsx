@@ -68,15 +68,27 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     return summaryParts.length > 0 ? summaryParts.join(" | ") : null;
   };
 
+  // Store conversation ref to stop it when needed
+  const conversationRef = { endSession: async () => {} };
+
   // Reference to track if we should trigger generation
-  const onGenerateDesignRef = useCallback(() => {
+  const onGenerateDesignRef = useCallback(async () => {
     if (onGenerateDesign) {
       setVoiceCommandDetected(true);
       setIsGeneratingFromVoice(true);
       
+      // Stop Kyle from talking
+      try {
+        await conversationRef.endSession();
+        console.log("Kyle stopped speaking for image generation");
+      } catch (e) {
+        console.log("Could not stop conversation:", e);
+      }
+      
       // Reset command detected after a short delay
       setTimeout(() => setVoiceCommandDetected(false), 3000);
       
+      // Trigger generation
       onGenerateDesign();
       
       // Reset generating state after generation completes (estimated time)
@@ -187,6 +199,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       },
     },
   });
+
+  // Update the ref after conversation is created
+  conversationRef.endSession = conversation.endSession;
 
   const startConversation = useCallback(async () => {
     try {
