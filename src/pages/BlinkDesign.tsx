@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
+import { KyleAvatar } from "@/components/KyleAvatar";
+import { VoiceInput } from "@/components/VoiceInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -69,9 +71,12 @@ const BlinkDesign = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-y-auto">
+      {/* Background gradient effect */}
+      <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
+
       {/* Header */}
-      <header className="flex items-center justify-between p-4 md:p-6">
+      <header className="relative z-20 flex items-center justify-between p-4 md:p-6">
         <Button
           variant="outline"
           size="sm"
@@ -85,23 +90,24 @@ const BlinkDesign = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-start px-4 py-8 md:py-12">
-        {/* Hero Icon */}
-        <div className="relative mb-6">
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shadow-lg shadow-primary/20 dark:shadow-[0_0_25px_rgba(220,38,38,0.4)] transition-all duration-300 hover:shadow-primary/40 dark:hover:shadow-[0_0_35px_rgba(220,38,38,0.6)] hover:scale-105">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-primary flex items-center justify-center bg-background dark:bg-primary shadow-lg shadow-primary/30 dark:shadow-[0_0_15px_rgba(220,38,38,0.5)]">
-              <Zap className="h-6 w-6 md:h-7 md:w-7 text-primary dark:text-white" />
-            </div>
-          </div>
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-start px-4 py-4 md:py-8">
+        {/* Kyle Avatar - Central Element */}
+        <div className="animate-float mb-4">
+          <KyleAvatar size="lg" />
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3 text-center">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2 text-center">
           Blink Design
         </h1>
-        <p className="text-muted-foreground text-center text-base md:text-lg max-w-md mb-10">
+        <p className="text-muted-foreground text-center text-base md:text-lg max-w-md mb-6">
           Instant creative inspiration for your design projects
         </p>
+
+        {/* Voice Input */}
+        <div className="w-full max-w-2xl mb-8">
+          <VoiceInput />
+        </div>
 
         {/* How It Works Card */}
         <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:shadow-primary/10 dark:hover:shadow-[0_0_30px_rgba(220,38,38,0.25)] transition-all duration-300 mb-8">
