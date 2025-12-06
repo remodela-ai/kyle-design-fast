@@ -13,11 +13,25 @@ import { useKyle } from "@/contexts/KyleContext";
 
 const BlinkDesign = () => {
   const navigate = useNavigate();
-  const { designSummary, setOnGenerateDesign, setIsGeneratingFromVoice } = useKyle();
+  const { designSummary, messages, setOnGenerateDesign, setIsGeneratingFromVoice } = useKyle();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+
+  // Build a comprehensive prompt from all conversation messages
+  const buildPromptFromConversation = useCallback(() => {
+    if (messages.length === 0) return null;
+    
+    const userMessages = messages
+      .filter(m => m.role === "user")
+      .map(m => m.content)
+      .join(". ");
+    
+    if (!userMessages) return null;
+    
+    return `Interior design visualization based on user preferences: ${userMessages}`;
+  }, [messages]);
 
   const generateDesign = useCallback(async (customPrompt?: string) => {
     const finalPrompt = customPrompt || prompt;
@@ -66,12 +80,16 @@ const BlinkDesign = () => {
   // Register the voice-triggered generation callback
   useEffect(() => {
     const voiceGenerateHandler = () => {
-      // Use design summary from conversation or current prompt
-      const voicePrompt = designSummary || prompt;
+      // Build prompt from full conversation, fallback to designSummary or current prompt
+      const conversationPrompt = buildPromptFromConversation();
+      const voicePrompt = conversationPrompt || designSummary || prompt;
+      
       if (voicePrompt) {
+        console.log("Voice generation triggered with prompt:", voicePrompt);
         generateDesign(voicePrompt);
       } else {
         toast.error("Please describe your design vision first");
+        setIsGeneratingFromVoice(false);
       }
     };
 
@@ -80,7 +98,7 @@ const BlinkDesign = () => {
     return () => {
       setOnGenerateDesign(null);
     };
-  }, [designSummary, prompt, generateDesign, setOnGenerateDesign]);
+  }, [designSummary, prompt, generateDesign, setOnGenerateDesign, buildPromptFromConversation, setIsGeneratingFromVoice]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isGenerating) {
