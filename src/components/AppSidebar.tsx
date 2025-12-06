@@ -10,14 +10,13 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Menu,
   X,
-  Sparkles,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 
 const navItems = [
-  { icon: Home, label: "Home", to: "/" },
-  { icon: Sparkles, label: "Kyle", to: "/shazam" },
+  { icon: Home, label: "Home", active: true },
   { icon: LayoutDashboard, label: "Dashboard" },
   { icon: FolderKanban, label: "Projects" },
   { icon: Heart, label: "Collections" },
@@ -103,7 +102,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
                 <SidebarNavItem
                   icon={item.icon}
                   label={item.label}
-                  to={item.to}
+                  active={item.active}
                   collapsed={collapsed && !mobileOpen}
                   onClick={onMobileClose}
                 />
