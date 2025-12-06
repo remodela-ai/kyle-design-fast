@@ -22,8 +22,8 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         </Button>
       </div>
       
-      {/* Theme toggle in top right */}
-      <div className="absolute top-4 right-4 z-20">
+      {/* Theme toggle - fixed/floating, subtle */}
+      <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
       
