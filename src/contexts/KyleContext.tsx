@@ -63,6 +63,13 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     return summaryParts.length > 0 ? summaryParts.join(" | ") : null;
   };
 
+  // Reference to track if we should trigger generation
+  const onGenerateDesignRef = useCallback(() => {
+    if (onGenerateDesign) {
+      onGenerateDesign();
+    }
+  }, [onGenerateDesign]);
+
   const conversation = useConversation({
     onConnect: () => {
       console.log("Kyle connected");
@@ -93,6 +100,29 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             setDesignSummary(summary);
             return updated;
           });
+
+          // Detect generation commands from user messages
+          if (msg.source === "user") {
+            const generateKeywords = [
+              "generate", "genera", "create", "crea", 
+              "show me", "muéstrame", "visualiza", "visualize",
+              "image", "imagen", "diseño", "design",
+              "render", "renderiza", "make", "haz"
+            ];
+            
+            const messageText = msg.message.toLowerCase();
+            const isGenerateCommand = generateKeywords.some(keyword => 
+              messageText.includes(keyword)
+            );
+
+            if (isGenerateCommand) {
+              console.log("Generation command detected:", msg.message);
+              // Delay to allow conversation to process
+              setTimeout(() => {
+                onGenerateDesignRef();
+              }, 1500);
+            }
+          }
         }
       }
     },
