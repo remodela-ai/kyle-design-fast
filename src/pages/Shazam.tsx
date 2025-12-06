@@ -125,12 +125,14 @@ export default function Shazam() {
       // Detect: "hey kyle give me the full project"
       if (content.includes("kyle") && content.includes("full") && content.includes("project")) {
         console.log("FULL PROJECT COMMAND DETECTED");
-        shazam2.stopConversation();
-        toast.success("Starting full project generation!");
-        navigate("/project");
+        shazam2.stopConversation().then(() => {
+          toast.success("Starting full project generation!");
+          navigate("/project");
+        });
       }
     }
-  }, [shazam2.messages, shazam2.isConnected, navigate, shazam2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shazam2.messages, shazam2.isConnected, navigate]);
 
   const getStatusText = () => {
     if (isGenerating) return "";
