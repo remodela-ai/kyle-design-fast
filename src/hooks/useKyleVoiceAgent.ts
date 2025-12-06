@@ -17,9 +17,9 @@ export function useKyleVoiceAgent() {
     onMessage: (message) => {
       console.log("Kyle message:", message);
     },
-    onError: (error) => {
-      console.error("Kyle error:", error);
-      setError(error.message || "Error connecting to Kyle");
+    onError: (errorMessage) => {
+      console.error("Kyle error:", errorMessage);
+      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
     },
   });
 
@@ -31,6 +31,7 @@ export function useKyleVoiceAgent() {
       // Start the conversation with the public agent
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
+        connectionType: "webrtc",
       });
     } catch (err) {
       console.error("Failed to start conversation:", err);
