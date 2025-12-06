@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, Send, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useKyle } from "@/contexts/KyleContext";
+import { AudioWaves } from "./AudioWaves";
 
 export function VoiceInput() {
   const { toggleConversation, isConnected, isSpeaking, error } = useKyle();
@@ -47,24 +48,15 @@ export function VoiceInput() {
         </div>
       </div>
 
-      {/* Voice status */}
+      {/* Voice status with audio waves */}
       {isConnected && (
         <div className="mt-3 md:mt-4 text-center animate-fade-in">
-          <div className="flex items-center justify-center gap-1 mb-2">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-1 bg-primary rounded-full",
-                  isSpeaking ? "animate-pulse" : ""
-                )}
-                style={{
-                  height: `${Math.random() * 20 + 10}px`,
-                  animationDelay: `${i * 0.1}s`,
-                }}
-              />
-            ))}
-          </div>
+          <AudioWaves 
+            isActive={isConnected} 
+            isSpeaking={isSpeaking} 
+            barCount={7}
+            className="mb-2 h-8"
+          />
           <p className="text-xs md:text-sm text-muted-foreground">
             {isSpeaking ? "Kyle is speaking..." : "Kyle is listening... Speak in any of 32 languages"}
           </p>
