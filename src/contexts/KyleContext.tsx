@@ -1,6 +1,6 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useRef } from "react";
 import { useConversation } from "@11labs/react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
@@ -68,33 +68,45 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     return summaryParts.length > 0 ? summaryParts.join(" | ") : null;
   };
 
-  // Store conversation ref to stop it when needed
-  const conversationRef = { endSession: async () => {} };
+  // Use ref to store the endSession function so it's always current
+  const endSessionRef = useRef<(() => Promise<void>) | null>(null);
+  const onGenerateDesignRef = useRef<(() => void) | null>(null);
 
-  // Reference to track if we should trigger generation
-  const onGenerateDesignRef = useCallback(async () => {
-    if (onGenerateDesign) {
-      setVoiceCommandDetected(true);
-      setIsGeneratingFromVoice(true);
-      
-      // Stop Kyle from talking
-      try {
-        await conversationRef.endSession();
-        console.log("Kyle stopped speaking for image generation");
-      } catch (e) {
-        console.log("Could not stop conversation:", e);
-      }
-      
-      // Reset command detected after a short delay
-      setTimeout(() => setVoiceCommandDetected(false), 3000);
-      
-      // Trigger generation
-      onGenerateDesign();
-      
-      // Reset generating state after generation completes (estimated time)
-      setTimeout(() => setIsGeneratingFromVoice(false), 15000);
-    }
+  // Keep the ref updated
+  useEffect(() => {
+    onGenerateDesignRef.current = onGenerateDesign;
   }, [onGenerateDesign]);
+
+  // Function to handle voice command detection
+  const handleVoiceCommand = useCallback(async () => {
+    console.log("🚀 handleVoiceCommand called");
+    
+    setVoiceCommandDetected(true);
+    setIsGeneratingFromVoice(true);
+    
+    // Stop Kyle from talking IMMEDIATELY
+    if (endSessionRef.current) {
+      try {
+        console.log("🛑 Stopping Kyle...");
+        await endSessionRef.current();
+        console.log("✅ Kyle stopped");
+      } catch (e) {
+        console.log("⚠️ Could not stop conversation:", e);
+      }
+    }
+    
+    // Reset command detected after a short delay
+    setTimeout(() => setVoiceCommandDetected(false), 3000);
+    
+    // Trigger generation using the ref
+    if (onGenerateDesignRef.current) {
+      console.log("🎨 Triggering image generation...");
+      onGenerateDesignRef.current();
+    } else {
+      console.log("⚠️ No onGenerateDesign callback registered");
+      setIsGeneratingFromVoice(false);
+    }
+  }, []);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -148,7 +160,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             if (isGenerateCommand) {
               console.log("🎯 VOICE COMMAND DETECTED! Stopping Kyle and generating...");
               // Immediately trigger - no delay
-              onGenerateDesignRef();
+              handleVoiceCommand();
             }
           }
         }
@@ -184,7 +196,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   });
 
   // Update the ref after conversation is created
-  conversationRef.endSession = conversation.endSession;
+  useEffect(() => {
+    endSessionRef.current = conversation.endSession;
+  }, [conversation.endSession]);
 
   const startConversation = useCallback(async () => {
     try {
