@@ -99,10 +99,21 @@ export default function Shazam() {
 
   const handleNewDesign = () => {
     setGeneratedImage(null);
+    setShazam2Started(false);
   };
+
+  // Stop Shazam 2 when tapping Kyle while Shazam 2 is active
+  const handleStopShazam2 = useCallback(async () => {
+    if (shazam2.isConnected) {
+      await shazam2.stopConversation();
+      setShazam2Started(false);
+      toast.info("Shazam 2 stopped");
+    }
+  }, [shazam2]);
 
   const getStatusText = () => {
     if (isGenerating) return "";
+    if (shazam2.isConnected) return "Tap Kyle to stop";
     if (isConnected) return "";
     if (generatedImage) return "";
     return "Tap Kyle to start";
@@ -124,7 +135,7 @@ export default function Shazam() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
         {/* Kyle Section - Fixed height to prevent layout shift */}
         <div className="flex flex-col items-center gap-4 min-h-[320px] justify-center">
-          <KyleAvatar size="xxl" />
+          <KyleAvatar size="xxl" onClickOverride={shazam2.isConnected ? handleStopShazam2 : undefined} />
           
           {/* Audio Waves - Fixed height container */}
           <div className="h-12 flex items-center justify-center">

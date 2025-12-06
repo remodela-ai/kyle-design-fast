@@ -4,10 +4,13 @@ import { useKyle } from "@/contexts/KyleContext";
 
 interface KyleAvatarProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
+  onClickOverride?: () => void;
 }
 
-export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
+export function KyleAvatar({ size = "lg", onClickOverride }: KyleAvatarProps) {
   const { toggleConversation, isConnected, isSpeaking } = useKyle();
+
+  const handleClick = onClickOverride || toggleConversation;
 
   const sizeClasses = {
     sm: "w-16 h-16",
@@ -21,7 +24,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
 
   return (
     <button
-      onClick={toggleConversation}
+      onClick={handleClick}
       className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95"
     >
       {/* Outer glow ring */}
