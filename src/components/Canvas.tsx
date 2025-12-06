@@ -15,8 +15,8 @@ export function Canvas({ onMenuClick }: CanvasProps) {
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       
-      {/* Mobile header */}
-      <div className="absolute top-4 left-4 z-20 md:hidden">
+      {/* Mobile menu button - fixed/floating */}
+      <div className="fixed top-4 left-4 z-50 md:hidden">
         <Button variant="icon" size="icon" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
         </Button>
