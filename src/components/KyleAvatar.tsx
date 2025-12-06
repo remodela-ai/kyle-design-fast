@@ -1,20 +1,27 @@
 import { cn } from "@/lib/utils";
 import kylePhoto from "@/assets/kyle-avatar.jpeg";
+import { useKyle } from "@/contexts/KyleContext";
 
 interface KyleAvatarProps {
   size?: "sm" | "md" | "lg";
-  speaking?: boolean;
 }
 
-export function KyleAvatar({ size = "lg", speaking = false }: KyleAvatarProps) {
+export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
+  const { toggleConversation, isConnected, isSpeaking } = useKyle();
+
   const sizeClasses = {
     sm: "w-16 h-16",
     md: "w-24 h-24",
     lg: "w-36 h-36",
   };
 
+  const speaking = isConnected && isSpeaking;
+
   return (
-    <div className="relative">
+    <button
+      onClick={toggleConversation}
+      className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95"
+    >
       {/* Outer glow ring */}
       <div
         className={cn(
@@ -41,7 +48,7 @@ export function KyleAvatar({ size = "lg", speaking = false }: KyleAvatarProps) {
         className={cn(
           "relative rounded-full overflow-hidden border-2 border-primary/50 bg-card",
           sizeClasses[size],
-          speaking && "glow-red"
+          (speaking || isConnected) && "glow-red"
         )}
       >
         {/* Kyle's photo */}
@@ -55,13 +62,14 @@ export function KyleAvatar({ size = "lg", speaking = false }: KyleAvatarProps) {
       {/* Status indicator */}
       <div
         className={cn(
-          "absolute bottom-1 right-1 rounded-full bg-primary border-2 border-background",
+          "absolute bottom-1 right-1 rounded-full border-2 border-background",
+          isConnected ? "bg-green-500" : "bg-primary",
           size === "lg" && "w-4 h-4",
           size === "md" && "w-3 h-3",
           size === "sm" && "w-2 h-2",
           speaking && "animate-pulse"
         )}
       />
-    </div>
+    </button>
   );
 }
