@@ -107,17 +107,19 @@ export default function Shazam() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pb-8 gap-6">
-        {/* Kyle Avatar - Central Element */}
-        <div className="flex flex-col items-center gap-4">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
+        {/* Kyle Section - Fixed height to prevent layout shift */}
+        <div className="flex flex-col items-center gap-4 min-h-[320px] justify-center">
           <KyleAvatar size="xxl" />
           
-          {/* Audio Waves */}
-          <div className={`transition-opacity duration-300 ${isConnected ? 'opacity-100' : 'opacity-0'}`}>
-            <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />
+          {/* Audio Waves - Fixed height container */}
+          <div className="h-12 flex items-center justify-center">
+            <div className={`transition-opacity duration-300 ${isConnected ? 'opacity-100' : 'opacity-0'}`}>
+              <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />
+            </div>
           </div>
           
-          {/* Status Text - Fixed height to avoid layout shift */}
+          {/* Status Text - Fixed height */}
           <div className="h-6 flex items-center justify-center">
             <p className="text-muted-foreground text-sm">
               {getStatusText()}
@@ -125,7 +127,12 @@ export default function Shazam() {
           </div>
         </div>
 
-        {/* Image Area */}
+        {/* Separator Line with Glow */}
+        <div className="w-full max-w-md my-6">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_hsl(var(--primary)/0.6)]" />
+        </div>
+
+        {/* Image Area - Separate section */}
         <div className="w-full max-w-md aspect-square relative">
           {isGenerating ? (
             <div className="w-full h-full rounded-2xl bg-card/50 border border-border/30 flex items-center justify-center">
