@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +10,10 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Menu,
+  X,
 } from "lucide-react";
+import { SidebarNavItem } from "./SidebarNavItem";
 
 const navItems = [
   { icon: Home, label: "Home", active: true },
@@ -25,78 +27,99 @@ const navItems = [
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) {
   return (
-    <aside
-      className={cn(
-        "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out relative",
-        collapsed ? "w-20" : "w-64"
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+          onClick={onMobileClose}
+        />
       )}
-    >
-      {/* Toggle Button */}
-      <Button
-        variant="icon"
-        size="icon"
-        onClick={onToggle}
-        className="absolute -right-3 top-6 z-10 h-6 w-6 rounded-full border border-border bg-card shadow-lg"
+      
+      <aside
+        className={cn(
+          "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out relative z-50",
+          // Desktop
+          "hidden md:flex",
+          collapsed ? "md:w-20" : "md:w-64",
+          // Mobile
+          mobileOpen && "fixed inset-y-0 left-0 flex w-64"
+        )}
       >
-        {collapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
-      </Button>
+        {/* Mobile close button */}
+        <Button
+          variant="icon"
+          size="icon"
+          onClick={onMobileClose}
+          className="absolute right-3 top-6 z-10 h-8 w-8 rounded-full md:hidden"
+        >
+          <X className="h-4 w-4" />
+        </Button>
 
-      {/* Logo */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center glow-red-subtle">
-          <span className="text-primary-foreground font-bold text-lg">K</span>
-        </div>
-        {!collapsed && (
-          <div className="animate-fade-in">
-            <span className="text-xs text-muted-foreground block">AI Design-OS</span>
-            <span className="text-xl font-semibold text-primary">küster</span>
+        {/* Desktop Toggle Button */}
+        <Button
+          variant="icon"
+          size="icon"
+          onClick={onToggle}
+          className="absolute -right-3 top-6 z-10 h-6 w-6 rounded-full border border-border bg-card shadow-lg hidden md:flex"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+        </Button>
+
+        {/* Logo */}
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center glow-red-subtle">
+            <span className="text-primary-foreground font-bold text-lg">K</span>
           </div>
-        )}
-      </div>
+          {(!collapsed || mobileOpen) && (
+            <div className="animate-fade-in">
+              <span className="text-xs text-muted-foreground block">AI Design-OS</span>
+              <span className="text-xl font-semibold text-primary">küster</span>
+            </div>
+          )}
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4">
-        {!collapsed && (
-          <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 block">
-            Navigation
-          </span>
-        )}
-        <ul className="space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4">
+          {(!collapsed || mobileOpen) && (
+            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 block">
+              Navigation
+            </span>
+          )}
+          <ul className="space-y-1">
           {navItems.map((item) => (
-            <li key={item.label}>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  item.active
-                    ? "bg-sidebar-accent text-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className={cn("h-5 w-5 shrink-0", item.active && "text-primary")} />
-                {!collapsed && (
-                  <span className="animate-fade-in font-medium">{item.label}</span>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+              <li key={item.label}>
+                <SidebarNavItem
+                  icon={item.icon}
+                  label={item.label}
+                  active={item.active}
+                  collapsed={collapsed && !mobileOpen}
+                  onClick={onMobileClose}
+                />
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-      {/* Sign In */}
-      <div className="p-3 border-t border-sidebar-border">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary hover:bg-sidebar-accent transition-colors">
-          <User className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="animate-fade-in font-medium">Sign In</span>}
-        </button>
-      </div>
-    </aside>
+        {/* Sign In */}
+        <div className="p-3 border-t border-sidebar-border">
+          <SidebarNavItem
+            icon={User}
+            label="Sign In"
+            collapsed={collapsed && !mobileOpen}
+          />
+        </div>
+      </aside>
+    </>
   );
 }
