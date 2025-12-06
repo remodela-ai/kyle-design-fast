@@ -1,0 +1,77 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Mic, Send, MicOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function VoiceInput() {
+  const [isListening, setIsListening] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+
+  const toggleListening = () => {
+    setIsListening(!isListening);
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="relative flex items-center gap-3">
+        {/* Voice button */}
+        <Button
+          variant="icon"
+          size="icon-lg"
+          onClick={toggleListening}
+          className={cn(
+            "shrink-0 transition-all duration-300",
+            isListening && "bg-primary glow-red animate-pulse"
+          )}
+        >
+          {isListening ? (
+            <MicOff className="h-5 w-5 text-primary-foreground" />
+          ) : (
+            <Mic className="h-5 w-5" />
+          )}
+        </Button>
+
+        {/* Input field */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Ask anything, create plan, find products..."
+            className="w-full h-12 px-5 pr-14 rounded-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
+          />
+          
+          {/* Go button */}
+          <Button
+            variant="kyle"
+            size="icon"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Voice status */}
+      {isListening && (
+        <div className="mt-4 text-center animate-fade-in">
+          <div className="flex items-center justify-center gap-1 mb-2">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="w-1 bg-primary rounded-full animate-pulse"
+                style={{
+                  height: `${Math.random() * 20 + 10}px`,
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Kyle is listening... Speak in any of 32 languages
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
