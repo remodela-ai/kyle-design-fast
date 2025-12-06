@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, Download, Heart, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Shazam() {
+  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [shazam2Started, setShazam2Started] = useState(false);
@@ -110,6 +111,26 @@ export default function Shazam() {
       toast.info("Shazam 2 stopped");
     }
   }, [shazam2]);
+
+  // Detect "full project" command from Shazam 2 messages
+  useEffect(() => {
+    if (!shazam2.isConnected) return;
+    
+    const lastUserMessage = shazam2.messages
+      .filter(m => m.role === "user")
+      .pop();
+    
+    if (lastUserMessage) {
+      const content = lastUserMessage.content.toLowerCase();
+      // Detect: "hey kyle give me the full project"
+      if (content.includes("kyle") && content.includes("full") && content.includes("project")) {
+        console.log("FULL PROJECT COMMAND DETECTED");
+        shazam2.stopConversation();
+        toast.success("Starting full project generation!");
+        navigate("/project");
+      }
+    }
+  }, [shazam2.messages, shazam2.isConnected, navigate, shazam2]);
 
   const getStatusText = () => {
     if (isGenerating) return "";
