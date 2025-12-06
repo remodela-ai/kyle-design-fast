@@ -18,12 +18,16 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="w-6 h-6 rounded-full bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-all duration-200 opacity-50 hover:opacity-100"
+      className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100 ${
+        isDark 
+          ? "bg-primary shadow-md" 
+          : "bg-background border border-primary"
+      }`}
     >
       {isDark ? (
-        <Sun className="h-3 w-3 text-muted-foreground" />
+        <Sun className="h-3 w-3 text-primary-foreground" />
       ) : (
-        <Moon className="h-3 w-3 text-muted-foreground" />
+        <Moon className="h-3 w-3 text-primary" />
       )}
     </button>
   );
