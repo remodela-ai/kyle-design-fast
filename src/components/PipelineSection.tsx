@@ -52,18 +52,9 @@ export function PipelineSection() {
     <div className="w-full max-w-6xl mx-auto mt-8 md:mt-12 px-4">
       {/* Header */}
       <div className="text-center mb-6 md:mb-8">
-        {/* Logo icon */}
-        <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-full border-2 border-primary flex items-center justify-center">
-          <div className="w-6 h-6 md:w-8 md:h-8 text-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-          </div>
-        </div>
-        
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">360° Design Project</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+          <span className="text-primary">Next Interiors</span> 360° Design Project
+        </h2>
         <p className="text-sm md:text-base text-muted-foreground">
           Complete AI-powered interior design pipeline
         </p>
