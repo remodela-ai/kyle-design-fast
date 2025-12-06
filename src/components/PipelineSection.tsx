@@ -82,13 +82,13 @@ export function PipelineSection() {
           <span className="font-medium">How It Works</span>
         </div>
 
-        <div className="flex rounded-full bg-secondary p-1">
+        <div className="flex rounded-full bg-secondary p-1 dark:shadow-[0_0_15px_rgba(220,38,38,0.3)]">
           <button
             onClick={() => setActiveTab("design")}
             className={cn(
-              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
               activeTab === "design"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-md dark:shadow-[0_0_20px_rgba(220,38,38,0.6)]"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -97,9 +97,9 @@ export function PipelineSection() {
           <button
             onClick={() => setActiveTab("management")}
             className={cn(
-              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
               activeTab === "management"
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-md dark:shadow-[0_0_20px_rgba(220,38,38,0.6)]"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
