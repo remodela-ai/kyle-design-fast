@@ -22,6 +22,8 @@ interface KyleContextType {
   stopConversation: () => Promise<void>;
   toggleConversation: () => Promise<void>;
   clearMessages: () => void;
+  onGenerateDesign: (() => void) | null;
+  setOnGenerateDesign: (callback: (() => void) | null) => void;
 }
 
 const KyleContext = createContext<KyleContextType | null>(null);
@@ -30,6 +32,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [designSummary, setDesignSummary] = useState<string | null>(null);
+  const [onGenerateDesign, setOnGenerateDesign] = useState<(() => void) | null>(null);
   const navigate = useNavigate();
 
   // Extract design-related keywords from messages
@@ -111,6 +114,14 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
         navigate("/");
         return "Successfully navigated to Home page";
       },
+      generateDesignImage: async () => {
+        console.log("Generating design image via voice command...");
+        if (onGenerateDesign) {
+          onGenerateDesign();
+          return "Starting design generation. I'll create an interior design visualization based on our conversation.";
+        }
+        return "Please navigate to the Blink Design page first to generate images.";
+      },
     },
   });
 
@@ -157,6 +168,8 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     stopConversation,
     toggleConversation,
     clearMessages,
+    onGenerateDesign,
+    setOnGenerateDesign,
   };
 
   return (
