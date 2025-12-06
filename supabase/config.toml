@@ -2,3 +2,9 @@ project_id = "jpedvgjclutbyuljoxog"
 
 [functions.generate-design]
 verify_jwt = false
+
+[functions.create-kyle-agent]
+verify_jwt = false
+
+[functions.create-shazam2-agent]
+verify_jwt = false
