@@ -3,8 +3,6 @@ import { useConversation } from "@11labs/react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Eric voice ID from ElevenLabs
-const ERIC_VOICE_ID = "cjVigY5qzO86Huf0OWal";
 const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
 
 export interface ConversationMessage {
@@ -40,7 +38,6 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       .map(m => m.content)
       .join(" ");
     
-    // Simple extraction - look for design-related terms
     const styleTerms = ["modern", "minimalist", "industrial", "bohemian", "scandinavian", "rustic", "contemporary", "traditional", "luxury", "cozy", "elegant", "warm", "cool", "bright", "dark"];
     const roomTerms = ["living room", "bedroom", "kitchen", "bathroom", "office", "dining room", "studio", "loft", "apartment"];
     const colorTerms = ["white", "black", "gray", "beige", "wood", "blue", "green", "neutral", "earth tones", "pastel"];
@@ -65,21 +62,22 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Next Interiors Agent connected");
+      console.log("Kyle connected");
       setError(null);
     },
     onDisconnect: () => {
-      console.log("Next Interiors Agent disconnected");
+      console.log("Kyle disconnected");
     },
     onMessage: (message) => {
-      console.log("Agent message:", message);
+      console.log("Kyle message:", message);
       
       // Handle different message types from ElevenLabs
       if (message && typeof message === "object") {
-        const msg = message as { message?: string; source?: string; type?: string };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const msg = message as any;
         
-        // Only capture final transcriptions, not tentative ones
-        if (msg.message && msg.source) {
+        // Capture transcriptions
+        if (msg.message && typeof msg.message === "string" && msg.source) {
           const newMessage: ConversationMessage = {
             role: msg.source === "user" ? "user" : "assistant",
             content: msg.message,
@@ -88,7 +86,6 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
           
           setMessages(prev => {
             const updated = [...prev, newMessage];
-            // Update design summary with new messages
             const summary = extractDesignSummary(updated);
             setDesignSummary(summary);
             return updated;
@@ -97,8 +94,11 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       }
     },
     onError: (errorMessage) => {
-      console.error("Agent error:", errorMessage);
-      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to agent");
+      console.error("Kyle error:", errorMessage);
+      // Don't set error for internal SDK issues
+      if (errorMessage && typeof errorMessage === "string") {
+        setError(errorMessage);
+      }
     },
     clientTools: {
       navigateToBlinkDesign: async () => {
@@ -118,40 +118,16 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // Use the public agent 
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            language: "en",
-            prompt: {
-              prompt: `You are Kyle, an AI assistant for Next Interiors, a modern interior design company. 
-              You help users explore design inspiration and navigate the platform.
-              
-              When users describe their design preferences, always acknowledge and summarize:
-              - Room type (living room, bedroom, kitchen, etc.)
-              - Style preferences (modern, minimalist, industrial, etc.)
-              - Color preferences
-              - Any specific elements they want
-              
-              You have access to tools to navigate between pages:
-              - Use navigateToBlinkDesign when users want to explore design inspiration, generate ideas, or use Blink Design
-              - Use navigateToHome when users want to go back to the main page
-              
-              Be helpful, creative, and guide users through the design experience. Ask clarifying questions about their design vision.`,
-            },
-            firstMessage: "Hello! I'm Kyle, your Next Interiors design assistant. Tell me about the space you'd like to design - what room, style, and atmosphere are you envisioning?",
-          },
-          tts: {
-            voiceId: ERIC_VOICE_ID,
-          },
-        },
       });
     } catch (err) {
       console.error("Failed to start conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
     }
-  }, [conversation, navigate]);
+  }, [conversation]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
