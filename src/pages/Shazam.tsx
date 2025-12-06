@@ -88,10 +88,9 @@ export default function Shazam() {
   };
 
   const getStatusText = () => {
-    if (isGenerating) return "Creating your design...";
-    if (isSpeaking) return "Kyle is speaking...";
-    if (isConnected) return "Listening...";
-    if (generatedImage) return "Here's your design!";
+    if (isGenerating) return "";
+    if (isConnected) return "";
+    if (generatedImage) return "";
     return "Tap Kyle to start";
   };
 
@@ -118,20 +117,19 @@ export default function Shazam() {
             <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />
           </div>
           
-          {/* Status Text */}
-          <p className="text-muted-foreground text-sm animate-pulse">
-            {getStatusText()}
-          </p>
+          {/* Status Text - Fixed height to avoid layout shift */}
+          <div className="h-6 flex items-center justify-center">
+            <p className="text-muted-foreground text-sm">
+              {getStatusText()}
+            </p>
+          </div>
         </div>
 
         {/* Image Area */}
         <div className="w-full max-w-md aspect-square relative">
           {isGenerating ? (
             <div className="w-full h-full rounded-2xl bg-card/50 border border-border/30 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-muted-foreground text-sm">Kyle is working now...</p>
-              </div>
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
           ) : generatedImage ? (
             <img 
