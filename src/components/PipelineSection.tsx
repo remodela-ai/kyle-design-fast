@@ -131,7 +131,7 @@ export function PipelineSection() {
               </div>
 
               {/* Label */}
-              <h4 className="text-[10px] md:text-xs font-semibold text-foreground mb-0.5 md:mb-1 leading-tight">
+              <h4 className="text-[10px] md:text-xs font-normal text-foreground mb-0.5 md:mb-1 leading-tight">
                 {item.label}
               </h4>
 
