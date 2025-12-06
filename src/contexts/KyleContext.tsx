@@ -127,45 +127,23 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             return updated;
           });
 
-          // Detect generation command variations from user messages
+          // Detect ONLY the specific command from USER messages
+          // Must be from user AND contain "hey kyle" AND "generate" AND "image"
           if (msg.source === "user") {
-            const messageText = msg.message.toLowerCase();
+            const messageText = msg.message.toLowerCase().trim();
             
-            // Check if message mentions Kyle and generation intent
-            const mentionsKyle = messageText.includes("kyle");
-            const hasGenerateIntent = 
-              messageText.includes("generate") || 
-              messageText.includes("genera") ||
-              messageText.includes("create") ||
-              messageText.includes("make") ||
-              messageText.includes("show") ||
-              messageText.includes("render") ||
-              messageText.includes("produce") ||
-              messageText.includes("build") ||
-              messageText.includes("design") ||
-              messageText.includes("visualize") ||
-              messageText.includes("crea") ||
-              messageText.includes("haz") ||
-              messageText.includes("muestra");
+            // Strict check: must contain "hey kyle" + "generate" + "image"
+            const hasHeyKyle = messageText.includes("hey kyle");
+            const hasGenerate = messageText.includes("generate");
+            const hasImage = messageText.includes("image");
             
-            const hasImageIntent = 
-              messageText.includes("image") || 
-              messageText.includes("imagen") ||
-              messageText.includes("picture") ||
-              messageText.includes("visual") ||
-              messageText.includes("render") ||
-              messageText.includes("design") ||
-              messageText.includes("photo") ||
-              messageText.includes("graphic");
-
-            // Trigger if mentions Kyle + generate intent + image intent
-            const isGenerateCommand = mentionsKyle && hasGenerateIntent && hasImageIntent;
+            const isGenerateCommand = hasHeyKyle && hasGenerate && hasImage;
 
             if (isGenerateCommand) {
-              console.log("Generation command detected:", msg.message);
+              console.log("🎯 Voice command detected from USER:", msg.message);
               setTimeout(() => {
                 onGenerateDesignRef();
-              }, 1500);
+              }, 500);
             }
           }
         }
