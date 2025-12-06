@@ -13,18 +13,17 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <KyleProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <KyleProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/blink-design" element={<BlinkDesign />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </KyleProvider>
+        </KyleProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
