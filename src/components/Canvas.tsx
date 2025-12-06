@@ -36,10 +36,10 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         {/* Title */}
         <div className="text-center space-y-2 px-4">
           <h1 className="text-3xl md:text-5xl font-bold text-foreground">
-            AI Design-OS
+            Next Interiors
           </h1>
           <p className="text-base md:text-lg text-muted-foreground max-w-md">
-            Your personalized AI Design Operating System
+            The First Full Stack AI Interior Design Company.
           </p>
         </div>
 
