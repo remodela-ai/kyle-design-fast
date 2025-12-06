@@ -16,7 +16,7 @@ export function VoiceInput() {
           size="icon-lg"
           onClick={toggleConversation}
           className={cn(
-            "shrink-0 transition-all duration-300 h-10 w-10 md:h-12 md:w-12",
+            "shrink-0 transition-all duration-300 h-10 w-10 md:h-12 md:w-12 shadow-lg shadow-primary/20 dark:shadow-[0_0_15px_rgba(220,38,38,0.4)] hover:shadow-primary/40 dark:hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] hover:scale-105",
             isConnected && "bg-primary glow-red animate-pulse"
           )}
         >
@@ -31,7 +31,7 @@ export function VoiceInput() {
         <div className="flex-1 relative">
           <button
             onClick={toggleConversation}
-            className="w-full h-10 md:h-12 px-4 md:px-5 pr-12 md:pr-14 rounded-full bg-input border border-border text-muted-foreground text-left focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 text-sm md:text-base cursor-pointer hover:border-primary/50"
+            className="w-full h-10 md:h-12 px-4 md:px-5 pr-12 md:pr-14 rounded-full bg-input border border-border text-muted-foreground text-left focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 text-sm md:text-base cursor-pointer hover:border-primary/50 shadow-lg shadow-primary/10 dark:shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-primary/20 dark:hover:shadow-[0_0_15px_rgba(220,38,38,0.3)]"
           >
             {isConnected ? "Talking to Kyle..." : "Click to talk..."}
           </button>
@@ -41,7 +41,7 @@ export function VoiceInput() {
             variant="kyle"
             size="icon"
             onClick={toggleConversation}
-            className="absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9"
+            className="absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9 shadow-lg shadow-primary/30 dark:shadow-[0_0_15px_rgba(220,38,38,0.5)] hover:shadow-primary/50 dark:hover:shadow-[0_0_25px_rgba(220,38,38,0.7)] hover:scale-110 transition-all duration-300"
           >
             <Send className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
