@@ -45,12 +45,8 @@ type PipelineType = "design" | "management";
 
 export function PipelineSection() {
   const [activeTab, setActiveTab] = useState<PipelineType>("design");
-  // Track which steps have been executed (for demo, none are executed by default)
-  const [executedSteps, setExecutedSteps] = useState<number[]>([]);
 
   const pipeline = activeTab === "design" ? designPipeline : managementPipeline;
-
-  const isExecuted = (step: number) => executedSteps.includes(step);
 
   return (
     <div className="w-full max-w-6xl mx-auto mt-8 md:mt-12 px-4">
@@ -129,35 +125,9 @@ export function PipelineSection() {
             >
               {/* Step indicator with icon */}
               <div className="relative mb-2 md:mb-3">
-                <div 
-                  className={cn(
-                    "w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110",
-                    isExecuted(item.step)
-                      ? "bg-primary shadow-lg glow-red-subtle"
-                      : "bg-transparent border-2 border-primary"
-                  )}
-                >
-                  <item.icon 
-                    className={cn(
-                      "w-4 h-4 md:w-6 md:h-6",
-                      isExecuted(item.step) ? "text-primary-foreground" : "text-primary"
-                    )} 
-                  />
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 glow-red-subtle">
+                  <item.icon className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground" />
                 </div>
-                {/* Checkmark for executed steps */}
-                {isExecuted(item.step) && (
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-background rounded-full flex items-center justify-center border border-primary">
-                    <svg 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="3" 
-                      className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary-foreground"
-                    >
-                      <path d="M5 12l5 5L20 7" stroke="white" />
-                    </svg>
-                  </div>
-                )}
               </div>
 
               {/* Label */}
