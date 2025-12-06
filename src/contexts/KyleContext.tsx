@@ -150,12 +150,11 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             
             console.log("📝 User message normalized:", messageText);
             
-            // Check for variations: "hey kyle generate the image" or "kyle generate the image"
+            // Check for "hey kyle generate" command (no need for "image")
             const hasKyle = messageText.includes("kyle");
             const hasGenerate = messageText.includes("generate");
-            const hasImage = messageText.includes("image");
             
-            const isGenerateCommand = hasKyle && hasGenerate && hasImage;
+            const isGenerateCommand = hasKyle && hasGenerate;
 
             if (isGenerateCommand) {
               console.log("🎯 VOICE COMMAND DETECTED! Stopping Kyle and generating...");
