@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Zap, Home, Loader2, Download, Heart, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,24 +9,33 @@ import { VoiceInput } from "@/components/VoiceInput";
 import { ConversationSummary } from "@/components/ConversationSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useKyle } from "@/contexts/KyleContext";
 
 const BlinkDesign = () => {
   const navigate = useNavigate();
+  const { designSummary, setOnGenerateDesign } = useKyle();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
 
-  const generateDesign = async () => {
-    if (!prompt.trim()) {
-      toast.error("Please enter a design description");
+  const generateDesign = useCallback(async (customPrompt?: string) => {
+    const finalPrompt = customPrompt || prompt;
+    
+    if (!finalPrompt.trim()) {
+      toast.error("Please enter a design description or talk to Kyle first");
       return;
+    }
+
+    // Update the prompt field if using custom prompt
+    if (customPrompt) {
+      setPrompt(customPrompt);
     }
 
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-design", {
-        body: { prompt: prompt.trim() },
+        body: { prompt: finalPrompt.trim() },
       });
 
       if (error) {
@@ -51,7 +60,26 @@ const BlinkDesign = () => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [prompt]);
+
+  // Register the voice-triggered generation callback
+  useEffect(() => {
+    const voiceGenerateHandler = () => {
+      // Use design summary from conversation or current prompt
+      const voicePrompt = designSummary || prompt;
+      if (voicePrompt) {
+        generateDesign(voicePrompt);
+      } else {
+        toast.error("Please describe your design vision first");
+      }
+    };
+
+    setOnGenerateDesign(() => voiceGenerateHandler);
+
+    return () => {
+      setOnGenerateDesign(null);
+    };
+  }, [designSummary, prompt, generateDesign, setOnGenerateDesign]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isGenerating) {
@@ -136,7 +164,7 @@ const BlinkDesign = () => {
               className="flex-1 h-12 shadow-lg shadow-primary/10 dark:shadow-[0_0_10px_rgba(220,38,38,0.2)] focus:shadow-primary/20 dark:focus:shadow-[0_0_15px_rgba(220,38,38,0.3)] transition-all duration-300"
             />
             <Button
-              onClick={generateDesign}
+              onClick={() => generateDesign()}
               disabled={isGenerating || !prompt.trim()}
               className="h-12 px-6 shadow-lg shadow-primary/30 dark:shadow-[0_0_15px_rgba(220,38,38,0.4)] hover:shadow-primary/50 dark:hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] transition-all duration-300"
             >
