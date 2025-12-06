@@ -1,14 +1,20 @@
 import { KyleAvatar } from "./KyleAvatar";
 import { VoiceInput } from "./VoiceInput";
-import { FeatureGrid } from "./FeatureGrid";
+import { PipelineSection } from "./PipelineSection";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Canvas() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+    <div className="flex-1 flex flex-col items-center p-8 relative overflow-y-auto">
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-4xl w-full animate-fade-in">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+      
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-6xl w-full animate-fade-in py-8">
         {/* Kyle Avatar */}
         <div className="animate-float">
           <KyleAvatar size="lg" />
@@ -35,10 +41,8 @@ export function Canvas() {
         {/* Voice Input */}
         <VoiceInput />
 
-        {/* Feature Grid */}
-        <div className="mt-8 w-full">
-          <FeatureGrid />
-        </div>
+        {/* Pipeline Section */}
+        <PipelineSection />
       </div>
     </div>
   );

@@ -5,7 +5,64 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  .light {
+    /* Light mode - clean whites and grays */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    /* Red primary */
+    --primary: 0 72% 51%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 72% 60%;
+
+    /* Grays for secondary */
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 25%;
+
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 94%;
+    --ring: 0 72% 51%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 35%;
+    --sidebar-primary: 0 72% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 0 72% 51%;
+
+    /* Custom tokens */
+    --kyle-red: 0 72% 51%;
+    --kyle-red-glow: 0 72% 45%;
+    --surface-elevated: 0 0% 100%;
+    --surface-hover: 0 0% 96%;
+    
+    /* Gradients */
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(0 72% 51% / 0.08) 0%, transparent 50%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+  }
+
+  .dark {
     /* Gray scale - dark theme */
     --background: 0 0% 8%;
     --foreground: 0 0% 95%;
