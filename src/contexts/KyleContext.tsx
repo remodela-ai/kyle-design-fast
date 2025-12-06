@@ -204,27 +204,10 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Use the public agent with prompt override
+      // Use the public agent without overrides (public agents don't allow prompt overrides)
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle, an expert AI interior design assistant. You help users describe their ideal interior design vision through natural conversation.
-
-IMPORTANT INSTRUCTION: After exactly 2 exchanges with the user (meaning after you've responded twice), you MUST tell them: "If you want to visualize your design, just say 'Hey Kyle Generate'."
-
-Guidelines:
-- Ask about their preferred style, room type, colors, and atmosphere
-- Be friendly, creative, and helpful
-- Listen carefully to understand their design preferences
-- After 2 exchanges, remind them about the voice command to generate their design
-- Keep responses concise and conversational`,
-            },
-            firstMessage: "Hi! I'm Kyle, your AI interior design assistant. Tell me about the space you'd like to design - what room are we working on and what style inspires you?",
-          },
-        },
       });
     } catch (err) {
       console.error("Failed to start conversation:", err);
