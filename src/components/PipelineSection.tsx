@@ -108,6 +108,9 @@ export function PipelineSection() {
         </div>
       </div>
 
+      {/* Separator line */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent my-6 md:my-8" />
+
       {/* Pipeline Steps */}
       <div className="relative">
         {/* Connection line - hidden on mobile */}
@@ -124,10 +127,6 @@ export function PipelineSection() {
               <div className="relative mb-2 md:mb-3">
                 <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 glow-red-subtle">
                   <item.icon className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground" />
-                </div>
-                {/* Step number badge */}
-                <div className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-4 h-4 md:w-5 md:h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                  <span className="text-[8px] md:text-[10px] font-bold text-primary-foreground">{item.step}</span>
                 </div>
               </div>
 
