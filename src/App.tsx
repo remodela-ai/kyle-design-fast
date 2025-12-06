@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { KyleProvider } from "@/contexts/KyleContext";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
+import CreateAgent from "./pages/CreateAgent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/blink-design" element={<BlinkDesign />} />
+            <Route path="/create-agent" element={<CreateAgent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </KyleProvider>
