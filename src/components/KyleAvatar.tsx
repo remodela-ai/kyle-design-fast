@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import kylePhoto from "@/assets/kyle-avatar.jpeg";
 
 interface KyleAvatarProps {
   size?: "sm" | "md" | "lg";
@@ -43,17 +44,12 @@ export function KyleAvatar({ size = "lg", speaking = false }: KyleAvatarProps) {
           speaking && "glow-red"
         )}
       >
-        {/* Placeholder with Kyle initials */}
-        <div className="w-full h-full bg-gradient-to-br from-muted to-card flex items-center justify-center">
-          <span className={cn(
-            "font-bold text-muted-foreground",
-            size === "lg" && "text-4xl",
-            size === "md" && "text-2xl",
-            size === "sm" && "text-lg"
-          )}>
-            K
-          </span>
-        </div>
+        {/* Kyle's photo */}
+        <img 
+          src={kylePhoto} 
+          alt="Kyle - AI Design Agent" 
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Status indicator */}
