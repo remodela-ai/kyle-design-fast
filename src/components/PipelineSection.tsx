@@ -125,8 +125,8 @@ export function PipelineSection() {
             >
               {/* Step indicator with icon */}
               <div className="relative mb-2 md:mb-3">
-                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 glow-red-subtle">
-                  <item.icon className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground" />
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary dark:bg-primary bg-background border-2 border-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 dark:glow-red-subtle">
+                  <item.icon className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground dark:text-primary-foreground text-primary" />
                 </div>
               </div>
 
