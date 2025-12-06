@@ -3,7 +3,7 @@ import { useConversation } from "@11labs/react";
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
+const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Kyle Blink Design
 
 export interface ConversationMessage {
   role: "user" | "assistant";
