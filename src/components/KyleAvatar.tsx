@@ -48,7 +48,7 @@ export function KyleAvatar({ size = "lg", speaking = false }: KyleAvatarProps) {
         <img 
           src={kylePhoto} 
           alt="Kyle - AI Design Agent" 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top scale-110"
         />
       </div>
 
