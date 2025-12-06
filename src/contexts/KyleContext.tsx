@@ -101,19 +101,15 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             return updated;
           });
 
-          // Detect generation commands from user messages
+          // Detect specific generation command from user messages
           if (msg.source === "user") {
-            const generateKeywords = [
-              "generate", "genera", "create", "crea", 
-              "show me", "muéstrame", "visualiza", "visualize",
-              "image", "imagen", "diseño", "design",
-              "render", "renderiza", "make", "haz"
-            ];
-            
             const messageText = msg.message.toLowerCase();
-            const isGenerateCommand = generateKeywords.some(keyword => 
-              messageText.includes(keyword)
-            );
+            
+            // Check for the specific command: "Hey Kyle, generate the image"
+            const isGenerateCommand = 
+              messageText.includes("hey kyle") && 
+              (messageText.includes("generate") || messageText.includes("genera")) &&
+              (messageText.includes("image") || messageText.includes("imagen"));
 
             if (isGenerateCommand) {
               console.log("Generation command detected:", msg.message);
