@@ -1,5 +1,5 @@
 import { useKyle, ConversationMessage } from "@/contexts/KyleContext";
-import { MessageSquare, Sparkles, Trash2 } from "lucide-react";
+import { MessageSquare, Sparkles, Trash2, Loader2, Mic } from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 
@@ -8,9 +8,9 @@ interface ConversationSummaryProps {
 }
 
 export function ConversationSummary({ onUseAsPrompt }: ConversationSummaryProps) {
-  const { messages, designSummary, clearMessages, isConnected } = useKyle();
+  const { messages, designSummary, clearMessages, isConnected, voiceCommandDetected, isGeneratingFromVoice } = useKyle();
 
-  if (messages.length === 0) {
+  if (messages.length === 0 && !voiceCommandDetected && !isGeneratingFromVoice) {
     return null;
   }
 
@@ -28,6 +28,30 @@ export function ConversationSummary({ onUseAsPrompt }: ConversationSummaryProps)
 
   return (
     <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-4 md:p-6 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] transition-all duration-300 mb-6">
+      {/* Voice Command Detected Banner */}
+      {voiceCommandDetected && (
+        <div className="mb-4 p-4 rounded-xl bg-primary border border-primary animate-pulse">
+          <div className="flex items-center gap-3">
+            <Mic className="h-5 w-5 text-white animate-bounce" />
+            <span className="text-white font-bold uppercase tracking-wider">
+              Voice Command Detected
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Kyle Working Banner */}
+      {isGeneratingFromVoice && (
+        <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-primary to-primary/80 border border-primary">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-white animate-spin" />
+            <span className="text-white font-semibold">
+              Kyle is working now...
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
