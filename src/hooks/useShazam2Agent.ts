@@ -3,8 +3,14 @@ import { useCallback, useState } from "react";
 
 const SHAZAM2_AGENT_ID = "agent_9301kbtp61qqf0hbtzpjkgjypazk";
 
+interface Message {
+  role: "user" | "agent";
+  content: string;
+}
+
 export function useShazam2Agent() {
   const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -16,6 +22,15 @@ export function useShazam2Agent() {
     },
     onMessage: (message) => {
       console.log("Shazam 2 message:", message);
+      
+      // Capture messages for command detection using type guard
+      const msg = message as { type?: string; user_transcript?: string; agent_response?: string };
+      
+      if (msg.type === "user_transcript" && msg.user_transcript) {
+        setMessages(prev => [...prev, { role: "user", content: msg.user_transcript! }]);
+      } else if (msg.type === "agent_response" && msg.agent_response) {
+        setMessages(prev => [...prev, { role: "agent", content: msg.agent_response! }]);
+      }
     },
     onError: (errorMessage) => {
       console.error("Shazam 2 error:", errorMessage);
@@ -41,6 +56,7 @@ export function useShazam2Agent() {
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
+    setMessages([]);
   }, [conversation]);
 
   return {
@@ -48,6 +64,7 @@ export function useShazam2Agent() {
     isSpeaking: conversation.isSpeaking,
     isConnected: conversation.status === "connected",
     error,
+    messages,
     startConversation,
     stopConversation,
   };
