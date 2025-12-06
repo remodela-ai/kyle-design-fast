@@ -49,12 +49,12 @@ export function PipelineSection() {
   const pipeline = activeTab === "design" ? designPipeline : managementPipeline;
 
   return (
-    <div className="w-full max-w-6xl mx-auto mt-12">
+    <div className="w-full max-w-6xl mx-auto mt-8 md:mt-12 px-4">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-6 md:mb-8">
         {/* Logo icon */}
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-primary flex items-center justify-center">
-          <div className="w-8 h-8 text-primary">
+        <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-full border-2 border-primary flex items-center justify-center">
+          <div className="w-6 h-6 md:w-8 md:h-8 text-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
@@ -63,15 +63,15 @@ export function PipelineSection() {
           </div>
         </div>
         
-        <h2 className="text-3xl font-bold text-foreground mb-2">360° Design Project</h2>
-        <p className="text-muted-foreground">
-          Complete AI-powered interior design pipeline from photo to video presentation
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">360° Design Project</h2>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Complete AI-powered interior design pipeline
         </p>
       </div>
 
       {/* Tab Toggle */}
-      <div className="flex items-center justify-between mb-8 px-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 md:mb-8">
+        <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
           <div className="w-5 h-5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -86,7 +86,7 @@ export function PipelineSection() {
           <button
             onClick={() => setActiveTab("design")}
             className={cn(
-              "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
               activeTab === "design"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground"
@@ -97,7 +97,7 @@ export function PipelineSection() {
           <button
             onClick={() => setActiveTab("management")}
             className={cn(
-              "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+              "px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
               activeTab === "management"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground"
@@ -109,11 +109,11 @@ export function PipelineSection() {
       </div>
 
       {/* Pipeline Steps */}
-      <div className="relative px-4">
-        {/* Connection line */}
-        <div className="absolute top-8 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+      <div className="relative">
+        {/* Connection line - hidden on mobile */}
+        <div className="absolute top-8 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 hidden md:block" />
 
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-4 relative">
+        <div className="grid grid-cols-4 gap-3 md:grid-cols-8 md:gap-4 relative">
           {pipeline.map((item, index) => (
             <div
               key={item.label}
@@ -121,23 +121,23 @@ export function PipelineSection() {
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {/* Step indicator with icon */}
-              <div className="relative mb-3">
-                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 glow-red-subtle">
-                  <item.icon className="w-6 h-6 text-primary-foreground" />
+              <div className="relative mb-2 md:mb-3">
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 glow-red-subtle">
+                  <item.icon className="w-4 h-4 md:w-6 md:h-6 text-primary-foreground" />
                 </div>
                 {/* Step number badge */}
-                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-primary-foreground">{item.step}</span>
+                <div className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-4 h-4 md:w-5 md:h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                  <span className="text-[8px] md:text-[10px] font-bold text-primary-foreground">{item.step}</span>
                 </div>
               </div>
 
               {/* Label */}
-              <h4 className="text-xs font-semibold text-foreground mb-1 leading-tight">
+              <h4 className="text-[10px] md:text-xs font-semibold text-foreground mb-0.5 md:mb-1 leading-tight">
                 {item.label}
               </h4>
 
-              {/* Description */}
-              <p className="text-[10px] text-muted-foreground leading-tight hidden md:block">
+              {/* Description - hidden on mobile */}
+              <p className="text-[10px] text-muted-foreground leading-tight hidden lg:block">
                 {item.description}
               </p>
             </div>
