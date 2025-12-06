@@ -127,23 +127,28 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             return updated;
           });
 
-          // Detect ONLY the specific command from USER messages
-          // Must be from user AND contain "hey kyle" AND "generate" AND "image"
+          // Detect the command from USER messages only
           if (msg.source === "user") {
-            const messageText = msg.message.toLowerCase().trim();
+            // Normalize: remove punctuation and extra spaces
+            const messageText = msg.message
+              .toLowerCase()
+              .replace(/[.,!?;:]/g, '') // Remove punctuation
+              .replace(/\s+/g, ' ')     // Normalize spaces
+              .trim();
             
-            // Strict check: must contain "hey kyle" + "generate" + "image"
-            const hasHeyKyle = messageText.includes("hey kyle");
+            console.log("📝 User message normalized:", messageText);
+            
+            // Check for variations: "hey kyle generate the image" or "kyle generate the image"
+            const hasKyle = messageText.includes("kyle");
             const hasGenerate = messageText.includes("generate");
             const hasImage = messageText.includes("image");
             
-            const isGenerateCommand = hasHeyKyle && hasGenerate && hasImage;
+            const isGenerateCommand = hasKyle && hasGenerate && hasImage;
 
             if (isGenerateCommand) {
-              console.log("🎯 Voice command detected from USER:", msg.message);
-              setTimeout(() => {
-                onGenerateDesignRef();
-              }, 500);
+              console.log("🎯 VOICE COMMAND DETECTED! Stopping Kyle and generating...");
+              // Immediately trigger - no delay
+              onGenerateDesignRef();
             }
           }
         }
