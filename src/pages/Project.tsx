@@ -4,6 +4,10 @@ import { Home, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Progress } from "@/components/ui/progress";
+import { KyleAvatar } from "@/components/KyleAvatar";
+import { AudioWaves } from "@/components/AudioWaves";
+import { useShazam3Agent } from "@/hooks/useShazam3Agent";
+import { useToast } from "@/hooks/use-toast";
 
 interface PipelineStep {
   id: string;
@@ -20,16 +24,25 @@ interface Pipeline {
 }
 
 export default function Project() {
+  const { toast } = useToast();
+  const shazam3 = useShazam3Agent();
+  const [shazam3Started, setShazam3Started] = useState(false);
+  const [pipelinesStarted, setPipelinesStarted] = useState(false);
+  
   const [pipelines, setPipelines] = useState<Pipeline[]>([
     {
       id: "visual-design",
       name: "Visual Design Pipeline",
       description: "Generating complete visual design package",
       steps: [
-        { id: "mood", name: "Mood Board Generation", status: "pending" },
-        { id: "floorplan", name: "Floor Plan Analysis", status: "pending" },
-        { id: "3d", name: "3D Visualization", status: "pending" },
-        { id: "materials", name: "Materials & Finishes", status: "pending" },
+        { id: "spatial", name: "Spatial Analysis", status: "pending" },
+        { id: "architectural", name: "Architectural Plan", status: "pending" },
+        { id: "items", name: "Items Extraction", status: "pending" },
+        { id: "moodboard", name: "Moodboard Generation", status: "pending" },
+        { id: "flatlay", name: "Flatlay Composition", status: "pending" },
+        { id: "colors", name: "Colors & Textures", status: "pending" },
+        { id: "storybook", name: "Your Story Book", status: "pending" },
+        { id: "video", name: "Presentation Video", status: "pending" },
       ],
       progress: 0,
     },
@@ -47,19 +60,54 @@ export default function Project() {
     },
   ]);
 
-  // Auto-start pipelines when page loads
+  // Start Shazam 3 when page loads
   useEffect(() => {
-    const runPipelines = async () => {
-      // Start both pipelines simultaneously
-      for (let pipelineIndex = 0; pipelineIndex < pipelines.length; pipelineIndex++) {
-        runPipeline(pipelineIndex);
-      }
-    };
-
-    // Small delay before starting
-    const timer = setTimeout(runPipelines, 500);
+    const timer = setTimeout(() => {
+      shazam3.startConversation();
+      setShazam3Started(true);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Detect magic command from Shazam 3
+  useEffect(() => {
+    if (!shazam3Started || pipelinesStarted) return;
+    
+    const lastUserMessage = shazam3.messages
+      .filter(m => m.role === "user")
+      .pop();
+    
+    if (lastUserMessage) {
+      const content = lastUserMessage.content.toLowerCase();
+      // Detect: "lets go kyle i want my project for free"
+      if (
+        content.includes("lets go") && 
+        content.includes("kyle") && 
+        content.includes("project") && 
+        content.includes("free")
+      ) {
+        console.log("Magic command detected!");
+        shazam3.stopConversation();
+        setShazam3Started(false);
+        setPipelinesStarted(true);
+        
+        toast({
+          title: "Let's Go! 🚀",
+          description: "Starting your Visual Design Pipeline...",
+        });
+        
+        // Start pipelines
+        setTimeout(() => runPipelines(), 500);
+      }
+    }
+  }, [shazam3.messages, shazam3Started, pipelinesStarted]);
+
+  const runPipelines = async () => {
+    // Start both pipelines simultaneously
+    for (let pipelineIndex = 0; pipelineIndex < pipelines.length; pipelineIndex++) {
+      runPipeline(pipelineIndex);
+    }
+  };
 
   const runPipeline = async (pipelineIndex: number) => {
     const pipeline = pipelines[pipelineIndex];
@@ -98,6 +146,13 @@ export default function Project() {
     }
   };
 
+  const handleStopShazam3 = () => {
+    if (shazam3.isConnected) {
+      shazam3.stopConversation();
+      setShazam3Started(false);
+    }
+  };
+
   const getStepIcon = (status: PipelineStep["status"]) => {
     switch (status) {
       case "completed":
@@ -107,6 +162,16 @@ export default function Project() {
       default:
         return <Circle className="h-5 w-5 text-muted-foreground/40" />;
     }
+  };
+
+  const getStatusText = () => {
+    if (shazam3.isConnected) {
+      return "Tap Kyle to stop";
+    }
+    if (pipelinesStarted) {
+      return "Kyle is working on your project...";
+    }
+    return "Kyle is explaining your deliverables";
   };
 
   const allCompleted = pipelines.every(p => p.progress === 100);
@@ -125,11 +190,34 @@ export default function Project() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-4 pb-8 pt-4">
+        {/* Kyle Avatar - only show before pipelines start */}
+        {!pipelinesStarted && (
+          <div className="flex flex-col items-center mb-8">
+            <KyleAvatar 
+              size="lg" 
+              onClickOverride={shazam3.isConnected ? handleStopShazam3 : undefined}
+            />
+            
+            <AudioWaves
+              isActive={shazam3.isConnected}
+              isSpeaking={shazam3.isSpeaking}
+              className="mt-4 h-8"
+            />
+            
+            <p className="text-sm text-muted-foreground mt-3 text-center">
+              {getStatusText()}
+            </p>
+          </div>
+        )}
+
         <h1 className="text-2xl font-bold text-foreground mb-2">
           Full Project Generation
         </h1>
-        <p className="text-muted-foreground text-sm mb-8">
-          Kyle is preparing your complete design package
+        <p className="text-muted-foreground text-sm mb-8 text-center">
+          {pipelinesStarted 
+            ? "Kyle is preparing your complete design package"
+            : "Say 'Lets Go Kyle! I want my Project for Free!' to start"
+          }
         </p>
 
         {/* Pipelines */}
