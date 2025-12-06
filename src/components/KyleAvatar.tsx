@@ -10,9 +10,9 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
   const { toggleConversation, isConnected, isSpeaking } = useKyle();
 
   const sizeClasses = {
-    sm: "w-16 h-16",
-    md: "w-24 h-24",
-    lg: "w-36 h-36",
+    sm: "w-12 h-16",
+    md: "w-[4.5rem] h-24",
+    lg: "w-[6.3rem] h-36",
   };
 
   const speaking = isConnected && isSpeaking;
@@ -25,7 +25,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
       {/* Outer glow ring */}
       <div
         className={cn(
-          "absolute inset-0 rounded-full bg-gradient-to-br from-primary/40 to-transparent",
+          "absolute inset-0 rounded-[50%] bg-gradient-to-br from-primary/40 to-transparent",
           speaking && "animate-pulse-glow",
           size === "lg" && "-inset-3",
           size === "md" && "-inset-2",
@@ -36,7 +36,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
       {/* Inner ring */}
       <div
         className={cn(
-          "absolute rounded-full border-2 border-primary/30",
+          "absolute rounded-[50%] border-2 border-primary/30",
           size === "lg" && "-inset-2",
           size === "md" && "-inset-1.5",
           size === "sm" && "-inset-1"
@@ -46,7 +46,7 @@ export function KyleAvatar({ size = "lg" }: KyleAvatarProps) {
       {/* Avatar container */}
       <div
         className={cn(
-          "relative rounded-full overflow-hidden border-2 border-primary/50 bg-card",
+          "relative rounded-[50%] overflow-hidden border-2 border-primary/50 bg-card",
           sizeClasses[size],
           (speaking || isConnected) && "glow-red"
         )}

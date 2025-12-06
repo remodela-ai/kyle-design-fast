@@ -34,17 +34,17 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         </div>
 
         {/* Title */}
-        <div className="text-center space-y-2 px-4">
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground">
+        <div className="text-center space-y-1 px-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
             Next Interiors
           </h1>
-          <p className="text-base md:text-lg text-muted-foreground max-w-md">
+          <p className="text-xs md:text-lg text-muted-foreground max-w-md">
             The First Full Stack AI Interior Design Company.
           </p>
         </div>
 
         {/* Description */}
-        <p className="text-center text-muted-foreground max-w-2xl text-sm leading-relaxed px-4">
+        <p className="text-center text-muted-foreground max-w-2xl text-xs md:text-sm leading-relaxed px-4">
           Meet <span className="text-primary font-semibold">Kyle</span>, your super voice agent. 
           In just <span className="text-primary font-semibold">5 minutes</span> instead of 5 weeks, 
           get complete interior design proposals with floor plans, moodboards, measurements, 
