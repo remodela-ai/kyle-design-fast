@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Home, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Progress } from "@/components/ui/progress";
-import { KyleAvatar } from "@/components/KyleAvatar";
-import { AudioWaves } from "@/components/AudioWaves";
-import { useShazam3Agent } from "@/hooks/useShazam3Agent";
 import { useToast } from "@/hooks/use-toast";
 
 interface PipelineStep {
@@ -25,8 +22,6 @@ interface Pipeline {
 
 export default function Project() {
   const { toast } = useToast();
-  const shazam3 = useShazam3Agent();
-  const [shazam3Started, setShazam3Started] = useState(false);
   const [pipelinesStarted, setPipelinesStarted] = useState(false);
   
   const [pipelines, setPipelines] = useState<Pipeline[]>([
@@ -60,67 +55,7 @@ export default function Project() {
     },
   ]);
 
-  // Start Shazam 3 when page loads
-  useEffect(() => {
-    let mounted = true;
-    const timer = setTimeout(async () => {
-      if (mounted) {
-        try {
-          await shazam3.startConversation();
-          setShazam3Started(true);
-        } catch (err) {
-          console.error("Failed to start Shazam 3:", err);
-        }
-      }
-    }, 1000);
-    return () => {
-      mounted = false;
-      clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Detect magic command from Shazam 3
-  useEffect(() => {
-    if (!shazam3Started || pipelinesStarted) return;
-    
-    const lastUserMessage = shazam3.messages
-      .filter(m => m.role === "user")
-      .pop();
-    
-    if (lastUserMessage) {
-      const content = lastUserMessage.content.toLowerCase();
-      // Detect: "lets go kyle i want my project for free"
-      if (
-        content.includes("lets go") && 
-        content.includes("kyle") && 
-        content.includes("project") && 
-        content.includes("free")
-      ) {
-        console.log("Magic command detected!");
-        shazam3.stopConversation();
-        setShazam3Started(false);
-        setPipelinesStarted(true);
-        
-        toast({
-          title: "Let's Go! 🚀",
-          description: "Starting your Visual Design Pipeline...",
-        });
-        
-        // Start pipelines
-        setTimeout(() => runPipelines(), 500);
-      }
-    }
-  }, [shazam3.messages, shazam3Started, pipelinesStarted]);
-
-  const runPipelines = async () => {
-    // Start both pipelines simultaneously
-    for (let pipelineIndex = 0; pipelineIndex < pipelines.length; pipelineIndex++) {
-      runPipeline(pipelineIndex);
-    }
-  };
-
-  const runPipeline = async (pipelineIndex: number) => {
+  const runPipeline = useCallback(async (pipelineIndex: number) => {
     const pipeline = pipelines[pipelineIndex];
     const totalSteps = pipeline.steps.length;
 
@@ -155,14 +90,26 @@ export default function Project() {
         return updated;
       });
     }
-  };
+  }, [pipelines]);
 
-  const handleStopShazam3 = () => {
-    if (shazam3.isConnected) {
-      shazam3.stopConversation();
-      setShazam3Started(false);
+  const runPipelines = useCallback(async () => {
+    // Start both pipelines simultaneously
+    for (let pipelineIndex = 0; pipelineIndex < pipelines.length; pipelineIndex++) {
+      runPipeline(pipelineIndex);
     }
-  };
+  }, [pipelines.length, runPipeline]);
+
+  // Auto-start pipelines when page loads
+  useEffect(() => {
+    if (!pipelinesStarted) {
+      setPipelinesStarted(true);
+      toast({
+        title: "Let's Go! 🚀",
+        description: "Starting your Visual Design Pipeline...",
+      });
+      setTimeout(() => runPipelines(), 500);
+    }
+  }, [pipelinesStarted, toast, runPipelines]);
 
   const getStepIcon = (status: PipelineStep["status"]) => {
     switch (status) {
@@ -173,16 +120,6 @@ export default function Project() {
       default:
         return <Circle className="h-5 w-5 text-muted-foreground/40" />;
     }
-  };
-
-  const getStatusText = () => {
-    if (shazam3.isConnected) {
-      return "Tap Kyle to stop";
-    }
-    if (pipelinesStarted) {
-      return "Kyle is working on your project...";
-    }
-    return "Kyle is explaining your deliverables";
   };
 
   const allCompleted = pipelines.every(p => p.progress === 100);
@@ -201,34 +138,11 @@ export default function Project() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-4 pb-8 pt-4">
-        {/* Kyle Avatar - only show before pipelines start */}
-        {!pipelinesStarted && (
-          <div className="flex flex-col items-center mb-8">
-            <KyleAvatar 
-              size="lg" 
-              onClickOverride={shazam3.isConnected ? handleStopShazam3 : undefined}
-            />
-            
-            <AudioWaves
-              isActive={shazam3.isConnected}
-              isSpeaking={shazam3.isSpeaking}
-              className="mt-4 h-8"
-            />
-            
-            <p className="text-sm text-muted-foreground mt-3 text-center">
-              {getStatusText()}
-            </p>
-          </div>
-        )}
-
         <h1 className="text-2xl font-bold text-foreground mb-2">
           Full Project Generation
         </h1>
         <p className="text-muted-foreground text-sm mb-8 text-center">
-          {pipelinesStarted 
-            ? "Kyle is preparing your complete design package"
-            : "Say 'Lets Go Kyle! I want my Project for Free!' to start"
-          }
+          Kyle is preparing your complete design package
         </p>
 
         {/* Pipelines */}
