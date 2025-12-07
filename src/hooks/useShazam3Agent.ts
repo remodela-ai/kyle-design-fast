@@ -1,36 +1,37 @@
 import { useConversation } from "@11labs/react";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
-// Kyle 4 - Storyteller agent (tells design story + offers full pipeline)
-const KYLE4_AGENT_ID = "agent_1601kbtrnzncfsmvxn8gyefn0b15";
+// Shazam 3 - Design Storyteller agent
+// This agent activates after image generation to tell a design story and offer the full pipeline
+const SHAZAM3_AGENT_ID = "agent_1601kbtrnzncfsmvxn8gyefn0b15";
 
-export interface Kyle4Message {
+export interface Shazam3Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
 
-export function useKyle4Agent() {
-  const [messages, setMessages] = useState<Kyle4Message[]>([]);
+export function useShazam3Agent() {
+  const [messages, setMessages] = useState<Shazam3Message[]>([]);
   const [pipelineCommandDetected, setPipelineCommandDetected] = useState(false);
   const onPipelineCommandRef = useRef<(() => void) | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Kyle 4 connected - starting storytelling");
+      console.log("Shazam 3 connected - starting storytelling");
     },
     onDisconnect: () => {
-      console.log("Kyle 4 disconnected");
+      console.log("Shazam 3 disconnected");
     },
     onMessage: (message) => {
-      console.log("Kyle 4 message:", message);
+      console.log("Shazam 3 message:", message);
       
       if (message && typeof message === "object") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const msg = message as any;
         
         if (msg.message && typeof msg.message === "string" && msg.source) {
-          const newMessage: Kyle4Message = {
+          const newMessage: Shazam3Message = {
             role: msg.source === "user" ? "user" : "assistant",
             content: msg.message,
             timestamp: new Date(),
@@ -46,7 +47,7 @@ export function useKyle4Agent() {
               .replace(/\s+/g, ' ')
               .trim();
             
-            console.log("📝 Kyle 4 - User message:", messageText);
+            console.log("📝 Shazam 3 - User message:", messageText);
             
             // Check for "hey kyle send me the complete project" command
             const hasKyle = messageText.includes("kyle");
@@ -57,9 +58,10 @@ export function useKyle4Agent() {
             const isPipelineCommand = hasKyle && (hasComplete || hasProject) && (hasSend || hasProject);
 
             if (isPipelineCommand) {
-              console.log("🚀 Kyle 4 - PIPELINE COMMAND DETECTED!");
+              console.log("🚀 PIPELINE COMMAND DETECTED!");
               setPipelineCommandDetected(true);
               
+              // Trigger the pipeline callback
               if (onPipelineCommandRef.current) {
                 onPipelineCommandRef.current();
               }
@@ -69,7 +71,7 @@ export function useKyle4Agent() {
       }
     },
     onError: (error) => {
-      console.error("Kyle 4 error:", error);
+      console.error("Shazam 3 error:", error);
     },
   });
 
@@ -78,13 +80,13 @@ export function useKyle4Agent() {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
       await conversation.startSession({
-        agentId: KYLE4_AGENT_ID,
+        agentId: SHAZAM3_AGENT_ID,
         connectionType: "webrtc",
       });
       
-      console.log("Kyle 4 started");
+      console.log("Shazam 3 started");
     } catch (err) {
-      console.error("Failed to start Kyle 4:", err);
+      console.error("Failed to start Shazam 3:", err);
     }
   }, [conversation]);
 

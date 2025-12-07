@@ -1,39 +1,40 @@
 import { useConversation } from "@11labs/react";
 import { useCallback, useState } from "react";
 
-// Kyle 1 - Basic public agent (legacy)
-const KYLE1_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
+const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
 
-export function useKyle1Agent() {
+export function useKyleVoiceAgent() {
   const [error, setError] = useState<string | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Kyle 1 connected");
+      console.log("Kyle connected");
       setError(null);
     },
     onDisconnect: () => {
-      console.log("Kyle 1 disconnected");
+      console.log("Kyle disconnected");
     },
     onMessage: (message) => {
-      console.log("Kyle 1 message:", message);
+      console.log("Kyle message:", message);
     },
     onError: (errorMessage) => {
-      console.error("Kyle 1 error:", errorMessage);
-      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle 1");
+      console.error("Kyle error:", errorMessage);
+      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
     },
   });
 
   const startConversation = useCallback(async () => {
     try {
+      // Request microphone access first
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // Start the conversation with the public agent
       await conversation.startSession({
-        agentId: KYLE1_AGENT_ID,
+        agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
       });
     } catch (err) {
-      console.error("Failed to start Kyle 1 conversation:", err);
+      console.error("Failed to start conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
     }
   }, [conversation]);

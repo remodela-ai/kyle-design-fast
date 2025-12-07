@@ -6,9 +6,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { PipelineProgress } from "@/components/PipelineProgress";
-import { SequenceDebugPanel } from "@/components/SequenceDebugPanel";
 import { useKyle } from "@/contexts/KyleContext";
-import { useKyle4Agent } from "@/hooks/useKyle4Agent";
+import { useShazam3Agent } from "@/hooks/useShazam3Agent";
 import { usePipeline } from "@/hooks/usePipeline";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,22 +15,21 @@ import { toast } from "sonner";
 export default function Shazam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [kyle4Active, setKyle4Active] = useState(false);
+  const [shazam3Active, setShazam3Active] = useState(false);
   
   const mainRef = useRef<HTMLElement>(null);
   
   const { 
-    isConnected: kyle3Connected, 
-    isSpeaking: kyle3Speaking, 
+    isConnected: kyleConnected, 
+    isSpeaking: kyleSpeaking, 
     messages, 
     designSummary,
     setOnGenerateDesign,
     setIsGeneratingFromVoice,
-    stopConversation: stopKyle3,
-    startConversation: startKyle3
+    stopConversation: stopKyle
   } = useKyle();
 
-  const kyle4 = useKyle4Agent();
+  const shazam3 = useShazam3Agent();
   const pipeline = usePipeline();
 
   const buildPromptFromConversation = useMemo(() => {
@@ -84,10 +82,10 @@ export default function Shazam() {
     return () => setOnGenerateDesign(null);
   }, [buildPromptFromConversation, designSummary, generateDesign, setOnGenerateDesign]);
 
-  // After image generation, scroll up and activate Kyle 4 (only if not manually controlled via debug)
+  // After image generation, scroll up and activate Shazam 3
   useEffect(() => {
-    if (generatedImage && !kyle4Active && !isGenerating && !kyle4.isConnected) {
-      console.log("Image generated! Preparing Kyle 4...");
+    if (generatedImage && !shazam3Active && !isGenerating) {
+      console.log("Image generated! Preparing Shazam 3...");
       
       // Scroll to top smoothly
       if (mainRef.current) {
@@ -95,32 +93,32 @@ export default function Shazam() {
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Wait for scroll animation, then activate Kyle 4
+      // Wait for scroll animation, then activate Shazam 3
       const timer = setTimeout(async () => {
-        console.log("Activating Kyle 4 storyteller...");
-        setKyle4Active(true);
+        console.log("Activating Shazam 3 storyteller...");
+        setShazam3Active(true);
         
-        // Stop Kyle 3 if still connected
-        if (kyle3Connected) {
-          await stopKyle3();
+        // Stop Kyle if still connected
+        if (kyleConnected) {
+          await stopKyle();
         }
         
-        // Start Kyle 4
-        await kyle4.startConversation();
+        // Start Shazam 3
+        await shazam3.startConversation();
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [generatedImage, kyle4Active, isGenerating, kyle3Connected, stopKyle3, kyle4]);
+  }, [generatedImage, shazam3Active, isGenerating, kyleConnected, stopKyle, shazam3]);
 
-  // Handle pipeline command from Kyle 4
+  // Handle pipeline command from Shazam 3
   useEffect(() => {
-    kyle4.setOnPipelineCommand(() => {
+    shazam3.setOnPipelineCommand(() => {
       console.log("Pipeline command received! Starting full design package...");
       
-      // Stop Kyle 4
-      kyle4.stopConversation();
-      setKyle4Active(false);
+      // Stop Shazam 3
+      shazam3.stopConversation();
+      setShazam3Active(false);
       
       toast.success("Starting your full design package!");
       
@@ -130,18 +128,18 @@ export default function Shazam() {
       }
     });
     
-    return () => kyle4.setOnPipelineCommand(null);
-  }, [kyle4, generatedImage, designSummary, pipeline]);
+    return () => shazam3.setOnPipelineCommand(null);
+  }, [shazam3, generatedImage, designSummary, pipeline]);
 
-  // Handle tapping Kyle to stop Kyle 4
+  // Handle tapping Kyle to stop Shazam 3
   const handleKyleTap = useCallback(async () => {
-    if (kyle4Active && kyle4.isConnected) {
-      console.log("Stopping Kyle 4 via Kyle tap...");
-      await kyle4.stopConversation();
-      setKyle4Active(false);
-      toast.info("Kyle 4 stopped");
+    if (shazam3Active && shazam3.isConnected) {
+      console.log("Stopping Shazam 3 via Kyle tap...");
+      await shazam3.stopConversation();
+      setShazam3Active(false);
+      toast.info("Shazam 3 stopped");
     }
-  }, [kyle4Active, kyle4]);
+  }, [shazam3Active, shazam3]);
 
   const downloadImage = () => {
     if (!generatedImage) return;
@@ -156,111 +154,28 @@ export default function Shazam() {
 
   const handleNewDesign = () => {
     setGeneratedImage(null);
-    setKyle4Active(false);
+    setShazam3Active(false);
     pipeline.resetPipeline();
-    if (kyle4.isConnected) {
-      kyle4.stopConversation();
+    if (shazam3.isConnected) {
+      shazam3.stopConversation();
     }
   };
 
   const getStatusText = () => {
     if (pipeline.isRunning) return "";
     if (isGenerating) return "";
-    if (kyle4Active && kyle4.isConnected) return "Tap Kyle to stop";
-    if (kyle3Connected) return "";
+    if (shazam3Active && shazam3.isConnected) return "Tap Kyle to stop";
+    if (kyleConnected) return "";
     if (generatedImage) return "";
     return "Tap Kyle to start";
   };
 
   // Determine which agent is active for audio waves
-  const isAnyAgentConnected = kyle3Connected || kyle4.isConnected;
-  const isAnyAgentSpeaking = kyle3Speaking || kyle4.isSpeaking;
-
-  // Debug: determine active agent name
-  const getActiveAgentName = () => {
-    if (kyle4.isConnected) return "Kyle 4";
-    if (kyle3Connected) return "Kyle 3";
-    return "None";
-  };
-
-  // Debug panel handlers
-  const handleTriggerKyle3 = useCallback(async () => {
-    await startKyle3();
-    toast.info("Kyle 3 started manually");
-  }, [startKyle3]);
-
-  const handleStopKyle3 = useCallback(async () => {
-    await stopKyle3();
-    toast.info("Kyle 3 stopped");
-  }, [stopKyle3]);
-
-  const handleTriggerImageGeneration = useCallback(() => {
-    const promptToUse = buildPromptFromConversation || designSummary || "Modern minimalist living room with natural light";
-    generateDesign(promptToUse);
-  }, [buildPromptFromConversation, designSummary, generateDesign]);
-
-  const handleSetMockImage = useCallback((url: string) => {
-    setGeneratedImage(url);
-    toast.success("Mock image set - Kyle 4 will NOT auto-start");
-  }, []);
-
-  const handleTriggerKyle4 = useCallback(async () => {
-    if (kyle3Connected) {
-      await stopKyle3();
-    }
-    setKyle4Active(true);
-    await kyle4.startConversation();
-    toast.info("Kyle 4 started manually");
-  }, [kyle3Connected, stopKyle3, kyle4]);
-
-  const handleStopKyle4 = useCallback(async () => {
-    await kyle4.stopConversation();
-    setKyle4Active(false);
-    toast.info("Kyle 4 stopped");
-  }, [kyle4]);
-
-  const handleTriggerPipeline = useCallback(() => {
-    if (generatedImage) {
-      if (kyle4.isConnected) {
-        kyle4.stopConversation();
-        setKyle4Active(false);
-      }
-      pipeline.startPipeline(generatedImage, designSummary || undefined);
-      toast.success("Pipeline started manually");
-    }
-  }, [generatedImage, kyle4, designSummary, pipeline]);
-
-  const handleFullReset = useCallback(() => {
-    setGeneratedImage(null);
-    setKyle4Active(false);
-    pipeline.resetPipeline();
-    if (kyle4.isConnected) {
-      kyle4.stopConversation();
-    }
-    if (kyle3Connected) {
-      stopKyle3();
-    }
-    toast.info("Full reset complete");
-  }, [kyle4, kyle3Connected, stopKyle3, pipeline]);
+  const isAnyAgentConnected = kyleConnected || shazam3.isConnected;
+  const isAnyAgentSpeaking = kyleSpeaking || shazam3.isSpeaking;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sequence Debug Panel */}
-      <SequenceDebugPanel
-        kyle3Connected={kyle3Connected}
-        kyle4Connected={kyle4.isConnected}
-        generatedImage={generatedImage}
-        pipelineRunning={pipeline.isRunning}
-        onTriggerKyle3={handleTriggerKyle3}
-        onStopKyle3={handleStopKyle3}
-        onTriggerImageGeneration={handleTriggerImageGeneration}
-        onSetMockImage={handleSetMockImage}
-        onTriggerKyle4={handleTriggerKyle4}
-        onStopKyle4={handleStopKyle4}
-        onTriggerPipeline={handleTriggerPipeline}
-        onReset={handleFullReset}
-      />
-
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <Link to="/">
@@ -272,7 +187,7 @@ export default function Shazam() {
       </header>
 
       {/* Main Content */}
-      <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pt-8 pb-8 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pb-8 overflow-y-auto">
         
         {/* Pipeline Progress - Shows when pipeline is running */}
         {pipeline.isRunning && (
@@ -287,31 +202,11 @@ export default function Shazam() {
         {/* Kyle Section - Fixed height to prevent layout shift */}
         {!pipeline.isRunning && (
           <div className="flex flex-col items-center gap-4 min-h-[320px] justify-center">
-            {/* Kyle Avatar + Debug Badge Container */}
-            <div className="flex items-center gap-4">
-              <div onClick={kyle4Active ? handleKyleTap : undefined}>
-                <KyleAvatar 
-                  size="xxl" 
-                  onClickOverride={kyle4Active ? handleKyleTap : undefined}
-                />
-              </div>
-              
-              {/* Debug Badge - Right side of Kyle */}
-              <div className="flex flex-col gap-1 bg-card/80 border border-border/50 rounded-lg p-3 text-xs font-mono min-w-[120px]">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${isAnyAgentConnected ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-                  <span className="text-foreground font-semibold">{getActiveAgentName()}</span>
-                </div>
-                <div className="text-muted-foreground">
-                  {kyle3Connected ? '🟢' : '⚪'} Kyle 3: {kyle3Connected ? 'ON' : 'OFF'}
-                </div>
-                <div className="text-muted-foreground">
-                  {kyle4.isConnected ? '🟢' : '⚪'} Kyle 4: {kyle4.isConnected ? 'ON' : 'OFF'}
-                </div>
-                <div className="text-muted-foreground mt-1 pt-1 border-t border-border/30">
-                  Speaking: {isAnyAgentSpeaking ? '🔊' : '🔇'}
-                </div>
-              </div>
+            <div onClick={shazam3Active ? handleKyleTap : undefined}>
+              <KyleAvatar 
+                size="xxl" 
+                onClickOverride={shazam3Active ? handleKyleTap : undefined}
+              />
             </div>
             
             {/* Audio Waves - Fixed height container */}
@@ -328,11 +223,11 @@ export default function Shazam() {
               </p>
             </div>
             
-            {/* Kyle 4 indicator */}
-            {kyle4Active && (
+            {/* Shazam 3 indicator */}
+            {shazam3Active && (
               <div className="animate-fade-in">
                 <p className="text-primary text-xs font-medium">
-                  ✨ Kyle 4 is telling your design story...
+                  ✨ Shazam 3 is telling your design story...
                 </p>
               </div>
             )}

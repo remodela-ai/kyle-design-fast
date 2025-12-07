@@ -2,37 +2,39 @@ import { useConversation } from "@11labs/react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Kyle 2 - Navigation agent (Next Interiors with custom prompt)
+// Eric voice ID from ElevenLabs
 const ERIC_VOICE_ID = "cjVigY5qzO86Huf0OWal";
-const KYLE2_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
 
-export function useKyle2Agent() {
+// Using the same public agent but with overrides for Next Interiors
+const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
+
+export function useNextInteriorsAgent() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Kyle 2 connected");
+      console.log("Next Interiors Agent connected");
       setError(null);
     },
     onDisconnect: () => {
-      console.log("Kyle 2 disconnected");
+      console.log("Next Interiors Agent disconnected");
     },
     onMessage: (message) => {
-      console.log("Kyle 2 message:", message);
+      console.log("Agent message:", message);
     },
     onError: (errorMessage) => {
-      console.error("Kyle 2 error:", errorMessage);
-      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle 2");
+      console.error("Agent error:", errorMessage);
+      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to agent");
     },
     clientTools: {
       navigateToBlinkDesign: async () => {
-        console.log("Kyle 2: Navigating to Blink Design...");
+        console.log("Navigating to Blink Design...");
         navigate("/blink-design");
         return "Successfully navigated to Blink Design page";
       },
       navigateToHome: async () => {
-        console.log("Kyle 2: Navigating to Home...");
+        console.log("Navigating to Home...");
         navigate("/");
         return "Successfully navigated to Home page";
       },
@@ -41,10 +43,12 @@ export function useKyle2Agent() {
 
   const startConversation = useCallback(async () => {
     try {
+      // Request microphone access first
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // Start the conversation with overrides for Next Interiors
       await conversation.startSession({
-        agentId: KYLE2_AGENT_ID,
+        agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
         overrides: {
           agent: {
@@ -65,7 +69,7 @@ export function useKyle2Agent() {
         },
       });
     } catch (err) {
-      console.error("Failed to start Kyle 2 conversation:", err);
+      console.error("Failed to start conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
     }
   }, [conversation, navigate]);
