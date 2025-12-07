@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pipeline_steps: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_data: Json | null
+          memory_context: Json | null
+          output_data: Json | null
+          session_id: string | null
+          started_at: string | null
+          status: string | null
+          step_name: string
+          step_number: number
+          visual_outcome_url: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          memory_context?: Json | null
+          output_data?: Json | null
+          session_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          step_name: string
+          step_number: number
+          visual_outcome_url?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          memory_context?: Json | null
+          output_data?: Json | null
+          session_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          step_name?: string
+          step_number?: number
+          visual_outcome_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_steps_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "project_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      project_sessions: {
+        Row: {
+          conversation_summary: string | null
+          created_at: string | null
+          design_image_url: string | null
+          id: string
+          session_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          conversation_summary?: string | null
+          created_at?: string | null
+          design_image_url?: string | null
+          id?: string
+          session_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          conversation_summary?: string | null
+          created_at?: string | null
+          design_image_url?: string | null
+          id?: string
+          session_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
