@@ -53,20 +53,30 @@ export function Canvas({ onMenuClick }: CanvasProps) {
           and professional documents delivered to your email.
         </p>
 
-        {/* Blink Design Quick Access */}
-        <Button
-          variant="outline"
-          onClick={() => navigate("/shazam")}
-          className="flex items-center gap-2 px-6 py-3 h-auto border-primary/30 hover:border-primary hover:bg-primary/10 shadow-lg shadow-primary/20 dark:shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-primary/40 dark:hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] hover:scale-105 transition-all duration-300"
-        >
-          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary flex items-center justify-center">
-            <Zap className="h-4 w-4 text-primary dark:text-white" />
-          </div>
-          <div className="text-left">
-            <span className="font-semibold text-foreground">Lets do it!</span>
-            <p className="text-xs text-muted-foreground">Get Your Full Design</p>
-          </div>
-        </Button>
+        {/* CTA Button with prominent animation */}
+        <div className="relative group">
+          {/* Animated glow ring behind button */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary via-primary/80 to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse-glow transition-opacity duration-500" />
+          
+          <Button
+            variant="outline"
+            onClick={() => navigate("/shazam")}
+            className="relative flex items-center gap-3 px-8 py-4 h-auto bg-background border-2 border-primary/50 hover:border-primary hover:bg-primary/10 shadow-2xl hover:shadow-primary/50 hover:scale-105 transition-all duration-300"
+          >
+            {/* Animated icon container */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary rounded-full blur-sm animate-pulse" />
+              <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                <Zap className="h-5 w-5 text-primary-foreground" />
+              </div>
+            </div>
+            
+            <div className="text-left">
+              <span className="font-bold text-lg text-foreground">Lets do it!</span>
+              <p className="text-sm text-muted-foreground">Get Your Full Design</p>
+            </div>
+          </Button>
+        </div>
 
         {/* Pipeline Section */}
         <PipelineSection />
