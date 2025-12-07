@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { PipelineProgress } from "@/components/PipelineProgress";
+import { SequenceDebugPanel } from "@/components/SequenceDebugPanel";
 import { useKyle } from "@/contexts/KyleContext";
 import { useKyle4Agent } from "@/hooks/useKyle4Agent";
 import { usePipeline } from "@/hooks/usePipeline";
@@ -26,7 +27,8 @@ export default function Shazam() {
     designSummary,
     setOnGenerateDesign,
     setIsGeneratingFromVoice,
-    stopConversation: stopKyle3
+    stopConversation: stopKyle3,
+    startConversation: startKyle3
   } = useKyle();
 
   const kyle4 = useKyle4Agent();
@@ -82,9 +84,9 @@ export default function Shazam() {
     return () => setOnGenerateDesign(null);
   }, [buildPromptFromConversation, designSummary, generateDesign, setOnGenerateDesign]);
 
-  // After image generation, scroll up and activate Kyle 4
+  // After image generation, scroll up and activate Kyle 4 (only if not manually controlled via debug)
   useEffect(() => {
-    if (generatedImage && !kyle4Active && !isGenerating) {
+    if (generatedImage && !kyle4Active && !isGenerating && !kyle4.isConnected) {
       console.log("Image generated! Preparing Kyle 4...");
       
       // Scroll to top smoothly
@@ -181,8 +183,84 @@ export default function Shazam() {
     return "None";
   };
 
+  // Debug panel handlers
+  const handleTriggerKyle3 = useCallback(async () => {
+    await startKyle3();
+    toast.info("Kyle 3 started manually");
+  }, [startKyle3]);
+
+  const handleStopKyle3 = useCallback(async () => {
+    await stopKyle3();
+    toast.info("Kyle 3 stopped");
+  }, [stopKyle3]);
+
+  const handleTriggerImageGeneration = useCallback(() => {
+    const promptToUse = buildPromptFromConversation || designSummary || "Modern minimalist living room with natural light";
+    generateDesign(promptToUse);
+  }, [buildPromptFromConversation, designSummary, generateDesign]);
+
+  const handleSetMockImage = useCallback((url: string) => {
+    setGeneratedImage(url);
+    toast.success("Mock image set - Kyle 4 will NOT auto-start");
+  }, []);
+
+  const handleTriggerKyle4 = useCallback(async () => {
+    if (kyle3Connected) {
+      await stopKyle3();
+    }
+    setKyle4Active(true);
+    await kyle4.startConversation();
+    toast.info("Kyle 4 started manually");
+  }, [kyle3Connected, stopKyle3, kyle4]);
+
+  const handleStopKyle4 = useCallback(async () => {
+    await kyle4.stopConversation();
+    setKyle4Active(false);
+    toast.info("Kyle 4 stopped");
+  }, [kyle4]);
+
+  const handleTriggerPipeline = useCallback(() => {
+    if (generatedImage) {
+      if (kyle4.isConnected) {
+        kyle4.stopConversation();
+        setKyle4Active(false);
+      }
+      pipeline.startPipeline(generatedImage, designSummary || undefined);
+      toast.success("Pipeline started manually");
+    }
+  }, [generatedImage, kyle4, designSummary, pipeline]);
+
+  const handleFullReset = useCallback(() => {
+    setGeneratedImage(null);
+    setKyle4Active(false);
+    pipeline.resetPipeline();
+    if (kyle4.isConnected) {
+      kyle4.stopConversation();
+    }
+    if (kyle3Connected) {
+      stopKyle3();
+    }
+    toast.info("Full reset complete");
+  }, [kyle4, kyle3Connected, stopKyle3, pipeline]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Sequence Debug Panel */}
+      <SequenceDebugPanel
+        kyle3Connected={kyle3Connected}
+        kyle4Connected={kyle4.isConnected}
+        generatedImage={generatedImage}
+        pipelineRunning={pipeline.isRunning}
+        onTriggerKyle3={handleTriggerKyle3}
+        onStopKyle3={handleStopKyle3}
+        onTriggerImageGeneration={handleTriggerImageGeneration}
+        onSetMockImage={handleSetMockImage}
+        onTriggerKyle4={handleTriggerKyle4}
+        onStopKyle4={handleStopKyle4}
+        onTriggerPipeline={handleTriggerPipeline}
+        onReset={handleFullReset}
+      />
+
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <Link to="/">
