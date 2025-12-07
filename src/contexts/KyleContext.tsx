@@ -3,7 +3,8 @@ import { useConversation } from "@11labs/react";
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Kyle Blink Design
+// Kyle 3 - Design conversation agent (Kyle Blink Design - "Hey Kyle Generate")
+const KYLE3_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -110,14 +111,14 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Kyle connected");
+      console.log("Kyle 3 connected");
       setError(null);
     },
     onDisconnect: () => {
-      console.log("Kyle disconnected");
+      console.log("Kyle 3 disconnected");
     },
     onMessage: (message) => {
-      console.log("Kyle message:", message);
+      console.log("Kyle 3 message:", message);
       
       // Handle different message types from ElevenLabs
       if (message && typeof message === "object") {
@@ -148,7 +149,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
               .replace(/\s+/g, ' ')     // Normalize spaces
               .trim();
             
-            console.log("📝 User message normalized:", messageText);
+            console.log("📝 Kyle 3 - User message normalized:", messageText);
             
             // Check for "hey kyle generate" command (no need for "image")
             const hasKyle = messageText.includes("kyle");
@@ -157,8 +158,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
             const isGenerateCommand = hasKyle && hasGenerate;
 
             if (isGenerateCommand) {
-              console.log("🎯 VOICE COMMAND DETECTED! Stopping Kyle and generating...");
-              // Immediately trigger - no delay
+              console.log("🎯 Kyle 3 - VOICE COMMAND DETECTED!");
               handleVoiceCommand();
             }
           }
@@ -166,7 +166,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       }
     },
     onError: (errorMessage) => {
-      console.error("Kyle error:", errorMessage);
+      console.error("Kyle 3 error:", errorMessage);
       // Don't set error for internal SDK issues
       if (errorMessage && typeof errorMessage === "string") {
         setError(errorMessage);
@@ -174,17 +174,17 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     },
     clientTools: {
       navigateToBlinkDesign: async () => {
-        console.log("Navigating to Blink Design...");
+        console.log("Kyle 3: Navigating to Blink Design...");
         navigate("/blink-design");
         return "Successfully navigated to Blink Design page";
       },
       navigateToHome: async () => {
-        console.log("Navigating to Home...");
+        console.log("Kyle 3: Navigating to Home...");
         navigate("/");
         return "Successfully navigated to Home page";
       },
       generateDesignImage: async () => {
-        console.log("Generating design image via voice command...");
+        console.log("Kyle 3: Generating design image via voice command...");
         if (onGenerateDesign) {
           onGenerateDesign();
           return "Starting design generation. I'll create an interior design visualization based on our conversation.";
@@ -203,9 +203,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Use the public agent without overrides (public agents don't allow prompt overrides)
+      // Use Kyle 3 agent (Kyle Blink Design)
       await conversation.startSession({
-        agentId: KYLE_AGENT_ID,
+        agentId: KYLE3_AGENT_ID,
         connectionType: "webrtc",
       });
     } catch (err) {
