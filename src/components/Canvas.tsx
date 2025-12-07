@@ -1,5 +1,4 @@
 import { KyleAvatar } from "./KyleAvatar";
-import { VoiceInput } from "./VoiceInput";
 import { PipelineSection } from "./PipelineSection";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
@@ -68,11 +67,6 @@ export function Canvas({ onMenuClick }: CanvasProps) {
             <p className="text-xs text-muted-foreground">Get Your Full Design</p>
           </div>
         </Button>
-
-        {/* Voice Input */}
-        <div className="w-full px-4">
-          <VoiceInput />
-        </div>
 
         {/* Pipeline Section */}
         <PipelineSection />
