@@ -187,7 +187,7 @@ export default function Shazam() {
       </header>
 
       {/* Main Content */}
-      <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pb-8 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pt-8 pb-8 overflow-y-auto">
         
         {/* Pipeline Progress - Shows when pipeline is running */}
         {pipeline.isRunning && (
