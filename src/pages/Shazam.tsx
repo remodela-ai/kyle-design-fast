@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
+import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -12,10 +12,30 @@ import { usePipeline } from "@/hooks/usePipeline";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const DEBUG_PROMPT = `🎯 SCRIPT DE PRUEBA - Lee esto a Kyle:
+
+1️⃣ INICIO (Tap Kyle):
+"Hola Kyle, quiero diseñar mi sala de estar"
+
+2️⃣ DETALLES:
+"Quiero un estilo moderno minimalista, con colores neutros como blanco y gris, y toques de madera natural. El espacio es de unos 30 metros cuadrados."
+
+3️⃣ GENERAR IMAGEN:
+"Hey Kyle Generate"
+
+4️⃣ DESPUÉS DE LA IMAGEN (Shazam 3 habla):
+Espera que Shazam 3 cuente la historia...
+
+5️⃣ PEDIR PROYECTO COMPLETO:
+"Hey Kyle, send me the complete project!"
+
+✨ El pipeline comenzará automáticamente.`;
+
 export default function Shazam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [shazam3Active, setShazam3Active] = useState(false);
+  const [showDebugPrompt, setShowDebugPrompt] = useState(false);
   
   const mainRef = useRef<HTMLElement>(null);
   
@@ -300,6 +320,37 @@ export default function Shazam() {
           </div>
         )}
       </main>
+
+      {/* Debug Floating Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setShowDebugPrompt(!showDebugPrompt)}
+        className="fixed bottom-4 right-4 z-50 rounded-full h-12 w-12 bg-background/80 backdrop-blur border-primary/50 hover:bg-primary/20"
+      >
+        <Bug className="h-5 w-5 text-primary" />
+      </Button>
+
+      {/* Debug Prompt Modal */}
+      {showDebugPrompt && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={() => setShowDebugPrompt(false)}>
+          <div 
+            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono leading-relaxed">
+              {DEBUG_PROMPT}
+            </pre>
+            <Button 
+              variant="outline" 
+              className="mt-4 w-full" 
+              onClick={() => setShowDebugPrompt(false)}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
