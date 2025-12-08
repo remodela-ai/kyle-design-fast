@@ -1,6 +1,5 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useCallback, useState, useRef } from "react";
 import { useConversation } from "@11labs/react";
-import { useCallback, useState } from "react";
 
 const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
@@ -35,7 +34,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   const [designSummary, setDesignSummary] = useState<string | null>(null);
   const [voiceCommandDetected, setVoiceCommandDetected] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationCallback, setGenerationCallbackState] = useState<(() => void) | null>(null);
+  const generationCallbackRef = useRef<(() => void) | null>(null);
 
   const extractDesignSummary = (allMessages: ConversationMessage[]) => {
     const text = allMessages.map(m => m.content).join(" ").toLowerCase();
@@ -72,10 +71,10 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     
     setTimeout(() => setVoiceCommandDetected(false), 2000);
     
-    if (generationCallback) {
-      generationCallback();
+    if (generationCallbackRef.current) {
+      generationCallbackRef.current();
     }
-  }, [generationCallback]);
+  }, []);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -159,7 +158,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   }, []);
 
   const setGenerationCallback = useCallback((callback: (() => void) | null) => {
-    setGenerationCallbackState(() => callback);
+    generationCallbackRef.current = callback;
   }, []);
 
   const resetGenerating = useCallback(() => {
