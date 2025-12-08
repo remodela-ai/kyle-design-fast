@@ -203,14 +203,11 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // No overrides - the first message must be configured in ElevenLabs dashboard
+      // New message: "Hey there. I am Kyle your AI interior design assistant. Welcome to Next Interiors, the first Full Stack Ai interior Design Studio where you can get your dream interior design project in just five minutes!"
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            firstMessage: "Hey there. I am Kyle your AI interior design assistant. Welcome to Next Interiors, a digital platform where you can get your dream interior design project in just five minutes!",
-          },
-        },
       });
     } catch (err) {
       console.error("Failed to start conversation:", err);
