@@ -7,6 +7,7 @@ import { KyleProvider } from "@/contexts/KyleContext";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
+import Storytelling from "./pages/Storytelling";
 import CreateAgent from "./pages/CreateAgent";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/blink-design" element={<BlinkDesign />} />
             <Route path="/shazam" element={<Shazam />} />
+            <Route path="/storytelling" element={<Storytelling />} />
             <Route path="/create-agent" element={<CreateAgent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
