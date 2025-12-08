@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { VoiceInput } from "@/components/VoiceInput";
 import { ConversationSummary } from "@/components/ConversationSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -143,10 +142,6 @@ const BlinkDesign = () => {
         <p className="text-muted-foreground text-center text-base md:text-lg max-w-md mb-6">
           Instant creative inspiration for your design projects
         </p>
-
-        <div className="w-full max-w-2xl mb-6">
-          <VoiceInput />
-        </div>
 
         <ConversationSummary onUseAsPrompt={handleUseAsPrompt} />
 
