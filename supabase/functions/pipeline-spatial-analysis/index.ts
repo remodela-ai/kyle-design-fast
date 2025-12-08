@@ -43,19 +43,44 @@ serve(async (req) => {
       input_data: { designImageUrl, conversationSummary },
     }, { onConflict: "session_id,step_number" });
 
-    // Call Lovable AI for spatial analysis
-    const analysisPrompt = `You are an expert interior designer and spatial analyst. Analyze this interior design image and provide a comprehensive spatial analysis.
+    // Call Lovable AI for spatial analysis with element extraction
+    const analysisPrompt = `You are an expert interior designer and spatial analyst. Analyze this interior design image and provide a comprehensive spatial analysis with element extraction.
 
 ${conversationSummary ? `Context from conversation: ${conversationSummary}` : ""}
+
+IMPORTANT: Extract EVERY visible element/object in the image and estimate its position in 3D cartesian coordinates (X, Y, Z) where:
+- X = horizontal position (left to right, 0 = left edge, positive = right)
+- Y = vertical position (bottom to top, 0 = floor level, positive = up)
+- Z = depth position (front to back, 0 = front of room, positive = deeper into room)
 
 Provide your analysis in the following JSON format:
 {
   "roomType": "string - type of room (living room, bedroom, etc.)",
   "estimatedDimensions": {
-    "length": "estimated in meters",
-    "width": "estimated in meters",
-    "height": "estimated in meters"
+    "length": "number in meters",
+    "width": "number in meters",
+    "height": "number in meters"
   },
+  "elements": [
+    {
+      "id": "unique identifier (e.g., 'sofa_1', 'lamp_2')",
+      "name": "element name (e.g., 'Sectional Sofa', 'Floor Lamp')",
+      "category": "furniture|lighting|decor|architectural|textile|plant|electronic|other",
+      "position": {
+        "x": "number in meters from left wall",
+        "y": "number in meters from floor",
+        "z": "number in meters from front wall"
+      },
+      "dimensions": {
+        "width": "estimated width in meters",
+        "height": "estimated height in meters",
+        "depth": "estimated depth in meters"
+      },
+      "color": "primary color",
+      "material": "primary material (wood, fabric, metal, glass, etc.)",
+      "condition": "new|good|fair|worn"
+    }
+  ],
   "zones": [
     {
       "name": "zone name",
@@ -68,12 +93,11 @@ Provide your analysis in the following JSON format:
     "artificial": ["description of artificial light sources"]
   },
   "spatialFlow": "description of how space flows and movement patterns",
-  "optimizationSuggestions": ["list of suggestions to optimize the space"],
   "styleIdentified": "identified interior design style",
   "atmosphereDescription": "description of the overall atmosphere and mood"
 }
 
-Be specific and detailed in your analysis.`;
+Be thorough - extract ALL visible elements including furniture, lamps, rugs, plants, artwork, pillows, etc.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

@@ -1,22 +1,68 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { usePipeline } from "@/hooks/usePipeline";
+import { PipelineProgress } from "@/components/PipelineProgress";
+
+interface ElementData {
+  id: string;
+  name: string;
+  category: string;
+  position: { x: number; y: number; z: number };
+  dimensions: { width: number; height: number; depth: number };
+  color: string;
+  material: string;
+  condition: string;
+}
 
 const features = [
-  { icon: Grid3X3, label: "Spatial Analysis" },
-  { icon: Layers, label: "Architectural Plans" },
-  { icon: Box, label: "Items Extraction" },
-  { icon: Palette, label: "Design Moodboard" },
-  { icon: Image, label: "Material Flatlay" },
-  { icon: Brush, label: "Colors & Textures" },
-  { icon: BookOpen, label: "Your Story Book" },
-  { icon: Video, label: "Video Presentation" },
+  { icon: Grid3X3, label: "Spatial Analysis", stepNumber: 1 },
+  { icon: Layers, label: "Architectural Plans", stepNumber: 2 },
+  { icon: Box, label: "Items Extraction", stepNumber: 3 },
+  { icon: Palette, label: "Design Moodboard", stepNumber: 4 },
+  { icon: Image, label: "Material Flatlay", stepNumber: 5 },
+  { icon: Brush, label: "Colors & Textures", stepNumber: 6 },
+  { icon: BookOpen, label: "Your Story Book", stepNumber: 7 },
+  { icon: Video, label: "Video Presentation", stepNumber: 8 },
 ];
 
 export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
+  const location = useLocation();
+  const { isRunning, currentStep, steps, memory, startPipeline } = usePipeline();
+  const [elements, setElements] = useState<ElementData[]>([]);
+  const [pipelineStarted, setPipelineStarted] = useState(false);
+
+  // Get the design image URL from navigation state
+  const designImageUrl = location.state?.designImageUrl;
+  const conversationSummary = location.state?.conversationSummary;
+
+  // Auto-start pipeline when page loads with design image
+  useEffect(() => {
+    if (designImageUrl && !pipelineStarted && !isRunning) {
+      console.log("Auto-starting pipeline with image:", designImageUrl);
+      setPipelineStarted(true);
+      startPipeline(designImageUrl, conversationSummary);
+    }
+  }, [designImageUrl, conversationSummary, pipelineStarted, isRunning, startPipeline]);
+
+  // Extract elements from pipeline memory when spatial analysis completes
+  useEffect(() => {
+    const spatialStep = steps.find(s => s.stepNumber === 1);
+    if (spatialStep?.status === "completed" && spatialStep.output) {
+      const output = spatialStep.output as { parsedAnalysis?: { elements?: ElementData[] } };
+      if (output.parsedAnalysis?.elements) {
+        setElements(output.parsedAnalysis.elements);
+      }
+    }
+  }, [steps]);
+
+  const getStepStatus = (stepNumber: number) => {
+    const step = steps.find(s => s.stepNumber === stepNumber);
+    return step?.status || "pending";
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -45,6 +91,13 @@ export default function FreeProject360() {
           Complete AI-powered interior design pipeline
         </p>
 
+        {/* Pipeline Progress */}
+        {isRunning && (
+          <div className="w-full max-w-md mb-8">
+            <PipelineProgress steps={steps} currentStep={currentStep} />
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex bg-secondary rounded-full p-1 mb-10">
           <button
@@ -71,20 +124,74 @@ export default function FreeProject360() {
 
         {/* Features Grid */}
         {activeTab === "visual" && (
-          <div className="grid grid-cols-4 gap-4 md:gap-6 max-w-md w-full">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all duration-300 cursor-pointer">
-                  <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground" />
+          <div className="grid grid-cols-4 gap-4 md:gap-6 max-w-md w-full mb-10">
+            {features.map((feature, index) => {
+              const status = getStepStatus(feature.stepNumber);
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 cursor-pointer ${
+                    status === "completed" 
+                      ? "bg-green-500 shadow-green-500/30" 
+                      : status === "processing"
+                      ? "bg-primary shadow-primary/30 animate-pulse"
+                      : status === "error"
+                      ? "bg-destructive shadow-destructive/30"
+                      : "bg-primary/30 shadow-primary/20"
+                  } hover:scale-105`}>
+                    {status === "processing" ? (
+                      <Loader2 className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground animate-spin" />
+                    ) : (
+                      <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs text-center text-muted-foreground leading-tight">
+                    {feature.label}
+                  </span>
                 </div>
-                <span className="text-xs text-center text-muted-foreground leading-tight">
-                  {feature.label}
-                </span>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+        )}
+
+        {/* Elements Table - Shows after Spatial Analysis completes */}
+        {activeTab === "visual" && elements.length > 0 && (
+          <div className="w-full max-w-4xl overflow-x-auto">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Extracted Elements</h2>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-foreground">Element</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground">Category</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">X (m)</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">Y (m)</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">Z (m)</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground">Dimensions</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground">Material</th>
+                    <th className="px-4 py-3 text-left font-medium text-foreground">Color</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {elements.map((element, idx) => (
+                    <tr key={element.id || idx} className="hover:bg-secondary/50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-foreground">{element.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">{element.category}</td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.x?.toFixed(2) || "—"}</td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.y?.toFixed(2) || "—"}</td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.z?.toFixed(2) || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {element.dimensions ? `${element.dimensions.width}×${element.dimensions.height}×${element.dimensions.depth}m` : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">{element.material || "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">{element.color || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -92,6 +199,14 @@ export default function FreeProject360() {
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Layers className="h-12 w-12 mb-4 text-primary/50" />
             <p className="text-center">Management features coming soon</p>
+          </div>
+        )}
+
+        {/* No image message */}
+        {!designImageUrl && !isRunning && (
+          <div className="text-center text-muted-foreground mt-8 p-6 rounded-lg bg-secondary/50">
+            <p className="mb-2">No design image provided.</p>
+            <p className="text-sm">Go to <Link to="/shazam" className="text-primary hover:underline">Shazam</Link> to generate a design first.</p>
           </div>
         )}
       </main>

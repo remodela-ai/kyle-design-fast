@@ -200,7 +200,12 @@ const BlinkDesign = () => {
                 <Button
                   variant="kyle"
                   size="sm"
-                  onClick={() => navigate("/360-free-project")}
+                  onClick={() => navigate("/360-free-project", {
+                    state: {
+                      designImageUrl: generatedImage,
+                      conversationSummary: designSummary || prompt
+                    }
+                  })}
                   className="flex items-center gap-2"
                 >
                   <Gift className="h-4 w-4" />
