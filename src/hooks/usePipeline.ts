@@ -74,6 +74,7 @@ export function usePipeline() {
   const [itemsExtraction, setItemsExtraction] = useState<ItemsExtraction>({ items: [] });
   const [moodboardUrl, setMoodboardUrl] = useState<string | null>(null);
   const [flatlayUrl, setFlatlayUrl] = useState<string | null>(null);
+  const [colorsTexturesUrl, setColorsTexturesUrl] = useState<string | null>(null);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -121,6 +122,65 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 6: Colors & Textures
+  const runColorsTextures = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string
+  ) => {
+    console.log("Starting Step 6: Colors & Textures");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 6 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-colors-textures", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified },
+      });
+
+      if (error) {
+        console.error("Colors & Textures generation error:", error);
+        throw error;
+      }
+
+      console.log("Colors & Textures result:", data);
+
+      const generatedColorsTexturesUrl = data?.imageUrl;
+      setColorsTexturesUrl(generatedColorsTexturesUrl);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 6 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { colorsTexturesUrl: generatedColorsTexturesUrl },
+              visualOutcomeUrl: generatedColorsTexturesUrl,
+            } 
+          : s
+      ));
+
+      setCurrentStep(7);
+      console.log("Step 6 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 6:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 6);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 6 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 5: Material Flatlay
   const runFlatlay = useCallback(async (
     currentSessionId: string,
@@ -163,6 +223,9 @@ export function usePipeline() {
       setCurrentStep(6);
       console.log("Step 5 completed successfully");
 
+      // Automatically proceed to Step 6: Colors & Textures
+      await runColorsTextures(currentSessionId, elements, roomType, styleIdentified);
+
     } catch (error) {
       console.error("Error in Step 5:", error);
       
@@ -178,7 +241,7 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runColorsTextures]);
 
   // Run Step 4: Design Moodboard
   const runMoodboard = useCallback(async (
@@ -487,6 +550,7 @@ export function usePipeline() {
     setItemsExtraction({ items: [] });
     setMoodboardUrl(null);
     setFlatlayUrl(null);
+    setColorsTexturesUrl(null);
   }, []);
 
   return {
@@ -499,6 +563,7 @@ export function usePipeline() {
     itemsExtraction,
     moodboardUrl,
     flatlayUrl,
+    colorsTexturesUrl,
     startPipeline,
     resetPipeline,
   };

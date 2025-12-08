@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.pipeline-flatlay]
 verify_jwt = false
+
+[functions.pipeline-colors-textures]
+verify_jwt = false
