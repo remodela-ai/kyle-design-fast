@@ -217,11 +217,11 @@ export default function Shazam() {
             </div>
             
             {/* Status Text with Bouncing Arrow */}
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
               {!kyleConnected && !generatedImage && !isGenerating && (
-                <ChevronUp className="h-6 w-6 text-foreground animate-bounce" />
+                <ChevronUp className="h-10 w-10 text-foreground animate-bounce" />
               )}
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-lg font-medium">
                 {getStatusText()}
               </p>
             </div>
