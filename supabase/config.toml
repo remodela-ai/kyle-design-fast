@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.pipeline-moodboard]
 verify_jwt = false
+
+[functions.pipeline-flatlay]
+verify_jwt = false

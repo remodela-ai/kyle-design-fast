@@ -32,7 +32,7 @@ export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, startPipeline, resetPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, startPipeline, resetPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
   const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
@@ -438,6 +438,38 @@ export default function FreeProject360() {
             </h2>
             <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
               <div className="aspect-video bg-secondary flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Material Flatlay - Shows after Step 5 completes */}
+        {activeTab === "visual" && flatlayUrl && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Image className="h-5 w-5 text-primary" />
+              Material Flatlay
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+              <img 
+                src={flatlayUrl} 
+                alt="Material Flatlay" 
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 5 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(5) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Image className="h-5 w-5 text-primary" />
+              Creating Material Flatlay...
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
+              <div className="aspect-square bg-secondary flex items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
               </div>
             </div>

@@ -73,6 +73,7 @@ export function usePipeline() {
   const [architecturalPlans, setArchitecturalPlans] = useState<ArchitecturalPlans>({});
   const [itemsExtraction, setItemsExtraction] = useState<ItemsExtraction>({ items: [] });
   const [moodboardUrl, setMoodboardUrl] = useState<string | null>(null);
+  const [flatlayUrl, setFlatlayUrl] = useState<string | null>(null);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -120,6 +121,65 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 5: Material Flatlay
+  const runFlatlay = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string
+  ) => {
+    console.log("Starting Step 5: Material Flatlay");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 5 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-flatlay", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified },
+      });
+
+      if (error) {
+        console.error("Flatlay generation error:", error);
+        throw error;
+      }
+
+      console.log("Flatlay result:", data);
+
+      const generatedFlatlayUrl = data?.imageUrl;
+      setFlatlayUrl(generatedFlatlayUrl);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 5 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { flatlayUrl: generatedFlatlayUrl },
+              visualOutcomeUrl: generatedFlatlayUrl,
+            } 
+          : s
+      ));
+
+      setCurrentStep(6);
+      console.log("Step 5 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 5:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 5);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 5 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 4: Design Moodboard
   const runMoodboard = useCallback(async (
     currentSessionId: string,
@@ -163,6 +223,9 @@ export function usePipeline() {
       setCurrentStep(5);
       console.log("Step 4 completed successfully");
 
+      // Automatically proceed to Step 5: Material Flatlay
+      await runFlatlay(currentSessionId, elements, roomType, styleIdentified);
+
     } catch (error) {
       console.error("Error in Step 4:", error);
       
@@ -178,7 +241,7 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runFlatlay]);
 
   // Run Step 3: Items Extraction
   const runItemsExtraction = useCallback(async (
@@ -423,6 +486,7 @@ export function usePipeline() {
     setArchitecturalPlans({});
     setItemsExtraction({ items: [] });
     setMoodboardUrl(null);
+    setFlatlayUrl(null);
   }, []);
 
   return {
@@ -434,6 +498,7 @@ export function usePipeline() {
     architecturalPlans,
     itemsExtraction,
     moodboardUrl,
+    flatlayUrl,
     startPipeline,
     resetPipeline,
   };
