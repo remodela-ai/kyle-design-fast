@@ -239,6 +239,7 @@ const BlinkDesign = () => {
           )}
         </div>
 
+        {/* How It Works section - temporarily hidden
         <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:shadow-primary/10 dark:hover:shadow-[0_0_30px_rgba(220,38,38,0.25)] transition-all duration-300 mt-8">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-5 w-5 text-primary" />
@@ -282,6 +283,7 @@ const BlinkDesign = () => {
             </div>
           </div>
         </div>
+        */}
       </main>
     </div>
   );
