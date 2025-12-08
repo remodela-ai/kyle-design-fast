@@ -13,13 +13,12 @@ import { useKyle } from "@/contexts/KyleContext";
 
 const BlinkDesign = () => {
   const navigate = useNavigate();
-  const { designSummary, messages, setOnGenerateDesign, setIsGeneratingFromVoice } = useKyle();
+  const { designSummary, messages, setGenerationCallback } = useKyle();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
 
-  // Build a comprehensive prompt from all conversation messages
   const buildPromptFromConversation = useCallback(() => {
     if (messages.length === 0) return null;
     
@@ -41,7 +40,6 @@ const BlinkDesign = () => {
       return;
     }
 
-    // Update the prompt field if using custom prompt
     if (customPrompt) {
       setPrompt(customPrompt);
     }
@@ -73,14 +71,12 @@ const BlinkDesign = () => {
       toast.error("An unexpected error occurred");
     } finally {
       setIsGenerating(false);
-      setIsGeneratingFromVoice(false);
     }
-  }, [prompt, setIsGeneratingFromVoice]);
+  }, [prompt]);
 
   // Register the voice-triggered generation callback
   useEffect(() => {
     const voiceGenerateHandler = () => {
-      // Build prompt from full conversation, fallback to designSummary or current prompt
       const conversationPrompt = buildPromptFromConversation();
       const voicePrompt = conversationPrompt || designSummary || prompt;
       
@@ -89,16 +85,12 @@ const BlinkDesign = () => {
         generateDesign(voicePrompt);
       } else {
         toast.error("Please describe your design vision first");
-        setIsGeneratingFromVoice(false);
       }
     };
 
-    setOnGenerateDesign(() => voiceGenerateHandler);
-
-    return () => {
-      setOnGenerateDesign(null);
-    };
-  }, [designSummary, prompt, generateDesign, setOnGenerateDesign, buildPromptFromConversation, setIsGeneratingFromVoice]);
+    setGenerationCallback(voiceGenerateHandler);
+    return () => setGenerationCallback(null);
+  }, [designSummary, prompt, generateDesign, setGenerationCallback, buildPromptFromConversation]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !isGenerating) {
@@ -125,10 +117,8 @@ const BlinkDesign = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-y-auto">
-      {/* Background gradient effect */}
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
 
-      {/* Header */}
       <header className="relative z-20 flex items-center justify-between p-4 md:p-6">
         <Button
           variant="outline"
@@ -142,14 +132,11 @@ const BlinkDesign = () => {
         <ThemeToggle />
       </header>
 
-      {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-start px-4 py-4 md:py-8">
-        {/* Kyle Avatar - Central Element */}
         <div className="animate-float mb-4">
           <KyleAvatar size="lg" />
         </div>
 
-        {/* Title */}
         <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2 text-center">
           Blink Design
         </h1>
@@ -157,22 +144,18 @@ const BlinkDesign = () => {
           Instant creative inspiration for your design projects
         </p>
 
-        {/* Voice Input */}
         <div className="w-full max-w-2xl mb-6">
           <VoiceInput />
         </div>
 
-        {/* Conversation Summary */}
         <ConversationSummary onUseAsPrompt={handleUseAsPrompt} />
 
-        {/* Design Generation Area */}
         <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)]">
           <div className="flex items-center gap-2 mb-4">
             <Zap className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Generate Design</h2>
           </div>
 
-          {/* Input */}
           <div className="flex gap-3 mb-6">
             <Input
               placeholder="Describe your interior design idea..."
@@ -195,7 +178,6 @@ const BlinkDesign = () => {
             </Button>
           </div>
 
-          {/* Generated Image */}
           {isGenerating && (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -219,7 +201,6 @@ const BlinkDesign = () => {
                 </p>
               )}
 
-              {/* Action Buttons */}
               <div className="flex justify-center gap-3">
                 <Button
                   variant="outline"
@@ -263,7 +244,6 @@ const BlinkDesign = () => {
           )}
         </div>
 
-        {/* How It Works Card */}
         <div className="w-full max-w-2xl bg-card rounded-2xl border border-border p-6 md:p-8 shadow-lg shadow-primary/5 dark:shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:shadow-primary/10 dark:hover:shadow-[0_0_30px_rgba(220,38,38,0.25)] transition-all duration-300 mt-8">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-5 w-5 text-primary" />

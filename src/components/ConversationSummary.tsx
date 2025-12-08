@@ -8,13 +8,12 @@ interface ConversationSummaryProps {
 }
 
 export function ConversationSummary({ onUseAsPrompt }: ConversationSummaryProps) {
-  const { messages, designSummary, clearMessages, isConnected, voiceCommandDetected, isGeneratingFromVoice } = useKyle();
+  const { messages, designSummary, clearMessages, isConnected, voiceCommandDetected, isGenerating } = useKyle();
 
-  if (messages.length === 0 && !voiceCommandDetected && !isGeneratingFromVoice) {
+  if (messages.length === 0 && !voiceCommandDetected && !isGenerating) {
     return null;
   }
 
-  // Generate a prompt from the conversation
   const generatePromptFromConversation = () => {
     const userMessages = messages
       .filter(m => m.role === "user")
@@ -41,7 +40,7 @@ export function ConversationSummary({ onUseAsPrompt }: ConversationSummaryProps)
       )}
 
       {/* Kyle Working Banner */}
-      {isGeneratingFromVoice && (
+      {isGenerating && (
         <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-primary to-primary/80 border border-primary">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 text-white animate-spin" />

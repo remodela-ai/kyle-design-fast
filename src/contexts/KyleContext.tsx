@@ -1,9 +1,8 @@
-import { createContext, useContext, ReactNode, useRef } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { useConversation } from "@11labs/react";
-import { useCallback, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useState } from "react";
 
-const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Kyle Blink Design
+const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -19,14 +18,13 @@ interface KyleContextType {
   messages: ConversationMessage[];
   designSummary: string | null;
   voiceCommandDetected: boolean;
-  isGeneratingFromVoice: boolean;
-  setIsGeneratingFromVoice: (value: boolean) => void;
+  isGenerating: boolean;
   startConversation: () => Promise<void>;
   stopConversation: () => Promise<void>;
   toggleConversation: () => Promise<void>;
   clearMessages: () => void;
-  onGenerateDesign: (() => void) | null;
-  setOnGenerateDesign: (callback: (() => void) | null) => void;
+  triggerGeneration: () => void;
+  setGenerationCallback: (callback: (() => void) | null) => void;
 }
 
 const KyleContext = createContext<KyleContextType | null>(null);
@@ -35,78 +33,49 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [designSummary, setDesignSummary] = useState<string | null>(null);
-  const [onGenerateDesign, setOnGenerateDesign] = useState<(() => void) | null>(null);
   const [voiceCommandDetected, setVoiceCommandDetected] = useState(false);
-  const [isGeneratingFromVoice, setIsGeneratingFromVoice] = useState(false);
-  const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationCallback, setGenerationCallbackState] = useState<(() => void) | null>(null);
 
-  // Extract design-related keywords from messages
   const extractDesignSummary = (allMessages: ConversationMessage[]) => {
-    const designKeywords = allMessages
-      .map(m => m.content)
-      .join(" ");
+    const text = allMessages.map(m => m.content).join(" ").toLowerCase();
     
-    const styleTerms = ["modern", "minimalist", "industrial", "bohemian", "scandinavian", "rustic", "contemporary", "traditional", "luxury", "cozy", "elegant", "warm", "cool", "bright", "dark"];
-    const roomTerms = ["living room", "bedroom", "kitchen", "bathroom", "office", "dining room", "studio", "loft", "apartment"];
-    const colorTerms = ["white", "black", "gray", "beige", "wood", "blue", "green", "neutral", "earth tones", "pastel"];
+    const styles = ["modern", "minimalist", "industrial", "bohemian", "scandinavian", "rustic", "contemporary", "traditional", "luxury", "cozy"];
+    const rooms = ["living room", "bedroom", "kitchen", "bathroom", "office", "dining room", "studio"];
+    const colors = ["white", "black", "gray", "beige", "wood", "blue", "green", "neutral"];
     
-    const foundStyles = styleTerms.filter(term => 
-      designKeywords.toLowerCase().includes(term)
-    );
-    const foundRooms = roomTerms.filter(term => 
-      designKeywords.toLowerCase().includes(term)
-    );
-    const foundColors = colorTerms.filter(term => 
-      designKeywords.toLowerCase().includes(term)
-    );
+    const found = {
+      styles: styles.filter(s => text.includes(s)),
+      rooms: rooms.filter(r => text.includes(r)),
+      colors: colors.filter(c => text.includes(c))
+    };
 
-    const summaryParts: string[] = [];
-    if (foundRooms.length > 0) summaryParts.push(`Room: ${foundRooms.join(", ")}`);
-    if (foundStyles.length > 0) summaryParts.push(`Style: ${foundStyles.join(", ")}`);
-    if (foundColors.length > 0) summaryParts.push(`Colors: ${foundColors.join(", ")}`);
+    const parts: string[] = [];
+    if (found.rooms.length) parts.push(`Room: ${found.rooms.join(", ")}`);
+    if (found.styles.length) parts.push(`Style: ${found.styles.join(", ")}`);
+    if (found.colors.length) parts.push(`Colors: ${found.colors.join(", ")}`);
 
-    return summaryParts.length > 0 ? summaryParts.join(" | ") : null;
+    return parts.length ? parts.join(" | ") : null;
   };
 
-  // Use ref to store the endSession function so it's always current
-  const endSessionRef = useRef<(() => Promise<void>) | null>(null);
-  const onGenerateDesignRef = useRef<(() => void) | null>(null);
-
-  // Keep the ref updated
-  useEffect(() => {
-    onGenerateDesignRef.current = onGenerateDesign;
-  }, [onGenerateDesign]);
-
-  // Function to handle voice command detection
-  const handleVoiceCommand = useCallback(async () => {
-    console.log("🚀 handleVoiceCommand called");
-    
+  const triggerGeneration = useCallback(async () => {
+    console.log("🚀 Generation triggered");
     setVoiceCommandDetected(true);
-    setIsGeneratingFromVoice(true);
+    setIsGenerating(true);
     
-    // Stop Kyle from talking IMMEDIATELY
-    if (endSessionRef.current) {
-      try {
-        console.log("🛑 Stopping Kyle...");
-        await endSessionRef.current();
-        console.log("✅ Kyle stopped");
-      } catch (e) {
-        console.log("⚠️ Could not stop conversation:", e);
-      }
+    // Stop Kyle
+    try {
+      await conversation.endSession();
+    } catch (e) {
+      console.log("Could not stop:", e);
     }
     
-    // Reset command detected after a short delay
-    setTimeout(() => setVoiceCommandDetected(false), 3000);
+    setTimeout(() => setVoiceCommandDetected(false), 2000);
     
-    // Trigger generation using the ref
-    if (onGenerateDesignRef.current) {
-      console.log("🎨 Triggering image generation...");
-      onGenerateDesignRef.current();
-    } else {
-      console.log("⚠️ No onGenerateDesign callback registered");
-      setIsGeneratingFromVoice(false);
+    if (generationCallback) {
+      generationCallback();
     }
-  }, []);
+  }, [generationCallback]);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -117,100 +86,58 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       console.log("Kyle disconnected");
     },
     onMessage: (message) => {
-      console.log("Kyle message:", message);
+      console.log("Message:", message);
       
-      // Handle different message types from ElevenLabs
-      if (message && typeof message === "object") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const msg = message as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const msg = message as any;
+      
+      if (msg?.message && msg?.source) {
+        const newMessage: ConversationMessage = {
+          role: msg.source === "user" ? "user" : "assistant",
+          content: msg.message,
+          timestamp: new Date(),
+        };
         
-        // Capture transcriptions
-        if (msg.message && typeof msg.message === "string" && msg.source) {
-          const newMessage: ConversationMessage = {
-            role: msg.source === "user" ? "user" : "assistant",
-            content: msg.message,
-            timestamp: new Date(),
-          };
+        setMessages(prev => {
+          const updated = [...prev, newMessage];
+          setDesignSummary(extractDesignSummary(updated));
+          return updated;
+        });
+
+        // Detect voice command from user
+        if (msg.source === "user") {
+          const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
           
-          setMessages(prev => {
-            const updated = [...prev, newMessage];
-            const summary = extractDesignSummary(updated);
-            setDesignSummary(summary);
-            return updated;
-          });
-
-          // Detect the command from USER messages only
-          if (msg.source === "user") {
-            // Normalize: remove punctuation and extra spaces
-            const messageText = msg.message
-              .toLowerCase()
-              .replace(/[.,!?;:]/g, '') // Remove punctuation
-              .replace(/\s+/g, ' ')     // Normalize spaces
-              .trim();
-            
-            console.log("📝 User message normalized:", messageText);
-            
-            // Check for "hey kyle generate" command (no need for "image")
-            const hasKyle = messageText.includes("kyle");
-            const hasGenerate = messageText.includes("generate");
-            
-            const isGenerateCommand = hasKyle && hasGenerate;
-
-            if (isGenerateCommand) {
-              console.log("🎯 VOICE COMMAND DETECTED! Stopping Kyle and generating...");
-              // Immediately trigger - no delay
-              handleVoiceCommand();
-            }
+          if (text.includes("kyle") && text.includes("generate")) {
+            console.log("🎯 VOICE COMMAND DETECTED!");
+            triggerGeneration();
           }
         }
       }
     },
-    onError: (errorMessage) => {
-      console.error("Kyle error:", errorMessage);
-      // Don't set error for internal SDK issues
-      if (errorMessage && typeof errorMessage === "string") {
-        setError(errorMessage);
-      }
-    },
-    clientTools: {
-      navigateToBlinkDesign: async () => {
-        console.log("Navigating to Blink Design...");
-        navigate("/blink-design");
-        return "Successfully navigated to Blink Design page";
-      },
-      navigateToHome: async () => {
-        console.log("Navigating to Home...");
-        navigate("/");
-        return "Successfully navigated to Home page";
-      },
-      generateDesignImage: async () => {
-        console.log("Generating design image via voice command...");
-        if (onGenerateDesign) {
-          onGenerateDesign();
-          return "Starting design generation. I'll create an interior design visualization based on our conversation.";
-        }
-        return "Please navigate to the Blink Design page first to generate images.";
-      },
+    onError: (err) => {
+      console.error("Kyle error:", err);
+      if (typeof err === "string") setError(err);
     },
   });
 
-  // Update the ref after conversation is created
-  useEffect(() => {
-    endSessionRef.current = conversation.endSession;
-  }, [conversation.endSession]);
-
   const startConversation = useCallback(async () => {
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
       
-      // Use the public agent without overrides (public agents don't allow prompt overrides)
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
       });
     } catch (err) {
-      console.error("Failed to start conversation:", err);
-      setError(err instanceof Error ? err.message : "Failed to start conversation");
+      console.error("Failed to start:", err);
+      setError(err instanceof Error ? err.message : "Failed to start");
     }
   }, [conversation]);
 
@@ -231,7 +158,15 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     setDesignSummary(null);
   }, []);
 
-  const value = {
+  const setGenerationCallback = useCallback((callback: (() => void) | null) => {
+    setGenerationCallbackState(() => callback);
+  }, []);
+
+  const resetGenerating = useCallback(() => {
+    setIsGenerating(false);
+  }, []);
+
+  const value: KyleContextType = {
     status: conversation.status,
     isSpeaking: conversation.isSpeaking,
     isConnected: conversation.status === "connected",
@@ -239,14 +174,13 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     messages,
     designSummary,
     voiceCommandDetected,
-    isGeneratingFromVoice,
-    setIsGeneratingFromVoice,
+    isGenerating,
     startConversation,
     stopConversation,
     toggleConversation,
     clearMessages,
-    onGenerateDesign,
-    setOnGenerateDesign,
+    triggerGeneration,
+    setGenerationCallback,
   };
 
   return (
