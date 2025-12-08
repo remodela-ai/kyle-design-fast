@@ -41,7 +41,7 @@ export function Canvas({ onMenuClick }: CanvasProps) {
             Next Interiors
           </h1>
           <p className="text-xs md:text-lg text-muted-foreground max-w-md">
-            The First Full Stack AI Interior Design Studio.
+            The First Full Stack AI Interior Design Company.
           </p>
         </div>
 

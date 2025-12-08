@@ -28,21 +28,6 @@ serve(async (req) => {
 
     console.log("Generating design for prompt:", prompt);
 
-    // Build a more specific prompt - if conversation is minimal, use defaults
-    const hasDesignDetails = prompt.toLowerCase().includes("modern") || 
-      prompt.toLowerCase().includes("minimalist") ||
-      prompt.toLowerCase().includes("color") ||
-      prompt.toLowerCase().includes("room") ||
-      prompt.toLowerCase().includes("living") ||
-      prompt.toLowerCase().includes("bedroom") ||
-      prompt.toLowerCase().includes("kitchen");
-
-    const imagePrompt = hasDesignDetails 
-      ? `Create this interior design image NOW: ${prompt}. Photorealistic, professional interior photography, excellent lighting.`
-      : `Create a stunning modern minimalist living room interior design image NOW. Features: clean lines, neutral color palette with warm wood accents, large windows with natural light, comfortable contemporary furniture, indoor plants, high ceilings. Style: Scandinavian modern. Photorealistic professional interior photography.`;
-
-    console.log("Using image prompt:", imagePrompt);
-
     // Use the Nano banana model for image generation
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -55,7 +40,7 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: imagePrompt,
+            content: `Generate a beautiful, professional interior design image: ${prompt}. The image should be photorealistic, high quality, with excellent lighting and composition. Focus on modern, elegant interior design aesthetics.`,
           },
         ],
         modalities: ["image", "text"],

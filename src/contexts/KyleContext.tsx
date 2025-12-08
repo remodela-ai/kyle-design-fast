@@ -203,8 +203,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // No overrides - the first message must be configured in ElevenLabs dashboard
-      // New message: "Hey there. I am Kyle your AI interior design assistant. Welcome to Next Interiors, the first Full Stack Ai interior Design Studio where you can get your dream interior design project in just five minutes!"
+      // Use the public agent without overrides (public agents don't allow prompt overrides)
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
