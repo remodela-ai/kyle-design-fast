@@ -15,6 +15,38 @@ export interface ArchitecturalPlans {
   elevationView?: string;
 }
 
+export interface ShoppingItem {
+  originalName: string;
+  productName: string;
+  category: string;
+  estimatedPriceRange: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  searchKeywords: string[];
+  suggestedRetailers: string[];
+  shoppingUrl: string;
+  description: string;
+  dimensions?: {
+    width: number;
+    height: number;
+    depth: number;
+  };
+  material?: string;
+  color?: string;
+}
+
+export interface ItemsExtraction {
+  items: ShoppingItem[];
+  totalEstimatedBudget?: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  shoppingTips?: string[];
+}
+
 const PIPELINE_STEPS = [
   { number: 1, name: "Spatial Analysis", fn: "pipeline-spatial-analysis" },
   { number: 2, name: "Architectural Plans", fn: "pipeline-architectural-plans" },
@@ -39,6 +71,7 @@ export function usePipeline() {
   );
   const [memory, setMemory] = useState<Record<string, unknown>>({});
   const [architecturalPlans, setArchitecturalPlans] = useState<ArchitecturalPlans>({});
+  const [itemsExtraction, setItemsExtraction] = useState<ItemsExtraction>({ items: [] });
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -86,12 +119,78 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 3: Items Extraction
+  const runItemsExtraction = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string
+  ) => {
+    console.log("Starting Step 3: Items Extraction");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 3 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-items-extraction", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified },
+      });
+
+      if (error) {
+        console.error("Items extraction error:", error);
+        throw error;
+      }
+
+      console.log("Items extraction result:", data);
+
+      const items = data?.output?.items || [];
+      const totalBudget = data?.output?.totalEstimatedBudget;
+      const tips = data?.output?.shoppingTips || [];
+
+      setItemsExtraction({
+        items,
+        totalEstimatedBudget: totalBudget,
+        shoppingTips: tips,
+      });
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 3 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { items, totalEstimatedBudget: totalBudget, shoppingTips: tips },
+            } 
+          : s
+      ));
+
+      setCurrentStep(4);
+      console.log("Step 3 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 3:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 3);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 3 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 2: Architectural Plans (nano-planta + nano-elevacion)
   const runArchitecturalPlans = useCallback(async (
     currentSessionId: string,
     spatialAnalysis: Record<string, unknown>,
     roomType: string,
-    elements: unknown[]
+    elements: unknown[],
+    styleIdentified: string
   ) => {
     console.log("Starting Step 2: Architectural Plans");
     
@@ -152,6 +251,9 @@ export function usePipeline() {
       setCurrentStep(3);
       console.log("Step 2 completed successfully");
 
+      // Automatically proceed to Step 3: Items Extraction
+      await runItemsExtraction(currentSessionId, elements, roomType, styleIdentified);
+
     } catch (error) {
       console.error("Error in Step 2:", error);
       
@@ -167,7 +269,7 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runItemsExtraction]);
 
   const startPipeline = useCallback(async (
     designImageUrl: string,
@@ -179,6 +281,7 @@ export function usePipeline() {
     setCurrentStep(1);
     setMemory({});
     setArchitecturalPlans({});
+    setItemsExtraction({ items: [] });
 
     console.log("Starting pipeline with session:", newSessionId);
 
@@ -221,6 +324,7 @@ export function usePipeline() {
       // Update memory with step 1 results
       const spatialAnalysis = data?.output?.parsedAnalysis || data?.memory?.spatialAnalysis;
       const roomType = spatialAnalysis?.roomType || data?.memory?.roomType || "room";
+      const styleIdentified = spatialAnalysis?.styleIdentified || data?.memory?.styleIdentified || "modern";
       const elements = spatialAnalysis?.elements || [];
 
       if (data?.memory) {
@@ -231,7 +335,7 @@ export function usePipeline() {
 
       // Automatically proceed to Step 2: Architectural Plans
       if (spatialAnalysis) {
-        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements);
+        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements, styleIdentified);
       }
 
     } catch (error) {
@@ -251,6 +355,7 @@ export function usePipeline() {
     })));
     setMemory({});
     setArchitecturalPlans({});
+    setItemsExtraction({ items: [] });
   }, []);
 
   return {
@@ -260,6 +365,7 @@ export function usePipeline() {
     steps,
     memory,
     architecturalPlans,
+    itemsExtraction,
     startPipeline,
     resetPipeline,
   };
