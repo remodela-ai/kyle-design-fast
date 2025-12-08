@@ -1,14 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
-import { PipelineProgress } from "@/components/PipelineProgress";
 import { useKyle } from "@/contexts/KyleContext";
-import { useShazam3Agent } from "@/hooks/useShazam3Agent";
-import { usePipeline } from "@/hooks/usePipeline";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -34,10 +31,10 @@ Espera que Kyle cuente la historia del diseño...
 export default function Shazam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [shazam3Active, setShazam3Active] = useState(false);
   const [showDebugPrompt, setShowDebugPrompt] = useState(false);
   
   const mainRef = useRef<HTMLElement>(null);
+  const navigate = useNavigate();
   
   const { 
     isConnected: kyleConnected, 
@@ -48,9 +45,6 @@ export default function Shazam() {
     setIsGeneratingFromVoice,
     stopConversation: stopKyle
   } = useKyle();
-
-  const shazam3 = useShazam3Agent();
-  const pipeline = usePipeline();
 
   const buildPromptFromConversation = useMemo(() => {
     if (messages.length === 0) return null;
@@ -102,10 +96,10 @@ export default function Shazam() {
     return () => setOnGenerateDesign(null);
   }, [buildPromptFromConversation, designSummary, generateDesign, setOnGenerateDesign]);
 
-  // After image generation, scroll up and activate Kyle Storyteller
+  // After image generation, wait 5 minutes then navigate to /storytelling
   useEffect(() => {
-    if (generatedImage && !shazam3Active && !isGenerating) {
-      console.log("🎭 Image generated! Preparing Kyle Storyteller...");
+    if (generatedImage && !isGenerating) {
+      console.log("🎭 Image generated! Will navigate to storytelling in 5 minutes...");
       
       // Scroll to top smoothly
       if (mainRef.current) {
@@ -113,54 +107,27 @@ export default function Shazam() {
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Wait for scroll animation, then activate Kyle Storyteller
-      const timer = setTimeout(async () => {
-        console.log("🎭 Activating Kyle Storyteller with design context...");
-        setShazam3Active(true);
-        
-        // Stop Kyle if still connected
-        if (kyleConnected) {
-          await stopKyle();
-        }
-        
-        // Start Kyle Storyteller with the design context
+      // Stop Kyle if still connected
+      if (kyleConnected) {
+        stopKyle();
+      }
+      
+      // Wait 5 minutes (300000ms) then navigate to storytelling
+      const timer = setTimeout(() => {
+        console.log("🎭 Navigating to storytelling page...");
         const designContext = designSummary || buildPromptFromConversation || "";
-        await shazam3.startConversation(designContext);
-      }, 1500);
+        
+        navigate('/storytelling', {
+          state: {
+            generatedImage,
+            designContext
+          }
+        });
+      }, 300000); // 5 minutes
       
       return () => clearTimeout(timer);
     }
-  }, [generatedImage, shazam3Active, isGenerating, kyleConnected, stopKyle, shazam3, designSummary, buildPromptFromConversation]);
-
-  // Handle pipeline command from Shazam 3
-  useEffect(() => {
-    shazam3.setOnPipelineCommand(() => {
-      console.log("Pipeline command received! Starting full design package...");
-      
-      // Stop Shazam 3
-      shazam3.stopConversation();
-      setShazam3Active(false);
-      
-      toast.success("Starting your full design package!");
-      
-      // Start the pipeline
-      if (generatedImage) {
-        pipeline.startPipeline(generatedImage, designSummary || undefined);
-      }
-    });
-    
-    return () => shazam3.setOnPipelineCommand(null);
-  }, [shazam3, generatedImage, designSummary, pipeline]);
-
-  // Handle tapping Kyle to stop Shazam 3
-  const handleKyleTap = useCallback(async () => {
-    if (shazam3Active && shazam3.isConnected) {
-      console.log("Stopping Shazam 3 via Kyle tap...");
-      await shazam3.stopConversation();
-      setShazam3Active(false);
-      toast.info("Shazam 3 stopped");
-    }
-  }, [shazam3Active, shazam3]);
+  }, [generatedImage, isGenerating, kyleConnected, stopKyle, designSummary, buildPromptFromConversation, navigate]);
 
   const downloadImage = () => {
     if (!generatedImage) return;
@@ -175,25 +142,18 @@ export default function Shazam() {
 
   const handleNewDesign = () => {
     setGeneratedImage(null);
-    setShazam3Active(false);
-    pipeline.resetPipeline();
-    if (shazam3.isConnected) {
-      shazam3.stopConversation();
-    }
   };
 
   const getStatusText = () => {
-    if (pipeline.isRunning) return "";
     if (isGenerating) return "";
-    if (shazam3Active && shazam3.isConnected) return "Tap Kyle to stop";
     if (kyleConnected) return "";
-    if (generatedImage) return "";
+    if (generatedImage) return "Navigating to storytelling...";
     return "Tap Kyle to start";
   };
 
-  // Determine which agent is active for audio waves
-  const isAnyAgentConnected = kyleConnected || shazam3.isConnected;
-  const isAnyAgentSpeaking = kyleSpeaking || shazam3.isSpeaking;
+  // Audio waves state
+  const isAnyAgentConnected = kyleConnected;
+  const isAnyAgentSpeaking = kyleSpeaking;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -209,87 +169,57 @@ export default function Shazam() {
 
       {/* Main Content */}
       <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pb-8 overflow-y-auto">
-        
-        {/* Pipeline Progress - Shows when pipeline is running */}
-        {pipeline.isRunning && (
-          <div className="w-full animate-fade-in mb-6">
-            <PipelineProgress 
-              steps={pipeline.steps} 
-              currentStep={pipeline.currentStep} 
-            />
-          </div>
-        )}
 
         {/* Kyle Section - Fixed height to prevent layout shift */}
-        {!pipeline.isRunning && (
-          <div className="flex flex-col items-center gap-4 min-h-[400px] justify-end pt-16">
-            <div onClick={shazam3Active ? handleKyleTap : undefined}>
-              <KyleAvatar 
-                size="xxl" 
-                onClickOverride={shazam3Active ? handleKyleTap : undefined}
-              />
+        <div className="flex flex-col items-center gap-4 min-h-[400px] justify-end pt-16">
+          <KyleAvatar size="xxl" />
+          
+          {/* Audio Waves - Fixed height container */}
+          <div className="h-12 flex items-center justify-center">
+            <div className={`transition-opacity duration-300 ${isAnyAgentConnected ? 'opacity-100' : 'opacity-0'}`}>
+              <AudioWaves isActive={isAnyAgentConnected} isSpeaking={isAnyAgentSpeaking} />
             </div>
-            
-            {/* Audio Waves - Fixed height container */}
-            <div className="h-12 flex items-center justify-center">
-              <div className={`transition-opacity duration-300 ${isAnyAgentConnected ? 'opacity-100' : 'opacity-0'}`}>
-                <AudioWaves isActive={isAnyAgentConnected} isSpeaking={isAnyAgentSpeaking} />
-              </div>
-            </div>
-            
-            {/* Status Text with Bouncing Arrow */}
-            <div className="flex flex-col items-center gap-3">
-              {!kyleConnected && !generatedImage && !isGenerating && (
-                <ChevronUp className="h-10 w-10 text-foreground animate-bounce" />
-              )}
-              <p className="text-muted-foreground text-lg font-medium">
-                {getStatusText()}
-              </p>
-            </div>
-            
-            {/* Kyle Storyteller indicator */}
-            {shazam3Active && (
-              <div className="animate-fade-in">
-                <p className="text-primary text-sm font-medium">
-                  ✨ Kyle is telling your design story...
-                </p>
-              </div>
-            )}
           </div>
-        )}
+          
+          {/* Status Text with Bouncing Arrow */}
+          <div className="flex flex-col items-center gap-3">
+            {!kyleConnected && !generatedImage && !isGenerating && (
+              <ChevronUp className="h-10 w-10 text-foreground animate-bounce" />
+            )}
+            <p className="text-muted-foreground text-lg font-medium">
+              {getStatusText()}
+            </p>
+          </div>
+        </div>
 
         {/* Separator Line with Glow */}
-        {!pipeline.isRunning && (
-          <div className="w-full max-w-md my-6">
-            <div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_hsl(var(--primary)/0.6)]" />
-          </div>
-        )}
+        <div className="w-full max-w-md my-6">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_hsl(var(--primary)/0.6)]" />
+        </div>
 
         {/* Image Area - Separate section */}
-        {!pipeline.isRunning && (
-          <div className="w-full max-w-md aspect-square relative">
-            {isGenerating ? (
-              <div className="w-full h-full rounded-2xl bg-card/50 border border-border/30 flex items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              </div>
-            ) : generatedImage ? (
-              <img 
-                src={generatedImage} 
-                alt="Generated design" 
-                className="w-full h-full object-cover rounded-2xl shadow-2xl"
-              />
-            ) : (
-              <div className="w-full h-full rounded-2xl bg-card/30 border border-border/20 flex items-center justify-center">
-                <p className="text-muted-foreground/50 text-sm text-center px-8">
-                  Describe your dream space to Kyle and say "Hey Kyle Generate"
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="w-full max-w-md aspect-square relative">
+          {isGenerating ? (
+            <div className="w-full h-full rounded-2xl bg-card/50 border border-border/30 flex items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+          ) : generatedImage ? (
+            <img 
+              src={generatedImage} 
+              alt="Generated design" 
+              className="w-full h-full object-cover rounded-2xl shadow-2xl"
+            />
+          ) : (
+            <div className="w-full h-full rounded-2xl bg-card/30 border border-border/20 flex items-center justify-center">
+              <p className="text-muted-foreground/50 text-sm text-center px-8">
+                Describe your dream space to Kyle and say "Hey Kyle Generate"
+              </p>
+            </div>
+          )}
+        </div>
 
-        {/* Action Buttons - Only show when image exists and no pipeline */}
-        {generatedImage && !isGenerating && !pipeline.isRunning && (
+        {/* Action Buttons - Only show when image exists */}
+        {generatedImage && !isGenerating && (
           <div className="flex gap-3 mt-4">
             <Button 
               variant="outline" 
