@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp, Bug } from "lucide-react";
+import { Home, Sparkles, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -9,31 +9,11 @@ import { useKyle } from "@/contexts/KyleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const DEBUG_PROMPT = `🎯 SCRIPT DE PRUEBA - Lee esto a Kyle:
-
-1️⃣ INICIO (Tap Kyle):
-"Hola Kyle, quiero diseñar mi sala de estar"
-
-2️⃣ DETALLES:
-"Quiero un estilo moderno minimalista, con colores neutros como blanco y gris, y toques de madera natural. El espacio es de unos 30 metros cuadrados."
-
-3️⃣ GENERAR IMAGEN:
-"Hey Kyle Generate"
-
-4️⃣ DESPUÉS DE LA IMAGEN (Kyle Storyteller):
-Espera que Kyle cuente la historia del diseño...
-
-5️⃣ PEDIR PROYECTO COMPLETO:
-"Hey Kyle, send me the complete project!"
-
-✨ El pipeline comenzará automáticamente.`;
-
 export default function Shazam() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [showDebugPrompt, setShowDebugPrompt] = useState(false);
   
-  const mainRef = useRef<HTMLElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   
   const { 
@@ -88,6 +68,8 @@ export default function Shazam() {
     const voiceGenerateHandler = () => {
       const promptToUse = buildPromptFromConversation || designSummary || "";
       if (promptToUse) {
+        // Scroll down to image area when voice command triggers
+        imageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         generateDesign(promptToUse);
       }
     };
@@ -100,12 +82,6 @@ export default function Shazam() {
   useEffect(() => {
     if (generatedImage && !isGenerating) {
       console.log("🎭 Image generated! Will navigate to storytelling in 5 minutes...");
-      
-      // Scroll to top smoothly
-      if (mainRef.current) {
-        mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       
       // Stop Kyle if still connected
       if (kyleConnected) {
@@ -129,15 +105,8 @@ export default function Shazam() {
     }
   }, [generatedImage, isGenerating, kyleConnected, stopKyle, designSummary, buildPromptFromConversation, navigate]);
 
-  const downloadImage = () => {
-    if (!generatedImage) return;
-    const link = document.createElement('a');
-    link.href = generatedImage;
-    link.download = `design-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Image downloaded!");
+  const handleFreeProject = () => {
+    navigate('/pipeline-diseno');
   };
 
   const handleNewDesign = () => {
@@ -168,7 +137,7 @@ export default function Shazam() {
       </header>
 
       {/* Main Content */}
-      <main ref={mainRef} className="flex-1 flex flex-col items-center justify-start px-4 pb-8 overflow-y-auto">
+      <main className="flex-1 flex flex-col items-center justify-start px-4 pb-8 overflow-y-auto">
 
         {/* Kyle Section - Fixed height to prevent layout shift */}
         <div className="flex flex-col items-center gap-4 min-h-[400px] justify-end pt-16">
@@ -198,7 +167,7 @@ export default function Shazam() {
         </div>
 
         {/* Image Area - Separate section */}
-        <div className="w-full max-w-md aspect-square relative">
+        <div ref={imageRef} className="w-full max-w-md aspect-square relative">
           {isGenerating ? (
             <div className="w-full h-full rounded-2xl bg-card/50 border border-border/30 flex items-center justify-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -222,13 +191,12 @@ export default function Shazam() {
         {generatedImage && !isGenerating && (
           <div className="flex gap-3 mt-4">
             <Button 
-              variant="outline" 
               size="sm" 
-              onClick={downloadImage}
-              className="rounded-full gap-2"
+              onClick={handleFreeProject}
+              className="rounded-full gap-2 shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
             >
-              <Download className="h-4 w-4" />
-              Download
+              <Sparkles className="h-4 w-4" />
+              Free Project
             </Button>
             <Button 
               variant="outline" 
@@ -251,37 +219,6 @@ export default function Shazam() {
           </div>
         )}
       </main>
-
-      {/* Debug Floating Button */}
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setShowDebugPrompt(!showDebugPrompt)}
-        className="fixed bottom-4 right-4 z-50 rounded-full h-12 w-12 bg-background/80 backdrop-blur border-primary/50 hover:bg-primary/20"
-      >
-        <Bug className="h-5 w-5 text-primary" />
-      </Button>
-
-      {/* Debug Prompt Modal */}
-      {showDebugPrompt && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={() => setShowDebugPrompt(false)}>
-          <div 
-            className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono leading-relaxed">
-              {DEBUG_PROMPT}
-            </pre>
-            <Button 
-              variant="outline" 
-              className="mt-4 w-full" 
-              onClick={() => setShowDebugPrompt(false)}
-            >
-              Cerrar
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
