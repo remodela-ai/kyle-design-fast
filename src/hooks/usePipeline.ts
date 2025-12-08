@@ -10,6 +10,11 @@ export interface PipelineStep {
   error?: string;
 }
 
+export interface ArchitecturalPlans {
+  floorPlan?: string;
+  elevationView?: string;
+}
+
 const PIPELINE_STEPS = [
   { number: 1, name: "Spatial Analysis", fn: "pipeline-spatial-analysis" },
   { number: 2, name: "Architectural Plans", fn: "pipeline-architectural-plans" },
@@ -33,6 +38,7 @@ export function usePipeline() {
     }))
   );
   const [memory, setMemory] = useState<Record<string, unknown>>({});
+  const [architecturalPlans, setArchitecturalPlans] = useState<ArchitecturalPlans>({});
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -80,6 +86,89 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 2: Architectural Plans (nano-planta + nano-elevacion)
+  const runArchitecturalPlans = useCallback(async (
+    currentSessionId: string,
+    spatialAnalysis: Record<string, unknown>,
+    roomType: string,
+    elements: unknown[]
+  ) => {
+    console.log("Starting Step 2: Architectural Plans");
+    
+    // Update step 2 status to processing
+    await supabase.from("pipeline_steps").update({
+      status: "processing",
+      started_at: new Date().toISOString(),
+    }).eq("session_id", currentSessionId).eq("step_number", 2);
+
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 2 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      // Run both nano functions in parallel
+      const [plantaResult, elevacionResult] = await Promise.all([
+        supabase.functions.invoke("nano-planta", {
+          body: { sessionId: currentSessionId, spatialAnalysis, roomType, elements },
+        }),
+        supabase.functions.invoke("nano-elevacion", {
+          body: { sessionId: currentSessionId, spatialAnalysis, roomType, elements },
+        }),
+      ]);
+
+      console.log("Floor plan result:", plantaResult);
+      console.log("Elevation result:", elevacionResult);
+
+      const floorPlanUrl = plantaResult.data?.imageUrl;
+      const elevationUrl = elevacionResult.data?.imageUrl;
+
+      setArchitecturalPlans({
+        floorPlan: floorPlanUrl,
+        elevationView: elevationUrl,
+      });
+
+      // Update step 2 as completed
+      await supabase.from("pipeline_steps").update({
+        status: "completed",
+        output_data: {
+          floorPlanUrl,
+          elevationUrl,
+          floorPlanDescription: plantaResult.data?.description,
+          elevationDescription: elevacionResult.data?.description,
+        },
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 2);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 2 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { floorPlanUrl, elevationUrl },
+            } 
+          : s
+      ));
+
+      setCurrentStep(3);
+      console.log("Step 2 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 2:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 2);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 2 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   const startPipeline = useCallback(async (
     designImageUrl: string,
     conversationSummary?: string
@@ -89,6 +178,7 @@ export function usePipeline() {
     setIsRunning(true);
     setCurrentStep(1);
     setMemory({});
+    setArchitecturalPlans({});
 
     console.log("Starting pipeline with session:", newSessionId);
 
@@ -129,19 +219,26 @@ export function usePipeline() {
       console.log("Step 1 completed:", data);
       
       // Update memory with step 1 results
+      const spatialAnalysis = data?.output?.parsedAnalysis || data?.memory?.spatialAnalysis;
+      const roomType = spatialAnalysis?.roomType || data?.memory?.roomType || "room";
+      const elements = spatialAnalysis?.elements || [];
+
       if (data?.memory) {
         setMemory(prev => ({ ...prev, ...data.memory }));
       }
 
-      // For now, just complete step 1
-      // Future steps will be implemented similarly
       setCurrentStep(2);
+
+      // Automatically proceed to Step 2: Architectural Plans
+      if (spatialAnalysis) {
+        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements);
+      }
 
     } catch (error) {
       console.error("Pipeline error:", error);
       setIsRunning(false);
     }
-  }, []);
+  }, [runArchitecturalPlans]);
 
   const resetPipeline = useCallback(() => {
     setSessionId(null);
@@ -153,6 +250,7 @@ export function usePipeline() {
       status: "pending",
     })));
     setMemory({});
+    setArchitecturalPlans({});
   }, []);
 
   return {
@@ -161,6 +259,7 @@ export function usePipeline() {
     currentStep,
     steps,
     memory,
+    architecturalPlans,
     startPipeline,
     resetPipeline,
   };
