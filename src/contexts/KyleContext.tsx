@@ -5,9 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Kyle Blink Design
 
-// Store media stream globally to control muting
-let globalMediaStream: MediaStream | null = null;
-
 export interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
@@ -202,29 +199,12 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     endSessionRef.current = conversation.endSession;
   }, [conversation.endSession]);
 
-  // Mute/unmute microphone based on isSpeaking to prevent echo
-  useEffect(() => {
-    if (globalMediaStream) {
-      const audioTrack = globalMediaStream.getAudioTracks()[0];
-      if (audioTrack) {
-        // Mute mic when Kyle is speaking to prevent echo
-        audioTrack.enabled = !conversation.isSpeaking;
-        console.log(`🎤 Microphone ${conversation.isSpeaking ? 'MUTED' : 'UNMUTED'} (Kyle speaking: ${conversation.isSpeaking})`);
-      }
-    }
-  }, [conversation.isSpeaking]);
-
   const startConversation = useCallback(async () => {
     try {
-      // Request microphone with aggressive echo cancellation
-      globalMediaStream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      });
+      await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // No overrides - the first message must be configured in ElevenLabs dashboard
+      // New message: "Hey there. I am Kyle your AI interior design assistant. Welcome to Next Interiors, the first Full Stack Ai interior Design Studio where you can get your dream interior design project in just five minutes!"
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
