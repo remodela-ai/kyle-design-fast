@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Home, Download, Heart, RotateCcw, Loader2 } from "lucide-react";
+import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -201,7 +201,7 @@ export default function Shazam() {
 
         {/* Kyle Section - Fixed height to prevent layout shift */}
         {!pipeline.isRunning && (
-          <div className="flex flex-col items-center gap-4 min-h-[320px] justify-center">
+          <div className="flex flex-col items-center gap-4 min-h-[400px] justify-end pt-16">
             <div onClick={shazam3Active ? handleKyleTap : undefined}>
               <KyleAvatar 
                 size="xxl" 
@@ -216,8 +216,11 @@ export default function Shazam() {
               </div>
             </div>
             
-            {/* Status Text - Fixed height */}
-            <div className="h-6 flex items-center justify-center">
+            {/* Status Text with Bouncing Arrow */}
+            <div className="flex flex-col items-center gap-2">
+              {!kyleConnected && !generatedImage && !isGenerating && (
+                <ChevronUp className="h-6 w-6 text-foreground animate-bounce" />
+              )}
               <p className="text-muted-foreground text-sm">
                 {getStatusText()}
               </p>
