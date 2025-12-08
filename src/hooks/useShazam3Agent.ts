@@ -1,9 +1,9 @@
 import { useConversation } from "@11labs/react";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 
-// Shazam 3 - Design Storyteller agent
-// This agent activates after image generation to tell a design story and offer the full pipeline
-const SHAZAM3_AGENT_ID = "agent_1601kbtrnzncfsmvxn8gyefn0b15";
+// Kyle Storyteller - Design Narrator agent
+// This agent activates after image generation to tell an immersive story about the design
+const KYLE_STORYTELLER_AGENT_ID = "agent_1601kbtrnzncfsmvxn8gyefn0b15";
 
 export interface Shazam3Message {
   role: "user" | "assistant";
@@ -14,17 +14,18 @@ export interface Shazam3Message {
 export function useShazam3Agent() {
   const [messages, setMessages] = useState<Shazam3Message[]>([]);
   const [pipelineCommandDetected, setPipelineCommandDetected] = useState(false);
+  const [designContext, setDesignContext] = useState<string>("");
   const onPipelineCommandRef = useRef<(() => void) | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Shazam 3 connected - starting storytelling");
+      console.log("🎭 Kyle Storyteller connected - beginning design narrative");
     },
     onDisconnect: () => {
-      console.log("Shazam 3 disconnected");
+      console.log("🎭 Kyle Storyteller disconnected");
     },
     onMessage: (message) => {
-      console.log("Shazam 3 message:", message);
+      console.log("🎭 Kyle Storyteller message:", message);
       
       if (message && typeof message === "object") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +48,7 @@ export function useShazam3Agent() {
               .replace(/\s+/g, ' ')
               .trim();
             
-            console.log("📝 Shazam 3 - User message:", messageText);
+            console.log("📝 Kyle Storyteller - User message:", messageText);
             
             // Check for "hey kyle send me the complete project" command
             const hasKyle = messageText.includes("kyle");
@@ -71,22 +72,52 @@ export function useShazam3Agent() {
       }
     },
     onError: (error) => {
-      console.error("Shazam 3 error:", error);
+      console.error("🎭 Kyle Storyteller error:", error);
     },
   });
 
-  const startConversation = useCallback(async () => {
+  const startConversation = useCallback(async (context?: string) => {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // Store the design context for reference
+      if (context) {
+        setDesignContext(context);
+      }
+      
+      // Start with dynamic first message based on design context
+      const dynamicPrompt = context 
+        ? `You just generated a beautiful design based on this description: "${context}". Now tell an immersive, emotional story about this space. Describe how it feels to walk through, the light, the textures, the atmosphere. Make the user FEEL like they are there. Be passionate and poetic!`
+        : undefined;
+
       await conversation.startSession({
-        agentId: SHAZAM3_AGENT_ID,
+        agentId: KYLE_STORYTELLER_AGENT_ID,
         connectionType: "webrtc",
+        overrides: context ? {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle, a passionate interior design storyteller. You've just helped create a beautiful design and now you're going to tell an IMMERSIVE, EMOTIONAL story about this space.
+
+The design you're describing: "${context}"
+
+YOUR MISSION:
+1. Paint a vivid picture with words - describe the light, textures, colors, atmosphere
+2. Make the user FEEL like they're walking through their dream space
+3. Be poetic, passionate, and emotionally engaging
+4. Keep it to about 1 minute of storytelling
+5. After your story, offer them the complete design package with this exact phrase:
+   "If you want the complete project with floor plans, mood boards, and everything you need to bring this to life - just say: Hey Kyle, send me the complete project!"
+
+Start immediately with the storytelling - no need for introductions. Just dive into the sensory experience of the space.`,
+            },
+            firstMessage: "Imagina esto...",
+          },
+        } : undefined,
       });
       
-      console.log("Shazam 3 started");
+      console.log("🎭 Kyle Storyteller started with context:", context?.substring(0, 50));
     } catch (err) {
-      console.error("Failed to start Shazam 3:", err);
+      console.error("Failed to start Kyle Storyteller:", err);
     }
   }, [conversation]);
 

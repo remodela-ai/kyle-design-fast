@@ -23,8 +23,8 @@ const DEBUG_PROMPT = `🎯 SCRIPT DE PRUEBA - Lee esto a Kyle:
 3️⃣ GENERAR IMAGEN:
 "Hey Kyle Generate"
 
-4️⃣ DESPUÉS DE LA IMAGEN (Shazam 3 habla):
-Espera que Shazam 3 cuente la historia...
+4️⃣ DESPUÉS DE LA IMAGEN (Kyle Storyteller):
+Espera que Kyle cuente la historia del diseño...
 
 5️⃣ PEDIR PROYECTO COMPLETO:
 "Hey Kyle, send me the complete project!"
@@ -102,10 +102,10 @@ export default function Shazam() {
     return () => setOnGenerateDesign(null);
   }, [buildPromptFromConversation, designSummary, generateDesign, setOnGenerateDesign]);
 
-  // After image generation, scroll up and activate Shazam 3
+  // After image generation, scroll up and activate Kyle Storyteller
   useEffect(() => {
     if (generatedImage && !shazam3Active && !isGenerating) {
-      console.log("Image generated! Preparing Shazam 3...");
+      console.log("🎭 Image generated! Preparing Kyle Storyteller...");
       
       // Scroll to top smoothly
       if (mainRef.current) {
@@ -113,9 +113,9 @@ export default function Shazam() {
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Wait for scroll animation, then activate Shazam 3
+      // Wait for scroll animation, then activate Kyle Storyteller
       const timer = setTimeout(async () => {
-        console.log("Activating Shazam 3 storyteller...");
+        console.log("🎭 Activating Kyle Storyteller with design context...");
         setShazam3Active(true);
         
         // Stop Kyle if still connected
@@ -123,13 +123,14 @@ export default function Shazam() {
           await stopKyle();
         }
         
-        // Start Shazam 3
-        await shazam3.startConversation();
+        // Start Kyle Storyteller with the design context
+        const designContext = designSummary || buildPromptFromConversation || "";
+        await shazam3.startConversation(designContext);
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [generatedImage, shazam3Active, isGenerating, kyleConnected, stopKyle, shazam3]);
+  }, [generatedImage, shazam3Active, isGenerating, kyleConnected, stopKyle, shazam3, designSummary, buildPromptFromConversation]);
 
   // Handle pipeline command from Shazam 3
   useEffect(() => {
@@ -246,11 +247,11 @@ export default function Shazam() {
               </p>
             </div>
             
-            {/* Shazam 3 indicator */}
+            {/* Kyle Storyteller indicator */}
             {shazam3Active && (
               <div className="animate-fade-in">
-                <p className="text-primary text-xs font-medium">
-                  ✨ Shazam 3 is telling your design story...
+                <p className="text-primary text-sm font-medium">
+                  ✨ Kyle is telling your design story...
                 </p>
               </div>
             )}
