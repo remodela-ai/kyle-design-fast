@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.pipeline-video-presentation]
 verify_jwt = false
+
+[functions.management-proposal-budget]
+verify_jwt = false
