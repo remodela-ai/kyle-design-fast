@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.pipeline-items-extraction]
 verify_jwt = false
+
+[functions.pipeline-moodboard]
+verify_jwt = false
