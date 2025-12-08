@@ -76,6 +76,8 @@ export function usePipeline() {
   const [flatlayUrl, setFlatlayUrl] = useState<string | null>(null);
   const [colorsTexturesUrl, setColorsTexturesUrl] = useState<string | null>(null);
   const [storybookUrl, setStorybookUrl] = useState<string | null>(null);
+  const [videoPresentationUrl, setVideoPresentationUrl] = useState<string | null>(null);
+  const [pipelineComplete, setPipelineComplete] = useState(false);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -123,6 +125,67 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 8: Video Presentation
+  const runVideoPresentation = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string,
+    conversationSummary?: string
+  ) => {
+    console.log("Starting Step 8: Video Presentation");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 8 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-video-presentation", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified, conversationSummary },
+      });
+
+      if (error) {
+        console.error("Video Presentation generation error:", error);
+        throw error;
+      }
+
+      console.log("Video Presentation result:", data);
+
+      const generatedVideoPresentationUrl = data?.imageUrl;
+      setVideoPresentationUrl(generatedVideoPresentationUrl);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 8 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { videoPresentationUrl: generatedVideoPresentationUrl },
+              visualOutcomeUrl: generatedVideoPresentationUrl,
+            } 
+          : s
+      ));
+
+      setPipelineComplete(true);
+      console.log("Step 8 completed successfully");
+      console.log("🎉 PIPELINE COMPLETE!");
+
+    } catch (error) {
+      console.error("Error in Step 8:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 8);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 8 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 7: Your Story Book
   const runStorybook = useCallback(async (
     currentSessionId: string,
@@ -166,6 +229,9 @@ export function usePipeline() {
       setCurrentStep(8);
       console.log("Step 7 completed successfully");
 
+      // Automatically proceed to Step 8: Video Presentation
+      await runVideoPresentation(currentSessionId, elements, roomType, styleIdentified, conversationSummary);
+
     } catch (error) {
       console.error("Error in Step 7:", error);
       
@@ -181,7 +247,7 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runVideoPresentation]);
 
   // Run Step 6: Colors & Textures
   const runColorsTextures = useCallback(async (
@@ -621,6 +687,8 @@ export function usePipeline() {
     setFlatlayUrl(null);
     setColorsTexturesUrl(null);
     setStorybookUrl(null);
+    setVideoPresentationUrl(null);
+    setPipelineComplete(false);
   }, []);
 
   return {
@@ -635,6 +703,8 @@ export function usePipeline() {
     flatlayUrl,
     colorsTexturesUrl,
     storybookUrl,
+    videoPresentationUrl,
+    pipelineComplete,
     startPipeline,
     resetPipeline,
   };
