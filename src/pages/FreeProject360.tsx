@@ -32,7 +32,7 @@ export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, colorsTexturesUrl, startPipeline, resetPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, colorsTexturesUrl, storybookUrl, startPipeline, resetPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
   const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
@@ -502,6 +502,38 @@ export default function FreeProject360() {
             </h2>
             <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
               <div className="aspect-video bg-secondary flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Your Story Book - Shows after Step 7 completes */}
+        {activeTab === "visual" && storybookUrl && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Your Design Story
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+              <img 
+                src={storybookUrl} 
+                alt="Your Design Story" 
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 7 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(7) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Creating Your Design Story...
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
+              <div className="aspect-[3/4] bg-secondary flex items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
               </div>
             </div>

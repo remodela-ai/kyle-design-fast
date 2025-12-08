@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.pipeline-colors-textures]
 verify_jwt = false
+
+[functions.pipeline-storybook]
+verify_jwt = false
