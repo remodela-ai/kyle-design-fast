@@ -48,10 +48,10 @@ serve(async (req) => {
 
 ${conversationSummary ? `Context from conversation: ${conversationSummary}` : ""}
 
-IMPORTANT: Extract EVERY visible element/object in the image and estimate its position in 3D cartesian coordinates (X, Y, Z) where:
-- X = horizontal position (left to right, 0 = left edge, positive = right)
-- Y = vertical position (bottom to top, 0 = floor level, positive = up)
-- Z = depth position (front to back, 0 = front of room, positive = deeper into room)
+IMPORTANT: Extract EVERY visible element/object in the image and estimate its MEASUREMENTS (dimensions) in 3D:
+- X = width (horizontal measurement)
+- Y = height (vertical measurement)  
+- Z = depth (how deep/thick the element is)
 
 Provide your analysis in the following JSON format:
 {
@@ -66,19 +66,13 @@ Provide your analysis in the following JSON format:
       "id": "unique identifier (e.g., 'sofa_1', 'lamp_2')",
       "name": "element name (e.g., 'Sectional Sofa', 'Floor Lamp')",
       "category": "furniture|lighting|decor|architectural|textile|plant|electronic|other",
-      "position": {
-        "x": "number in meters from left wall",
-        "y": "number in meters from floor",
-        "z": "number in meters from front wall"
-      },
       "dimensions": {
-        "width": "estimated width in meters",
-        "height": "estimated height in meters",
-        "depth": "estimated depth in meters"
+        "width": "estimated width in meters (X axis)",
+        "height": "estimated height in meters (Y axis)",
+        "depth": "estimated depth in meters (Z axis)"
       },
       "color": "primary color",
-      "material": "primary material (wood, fabric, metal, glass, etc.)",
-      "condition": "new|good|fair|worn"
+      "material": "primary material (wood, fabric, metal, glass, etc.)"
     }
   ],
   "zones": [
@@ -97,7 +91,7 @@ Provide your analysis in the following JSON format:
   "atmosphereDescription": "description of the overall atmosphere and mood"
 }
 
-Be thorough - extract ALL visible elements including furniture, lamps, rugs, plants, artwork, pillows, etc.`;
+Be thorough - extract ALL visible elements including furniture, lamps, rugs, plants, artwork, pillows, etc. Provide realistic measurements in meters.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
