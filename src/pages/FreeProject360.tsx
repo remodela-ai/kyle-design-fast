@@ -29,7 +29,7 @@ const features = [
 export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const location = useLocation();
-  const { isRunning, currentStep, steps, memory, startPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, startPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
 
@@ -156,7 +156,7 @@ export default function FreeProject360() {
 
         {/* Elements Table - Shows after Spatial Analysis completes */}
         {activeTab === "visual" && elements.length > 0 && (
-          <div className="w-full max-w-3xl overflow-x-auto">
+          <div className="w-full max-w-3xl overflow-x-auto mb-10">
             <h2 className="text-xl font-semibold text-foreground mb-4">Extracted Elements & Measurements</h2>
             <div className="rounded-lg border border-border overflow-hidden">
               <table className="w-full text-sm">
@@ -185,6 +185,71 @@ export default function FreeProject360() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Architectural Plans - Shows after Step 2 completes */}
+        {activeTab === "visual" && (architecturalPlans.floorPlan || architecturalPlans.elevationView) && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Architectural Plans</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Floor Plan */}
+              {architecturalPlans.floorPlan && (
+                <div className="rounded-lg border border-border overflow-hidden bg-card">
+                  <div className="p-3 bg-secondary border-b border-border">
+                    <h3 className="font-medium text-foreground text-center">Floor Plan (Top View)</h3>
+                  </div>
+                  <div className="p-4">
+                    <img 
+                      src={architecturalPlans.floorPlan} 
+                      alt="Floor Plan" 
+                      className="w-full h-auto rounded-lg shadow-lg"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Elevation View */}
+              {architecturalPlans.elevationView && (
+                <div className="rounded-lg border border-border overflow-hidden bg-card">
+                  <div className="p-3 bg-secondary border-b border-border">
+                    <h3 className="font-medium text-foreground text-center">Elevation View (Front View)</h3>
+                  </div>
+                  <div className="p-4">
+                    <img 
+                      src={architecturalPlans.elevationView} 
+                      alt="Elevation View" 
+                      className="w-full h-auto rounded-lg shadow-lg"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(2) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Generating Architectural Plans...</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="rounded-lg border border-border overflow-hidden bg-card animate-pulse">
+                <div className="p-3 bg-secondary border-b border-border">
+                  <h3 className="font-medium text-foreground text-center">Floor Plan</h3>
+                </div>
+                <div className="p-4 flex items-center justify-center h-64">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+              </div>
+              <div className="rounded-lg border border-border overflow-hidden bg-card animate-pulse">
+                <div className="p-3 bg-secondary border-b border-border">
+                  <h3 className="font-medium text-foreground text-center">Elevation View</h3>
+                </div>
+                <div className="p-4 flex items-center justify-center h-64">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+              </div>
             </div>
           </div>
         )}

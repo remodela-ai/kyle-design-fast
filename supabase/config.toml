@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.blink-design]
 verify_jwt = false
+
+[functions.nano-planta]
+verify_jwt = false
+
+[functions.nano-elevacion]
+verify_jwt = false
