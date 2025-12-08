@@ -24,6 +24,7 @@ interface KyleContextType {
   clearMessages: () => void;
   triggerGeneration: () => void;
   setGenerationCallback: (callback: (() => void) | null) => void;
+  resetGenerating: () => void;
 }
 
 const KyleContext = createContext<KyleContextType | null>(null);
@@ -183,6 +184,7 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     clearMessages,
     triggerGeneration,
     setGenerationCallback,
+    resetGenerating,
   };
 
   return (
