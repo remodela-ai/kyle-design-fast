@@ -75,6 +75,7 @@ export function usePipeline() {
   const [moodboardUrl, setMoodboardUrl] = useState<string | null>(null);
   const [flatlayUrl, setFlatlayUrl] = useState<string | null>(null);
   const [colorsTexturesUrl, setColorsTexturesUrl] = useState<string | null>(null);
+  const [storybookUrl, setStorybookUrl] = useState<string | null>(null);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -122,12 +123,73 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 7: Your Story Book
+  const runStorybook = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string,
+    conversationSummary?: string
+  ) => {
+    console.log("Starting Step 7: Your Story Book");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 7 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-storybook", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified, conversationSummary },
+      });
+
+      if (error) {
+        console.error("Storybook generation error:", error);
+        throw error;
+      }
+
+      console.log("Storybook result:", data);
+
+      const generatedStorybookUrl = data?.imageUrl;
+      setStorybookUrl(generatedStorybookUrl);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 7 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { storybookUrl: generatedStorybookUrl },
+              visualOutcomeUrl: generatedStorybookUrl,
+            } 
+          : s
+      ));
+
+      setCurrentStep(8);
+      console.log("Step 7 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 7:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 7);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 7 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 6: Colors & Textures
   const runColorsTextures = useCallback(async (
     currentSessionId: string,
     elements: unknown[],
     roomType: string,
-    styleIdentified: string
+    styleIdentified: string,
+    conversationSummary?: string
   ) => {
     console.log("Starting Step 6: Colors & Textures");
     
@@ -164,6 +226,9 @@ export function usePipeline() {
       setCurrentStep(7);
       console.log("Step 6 completed successfully");
 
+      // Automatically proceed to Step 7: Your Story Book
+      await runStorybook(currentSessionId, elements, roomType, styleIdentified, conversationSummary);
+
     } catch (error) {
       console.error("Error in Step 6:", error);
       
@@ -179,14 +244,15 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runStorybook]);
 
   // Run Step 5: Material Flatlay
   const runFlatlay = useCallback(async (
     currentSessionId: string,
     elements: unknown[],
     roomType: string,
-    styleIdentified: string
+    styleIdentified: string,
+    conversationSummary?: string
   ) => {
     console.log("Starting Step 5: Material Flatlay");
     
@@ -224,7 +290,7 @@ export function usePipeline() {
       console.log("Step 5 completed successfully");
 
       // Automatically proceed to Step 6: Colors & Textures
-      await runColorsTextures(currentSessionId, elements, roomType, styleIdentified);
+      await runColorsTextures(currentSessionId, elements, roomType, styleIdentified, conversationSummary);
 
     } catch (error) {
       console.error("Error in Step 5:", error);
@@ -249,7 +315,8 @@ export function usePipeline() {
     elements: unknown[],
     roomType: string,
     styleIdentified: string,
-    designImageUrl?: string
+    designImageUrl?: string,
+    conversationSummary?: string
   ) => {
     console.log("Starting Step 4: Design Moodboard");
     
@@ -287,7 +354,7 @@ export function usePipeline() {
       console.log("Step 4 completed successfully");
 
       // Automatically proceed to Step 5: Material Flatlay
-      await runFlatlay(currentSessionId, elements, roomType, styleIdentified);
+      await runFlatlay(currentSessionId, elements, roomType, styleIdentified, conversationSummary);
 
     } catch (error) {
       console.error("Error in Step 4:", error);
@@ -312,7 +379,8 @@ export function usePipeline() {
     elements: unknown[],
     roomType: string,
     styleIdentified: string,
-    designImageUrl?: string
+    designImageUrl?: string,
+    conversationSummary?: string
   ) => {
     console.log("Starting Step 3: Items Extraction");
     
@@ -356,7 +424,7 @@ export function usePipeline() {
       console.log("Step 3 completed successfully");
 
       // Automatically proceed to Step 4: Design Moodboard
-      await runMoodboard(currentSessionId, elements, roomType, styleIdentified, designImageUrl);
+      await runMoodboard(currentSessionId, elements, roomType, styleIdentified, designImageUrl, conversationSummary);
 
     } catch (error) {
       console.error("Error in Step 3:", error);
@@ -382,7 +450,8 @@ export function usePipeline() {
     roomType: string,
     elements: unknown[],
     styleIdentified: string,
-    designImageUrl?: string
+    designImageUrl?: string,
+    conversationSummary?: string
   ) => {
     console.log("Starting Step 2: Architectural Plans");
     
@@ -444,7 +513,7 @@ export function usePipeline() {
       console.log("Step 2 completed successfully");
 
       // Automatically proceed to Step 3: Items Extraction
-      await runItemsExtraction(currentSessionId, elements, roomType, styleIdentified, designImageUrl);
+      await runItemsExtraction(currentSessionId, elements, roomType, styleIdentified, designImageUrl, conversationSummary);
 
     } catch (error) {
       console.error("Error in Step 2:", error);
@@ -527,7 +596,7 @@ export function usePipeline() {
 
       // Automatically proceed to Step 2: Architectural Plans
       if (spatialAnalysis) {
-        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements, styleIdentified, designImageUrl);
+        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements, styleIdentified, designImageUrl, conversationSummary);
       }
 
     } catch (error) {
@@ -551,6 +620,7 @@ export function usePipeline() {
     setMoodboardUrl(null);
     setFlatlayUrl(null);
     setColorsTexturesUrl(null);
+    setStorybookUrl(null);
   }, []);
 
   return {
@@ -564,6 +634,7 @@ export function usePipeline() {
     moodboardUrl,
     flatlayUrl,
     colorsTexturesUrl,
+    storybookUrl,
     startPipeline,
     resetPipeline,
   };
