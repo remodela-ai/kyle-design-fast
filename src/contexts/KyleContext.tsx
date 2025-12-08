@@ -203,10 +203,14 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Use the public agent without overrides (public agents don't allow prompt overrides)
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            firstMessage: "Hey there. I am Kyle your AI interior design assistant. Welcome to Next Interiors, a digital platform where you can get your dream interior design project in just five minutes!",
+          },
+        },
       });
     } catch (err) {
       console.error("Failed to start conversation:", err);
