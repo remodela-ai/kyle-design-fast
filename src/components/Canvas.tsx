@@ -72,8 +72,8 @@ export function Canvas({ onMenuClick }: CanvasProps) {
             </div>
             
             <div className="text-left">
-              <span className="font-bold text-lg text-foreground">Lets do it!</span>
-              <p className="text-sm text-muted-foreground">Get Your Full Design</p>
+              <span className="font-bold text-lg text-foreground">Lets do It!</span>
+              <p className="text-sm text-muted-foreground">I want my design FREE!</p>
             </div>
           </Button>
         </div>
