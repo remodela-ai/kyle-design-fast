@@ -49,7 +49,7 @@ export default function Shazam() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-design', {
+      const { data, error } = await supabase.functions.invoke('blink-design', {
         body: { prompt: promptToUse }
       });
 

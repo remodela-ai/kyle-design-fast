@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.pipeline-spatial-analysis]
 verify_jwt = false
+
+[functions.blink-design]
+verify_jwt = false
