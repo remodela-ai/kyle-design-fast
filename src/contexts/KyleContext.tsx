@@ -80,6 +80,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     onConnect: () => {
       console.log("Kyle connected");
       setError(null);
+      setMessages([]);
+      setDesignSummary(null);
+      setIsGenerating(false);
     },
     onDisconnect: () => {
       console.log("Kyle disconnected");
