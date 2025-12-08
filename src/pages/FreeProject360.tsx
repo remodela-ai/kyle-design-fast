@@ -10,11 +10,9 @@ interface ElementData {
   id: string;
   name: string;
   category: string;
-  position: { x: number; y: number; z: number };
   dimensions: { width: number; height: number; depth: number };
   color: string;
   material: string;
-  condition: string;
 }
 
 const features = [
@@ -158,18 +156,17 @@ export default function FreeProject360() {
 
         {/* Elements Table - Shows after Spatial Analysis completes */}
         {activeTab === "visual" && elements.length > 0 && (
-          <div className="w-full max-w-4xl overflow-x-auto">
-            <h2 className="text-xl font-semibold text-foreground mb-4">Extracted Elements</h2>
+          <div className="w-full max-w-3xl overflow-x-auto">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Extracted Elements & Measurements</h2>
             <div className="rounded-lg border border-border overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-secondary">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium text-foreground">Element</th>
                     <th className="px-4 py-3 text-left font-medium text-foreground">Category</th>
-                    <th className="px-4 py-3 text-center font-medium text-foreground">X (m)</th>
-                    <th className="px-4 py-3 text-center font-medium text-foreground">Y (m)</th>
-                    <th className="px-4 py-3 text-center font-medium text-foreground">Z (m)</th>
-                    <th className="px-4 py-3 text-left font-medium text-foreground">Dimensions</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">X (width)</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">Y (height)</th>
+                    <th className="px-4 py-3 text-center font-medium text-foreground">Z (depth)</th>
                     <th className="px-4 py-3 text-left font-medium text-foreground">Material</th>
                     <th className="px-4 py-3 text-left font-medium text-foreground">Color</th>
                   </tr>
@@ -179,12 +176,9 @@ export default function FreeProject360() {
                     <tr key={element.id || idx} className="hover:bg-secondary/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{element.name}</td>
                       <td className="px-4 py-3 text-muted-foreground capitalize">{element.category}</td>
-                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.x?.toFixed(2) || "—"}</td>
-                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.y?.toFixed(2) || "—"}</td>
-                      <td className="px-4 py-3 text-center text-primary font-mono">{element.position?.z?.toFixed(2) || "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {element.dimensions ? `${element.dimensions.width}×${element.dimensions.height}×${element.dimensions.depth}m` : "—"}
-                      </td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.dimensions?.width ? `${element.dimensions.width}m` : "—"}</td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.dimensions?.height ? `${element.dimensions.height}m` : "—"}</td>
+                      <td className="px-4 py-3 text-center text-primary font-mono">{element.dimensions?.depth ? `${element.dimensions.depth}m` : "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground capitalize">{element.material || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground capitalize">{element.color || "—"}</td>
                     </tr>
