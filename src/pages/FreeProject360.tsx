@@ -32,7 +32,7 @@ export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, startPipeline, resetPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, startPipeline, resetPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
   const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
@@ -408,6 +408,38 @@ export default function FreeProject360() {
                   <div className="h-8 bg-primary/20 rounded w-full" />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Design Moodboard - Shows after Step 4 completes */}
+        {activeTab === "visual" && moodboardUrl && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Palette className="h-5 w-5 text-primary" />
+              Design Moodboard
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+              <img 
+                src={moodboardUrl} 
+                alt="Design Moodboard" 
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 4 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(4) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Palette className="h-5 w-5 text-primary" />
+              Creating Design Moodboard...
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
+              <div className="aspect-video bg-secondary flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
             </div>
           </div>
         )}

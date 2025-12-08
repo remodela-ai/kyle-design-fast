@@ -72,6 +72,7 @@ export function usePipeline() {
   const [memory, setMemory] = useState<Record<string, unknown>>({});
   const [architecturalPlans, setArchitecturalPlans] = useState<ArchitecturalPlans>({});
   const [itemsExtraction, setItemsExtraction] = useState<ItemsExtraction>({ items: [] });
+  const [moodboardUrl, setMoodboardUrl] = useState<string | null>(null);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -119,12 +120,73 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Run Step 4: Design Moodboard
+  const runMoodboard = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string,
+    designImageUrl?: string
+  ) => {
+    console.log("Starting Step 4: Design Moodboard");
+    
+    setSteps(prev => prev.map(s => 
+      s.stepNumber === 4 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("pipeline-moodboard", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified, designImageUrl },
+      });
+
+      if (error) {
+        console.error("Moodboard generation error:", error);
+        throw error;
+      }
+
+      console.log("Moodboard result:", data);
+
+      const generatedMoodboardUrl = data?.imageUrl;
+      setMoodboardUrl(generatedMoodboardUrl);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 4 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { moodboardUrl: generatedMoodboardUrl },
+              visualOutcomeUrl: generatedMoodboardUrl,
+            } 
+          : s
+      ));
+
+      setCurrentStep(5);
+      console.log("Step 4 completed successfully");
+
+    } catch (error) {
+      console.error("Error in Step 4:", error);
+      
+      await supabase.from("pipeline_steps").update({
+        status: "error",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        completed_at: new Date().toISOString(),
+      }).eq("session_id", currentSessionId).eq("step_number", 4);
+
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 4 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+    }
+  }, []);
+
   // Run Step 3: Items Extraction
   const runItemsExtraction = useCallback(async (
     currentSessionId: string,
     elements: unknown[],
     roomType: string,
-    styleIdentified: string
+    styleIdentified: string,
+    designImageUrl?: string
   ) => {
     console.log("Starting Step 3: Items Extraction");
     
@@ -167,6 +229,9 @@ export function usePipeline() {
       setCurrentStep(4);
       console.log("Step 3 completed successfully");
 
+      // Automatically proceed to Step 4: Design Moodboard
+      await runMoodboard(currentSessionId, elements, roomType, styleIdentified, designImageUrl);
+
     } catch (error) {
       console.error("Error in Step 3:", error);
       
@@ -182,7 +247,7 @@ export function usePipeline() {
           : s
       ));
     }
-  }, []);
+  }, [runMoodboard]);
 
   // Run Step 2: Architectural Plans (nano-planta + nano-elevacion)
   const runArchitecturalPlans = useCallback(async (
@@ -190,7 +255,8 @@ export function usePipeline() {
     spatialAnalysis: Record<string, unknown>,
     roomType: string,
     elements: unknown[],
-    styleIdentified: string
+    styleIdentified: string,
+    designImageUrl?: string
   ) => {
     console.log("Starting Step 2: Architectural Plans");
     
@@ -252,7 +318,7 @@ export function usePipeline() {
       console.log("Step 2 completed successfully");
 
       // Automatically proceed to Step 3: Items Extraction
-      await runItemsExtraction(currentSessionId, elements, roomType, styleIdentified);
+      await runItemsExtraction(currentSessionId, elements, roomType, styleIdentified, designImageUrl);
 
     } catch (error) {
       console.error("Error in Step 2:", error);
@@ -335,7 +401,7 @@ export function usePipeline() {
 
       // Automatically proceed to Step 2: Architectural Plans
       if (spatialAnalysis) {
-        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements, styleIdentified);
+        await runArchitecturalPlans(newSessionId, spatialAnalysis, roomType, elements, styleIdentified, designImageUrl);
       }
 
     } catch (error) {
@@ -356,6 +422,7 @@ export function usePipeline() {
     setMemory({});
     setArchitecturalPlans({});
     setItemsExtraction({ items: [] });
+    setMoodboardUrl(null);
   }, []);
 
   return {
@@ -366,6 +433,7 @@ export function usePipeline() {
     memory,
     architecturalPlans,
     itemsExtraction,
+    moodboardUrl,
     startPipeline,
     resetPipeline,
   };
