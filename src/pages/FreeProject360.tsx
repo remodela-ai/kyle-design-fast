@@ -131,6 +131,24 @@ export default function FreeProject360() {
           </div>
         )}
 
+        {/* Uploaded Image Preview */}
+        {designImageUrl && (
+          <div className="w-full max-w-md mb-8">
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+              <div className="p-2 bg-secondary/50 border-b border-border">
+                <p className="text-xs text-muted-foreground text-center">Your Design Image</p>
+              </div>
+              <div className="p-3">
+                <img 
+                  src={designImageUrl} 
+                  alt="Uploaded design" 
+                  className="w-full h-auto rounded-lg object-cover max-h-64"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex bg-secondary rounded-full p-1 mb-10">
           <button
