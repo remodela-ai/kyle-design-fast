@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.pipeline-storybook]
 verify_jwt = false
+
+[functions.pipeline-video-presentation]
+verify_jwt = false

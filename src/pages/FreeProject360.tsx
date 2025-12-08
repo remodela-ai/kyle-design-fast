@@ -32,7 +32,7 @@ export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, colorsTexturesUrl, storybookUrl, startPipeline, resetPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, colorsTexturesUrl, storybookUrl, videoPresentationUrl, pipelineComplete, startPipeline, resetPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
   const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
@@ -537,6 +537,53 @@ export default function FreeProject360() {
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Video Presentation - Shows after Step 8 completes */}
+        {activeTab === "visual" && videoPresentationUrl && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Video className="h-5 w-5 text-primary" />
+              Video Presentation
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg relative">
+              <img 
+                src={videoPresentationUrl} 
+                alt="Video Presentation" 
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 8 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(8) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Video className="h-5 w-5 text-primary" />
+              Creating Video Presentation...
+            </h2>
+            <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
+              <div className="aspect-video bg-secondary flex items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pipeline Complete Message */}
+        {activeTab === "visual" && pipelineComplete && (
+          <div className="w-full max-w-4xl mb-10 p-6 rounded-xl bg-green-500/10 border border-green-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <span className="text-white text-xl">✓</span>
+              </div>
+              <h2 className="text-xl font-bold text-foreground">Pipeline Complete!</h2>
+            </div>
+            <p className="text-muted-foreground">
+              Your complete 360° design project has been generated. All 8 deliverables are ready for download.
+            </p>
           </div>
         )}
 
