@@ -58,6 +58,17 @@ const PIPELINE_STEPS = [
   { number: 8, name: "Video Presentation", fn: "pipeline-video-presentation" },
 ];
 
+const MANAGEMENT_STEPS = [
+  { number: 1, name: "Proposal & Budget", fn: "management-proposal-budget" },
+  { number: 2, name: "Client Onboarding", fn: "management-client-onboarding" },
+  { number: 3, name: "Financial Planning", fn: "management-financial-planning" },
+  { number: 4, name: "Procurement", fn: "management-procurement" },
+  { number: 5, name: "Site Coordination", fn: "management-site-coordination" },
+  { number: 6, name: "Vendor Management", fn: "management-vendor-management" },
+  { number: 7, name: "Final Delivery", fn: "management-final-delivery" },
+  { number: 8, name: "Closeout & Portfolio", fn: "management-closeout-portfolio" },
+];
+
 export function usePipeline() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -78,6 +89,19 @@ export function usePipeline() {
   const [storybookUrl, setStorybookUrl] = useState<string | null>(null);
   const [videoPresentationUrl, setVideoPresentationUrl] = useState<string | null>(null);
   const [pipelineComplete, setPipelineComplete] = useState(false);
+
+  // Management Pipeline State
+  const [managementSteps, setManagementSteps] = useState<PipelineStep[]>(
+    MANAGEMENT_STEPS.map(s => ({
+      stepNumber: s.number,
+      stepName: s.name,
+      status: "pending",
+    }))
+  );
+  const [managementCurrentStep, setManagementCurrentStep] = useState(0);
+  const [isManagementRunning, setIsManagementRunning] = useState(false);
+  const [proposalBudgetUrl, setProposalBudgetUrl] = useState<string | null>(null);
+  const [managementComplete, setManagementComplete] = useState(false);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -689,7 +713,98 @@ export function usePipeline() {
     setStorybookUrl(null);
     setVideoPresentationUrl(null);
     setPipelineComplete(false);
+    // Reset management pipeline
+    setManagementSteps(MANAGEMENT_STEPS.map(s => ({
+      stepNumber: s.number,
+      stepName: s.name,
+      status: "pending",
+    })));
+    setManagementCurrentStep(0);
+    setIsManagementRunning(false);
+    setProposalBudgetUrl(null);
+    setManagementComplete(false);
   }, []);
+
+  // Run Management Step 1: Proposal & Budget
+  const runProposalBudget = useCallback(async (
+    currentSessionId: string,
+    elements: unknown[],
+    roomType: string,
+    styleIdentified: string,
+    totalBudget?: { min: number; max: number; currency: string },
+    conversationSummary?: string
+  ) => {
+    console.log("Starting Management Step 1: Proposal & Budget");
+    
+    setIsManagementRunning(true);
+    setManagementCurrentStep(1);
+    setManagementSteps(prev => prev.map(s => 
+      s.stepNumber === 1 ? { ...s, status: "processing" } : s
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("management-proposal-budget", {
+        body: { sessionId: currentSessionId, elements, roomType, styleIdentified, totalBudget, conversationSummary },
+      });
+
+      if (error) {
+        console.error("Proposal & Budget generation error:", error);
+        throw error;
+      }
+
+      console.log("Proposal & Budget result:", data);
+
+      const generatedProposalUrl = data?.imageUrl;
+      setProposalBudgetUrl(generatedProposalUrl);
+
+      setManagementSteps(prev => prev.map(s => 
+        s.stepNumber === 1 
+          ? { 
+              ...s, 
+              status: "completed",
+              output: { proposalBudgetUrl: generatedProposalUrl },
+              visualOutcomeUrl: generatedProposalUrl,
+            } 
+          : s
+      ));
+
+      setManagementCurrentStep(2);
+      console.log("Management Step 1 completed successfully");
+
+      // For now, mark management as complete after step 1
+      // Future steps will be chained here
+      setManagementComplete(true);
+      setIsManagementRunning(false);
+
+    } catch (error) {
+      console.error("Error in Management Step 1:", error);
+      
+      setManagementSteps(prev => prev.map(s => 
+        s.stepNumber === 1 
+          ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
+          : s
+      ));
+      setIsManagementRunning(false);
+    }
+  }, []);
+
+  // Start management pipeline after visual pipeline completes
+  const startManagementPipeline = useCallback(async () => {
+    if (!sessionId || !pipelineComplete) {
+      console.log("Cannot start management pipeline: visual pipeline not complete");
+      return;
+    }
+
+    const spatialStep = steps.find(s => s.stepNumber === 1);
+    const spatialOutput = spatialStep?.output as { parsedAnalysis?: { elements?: unknown[]; roomType?: string; styleIdentified?: string } } | undefined;
+    
+    const elements = spatialOutput?.parsedAnalysis?.elements || [];
+    const roomType = spatialOutput?.parsedAnalysis?.roomType || "room";
+    const styleIdentified = spatialOutput?.parsedAnalysis?.styleIdentified || "modern";
+    const totalBudget = itemsExtraction.totalEstimatedBudget;
+
+    await runProposalBudget(sessionId, elements, roomType, styleIdentified, totalBudget);
+  }, [sessionId, pipelineComplete, steps, itemsExtraction.totalEstimatedBudget, runProposalBudget]);
 
   return {
     sessionId,
@@ -707,5 +822,12 @@ export function usePipeline() {
     pipelineComplete,
     startPipeline,
     resetPipeline,
+    // Management pipeline exports
+    managementSteps,
+    managementCurrentStep,
+    isManagementRunning,
+    proposalBudgetUrl,
+    managementComplete,
+    startManagementPipeline,
   };
 }
