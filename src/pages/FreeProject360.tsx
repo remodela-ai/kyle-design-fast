@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart } from "lucide-react";
+import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
 import { PipelineProgress } from "@/components/PipelineProgress";
+import { ImageUploadDialog } from "@/components/ImageUploadDialog";
+import { toast } from "sonner";
 
 interface ElementData {
   id: string;
@@ -28,14 +30,33 @@ const features = [
 
 export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, startPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, startPipeline, resetPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
+  const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
 
   // Get the design image URL from navigation state
-  const designImageUrl = location.state?.designImageUrl;
+  const designImageUrl = location.state?.designImageUrl || userUploadedImage;
   const conversationSummary = location.state?.conversationSummary;
+
+  // Handle image upload from dialog
+  const handleImageSelected = (imageDataUrl: string) => {
+    console.log("User uploaded image for pipeline");
+    setUserUploadedImage(imageDataUrl);
+    setPipelineStarted(true);
+    resetPipeline();
+    startPipeline(imageDataUrl, "User uploaded design image");
+    toast.success("Pipeline started with your image!");
+  };
+
+  // Handle logo click to open upload dialog
+  const handleLogoClick = () => {
+    if (!isRunning) {
+      setUploadDialogOpen(true);
+    }
+  };
 
   // Auto-start pipeline when page loads with design image
   useEffect(() => {
@@ -80,9 +101,19 @@ export default function FreeProject360() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-4 pb-8 pt-4">
-        {/* Logo Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-6 shadow-lg shadow-primary/30">
-          <Layers className="h-8 w-8 text-primary-foreground" />
+        {/* Logo Icon - Clickable to upload image */}
+        <div 
+          onClick={handleLogoClick}
+          className={`w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-6 shadow-lg shadow-primary/30 transition-all duration-300 ${
+            !isRunning ? "cursor-pointer hover:scale-110 hover:shadow-primary/50" : ""
+          }`}
+          title={!isRunning ? "Click to upload your design image" : "Pipeline is running..."}
+        >
+          {isRunning ? (
+            <Loader2 className="h-8 w-8 text-primary-foreground animate-spin" />
+          ) : (
+            <Upload className="h-8 w-8 text-primary-foreground" />
+          )}
         </div>
 
         {/* Title */}
@@ -370,14 +401,29 @@ export default function FreeProject360() {
           </div>
         )}
 
-        {/* No image message */}
+        {/* No image message - now shows upload prompt */}
         {!designImageUrl && !isRunning && (
           <div className="text-center text-muted-foreground mt-8 p-6 rounded-lg bg-secondary/50">
-            <p className="mb-2">No design image provided.</p>
-            <p className="text-sm">Go to <Link to="/shazam" className="text-primary hover:underline">Shazam</Link> to generate a design first.</p>
+            <p className="mb-3">Click the upload icon above to start with your own image</p>
+            <p className="text-sm mb-4">Or go to <Link to="/shazam" className="text-primary hover:underline">Shazam</Link> to generate a design first.</p>
+            <Button 
+              variant="kyle" 
+              onClick={() => setUploadDialogOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Your Design
+            </Button>
           </div>
         )}
       </main>
+
+      {/* Image Upload Dialog */}
+      <ImageUploadDialog 
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onImageSelected={handleImageSelected}
+      />
     </div>
   );
 }
