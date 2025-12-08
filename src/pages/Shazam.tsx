@@ -21,7 +21,8 @@ export default function Shazam() {
     designSummary,
     voiceCommandDetected,
     isGenerating,
-    setGenerationCallback
+    setGenerationCallback,
+    resetGenerating
   } = useKyle();
 
   // Build prompt from conversation
@@ -63,8 +64,9 @@ export default function Shazam() {
       toast.error("Failed to generate design");
     } finally {
       setLocalGenerating(false);
+      resetGenerating();
     }
-  }, [prompt, designSummary]);
+  }, [prompt, designSummary, resetGenerating]);
 
   // Register generation callback
   useEffect(() => {
