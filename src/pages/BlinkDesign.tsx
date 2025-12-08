@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Zap, Home, Loader2, Download, Heart, RefreshCw } from "lucide-react";
+import { Zap, Home, Loader2, Gift, Heart, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -198,13 +198,13 @@ const BlinkDesign = () => {
 
               <div className="flex justify-center gap-3">
                 <Button
-                  variant="outline"
+                  variant="kyle"
                   size="sm"
-                  onClick={downloadImage}
-                  className="flex items-center gap-2 shadow-lg shadow-primary/10 dark:shadow-[0_0_10px_rgba(220,38,38,0.2)] hover:shadow-primary/20 dark:hover:shadow-[0_0_15px_rgba(220,38,38,0.3)] transition-all duration-300"
+                  onClick={() => navigate("/360-free-project")}
+                  className="flex items-center gap-2"
                 >
-                  <Download className="h-4 w-4" />
-                  Download
+                  <Gift className="h-4 w-4" />
+                  I want my free project
                 </Button>
                 <Button
                   variant="outline"

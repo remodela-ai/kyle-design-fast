@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
 import CreateAgent from "./pages/CreateAgent";
+import FreeProject360 from "./pages/FreeProject360";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/blink-design" element={<BlinkDesign />} />
             <Route path="/shazam" element={<Shazam />} />
             <Route path="/create-agent" element={<CreateAgent />} />
+            <Route path="/360-free-project" element={<FreeProject360 />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </KyleProvider>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Home, Download, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Shazam() {
+  const navigate = useNavigate();
   const [localGenerating, setLocalGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const imageAreaRef = useRef<HTMLDivElement>(null);
@@ -166,13 +167,13 @@ export default function Shazam() {
         {generatedImage && !showLoading && (
           <div className="flex gap-3 mt-4">
             <Button 
-              variant="outline" 
+              variant="kyle" 
               size="sm" 
-              onClick={downloadImage}
+              onClick={() => navigate("/360-free-project")}
               className="rounded-full gap-2"
             >
-              <Download className="h-4 w-4" />
-              Download
+              <Gift className="h-4 w-4" />
+              I want my free project
             </Button>
             <Button 
               variant="outline" 
