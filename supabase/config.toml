@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.nano-elevacion]
 verify_jwt = false
+
+[functions.pipeline-items-extraction]
+verify_jwt = false

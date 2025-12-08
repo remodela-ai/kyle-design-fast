@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2 } from "lucide-react";
+import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { usePipeline } from "@/hooks/usePipeline";
+import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
 import { PipelineProgress } from "@/components/PipelineProgress";
 
 interface ElementData {
@@ -29,7 +29,7 @@ const features = [
 export default function FreeProject360() {
   const [activeTab, setActiveTab] = useState<"visual" | "management">("visual");
   const location = useLocation();
-  const { isRunning, currentStep, steps, architecturalPlans, startPipeline } = usePipeline();
+  const { isRunning, currentStep, steps, architecturalPlans, itemsExtraction, startPipeline } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
 
@@ -60,6 +60,10 @@ export default function FreeProject360() {
   const getStepStatus = (stepNumber: number) => {
     const step = steps.find(s => s.stepNumber === stepNumber);
     return step?.status || "pending";
+  };
+
+  const formatPrice = (min: number, max: number, currency: string) => {
+    return `${currency === "USD" ? "$" : currency}${min.toLocaleString()} - ${currency === "USD" ? "$" : currency}${max.toLocaleString()}`;
   };
 
   return (
@@ -250,6 +254,111 @@ export default function FreeProject360() {
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Items Extraction - Shopping List with Links */}
+        {activeTab === "visual" && itemsExtraction.items.length > 0 && (
+          <div className="w-full max-w-4xl mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                Shopping List
+              </h2>
+              {itemsExtraction.totalEstimatedBudget && (
+                <div className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+                  Total: {formatPrice(
+                    itemsExtraction.totalEstimatedBudget.min,
+                    itemsExtraction.totalEstimatedBudget.max,
+                    itemsExtraction.totalEstimatedBudget.currency
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {itemsExtraction.items.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-foreground">{item.productName}</h3>
+                    <span className="text-xs bg-secondary px-2 py-1 rounded-full text-muted-foreground capitalize">
+                      {item.category}
+                    </span>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.description}</p>
+                  
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-primary font-bold">
+                      {formatPrice(item.estimatedPriceRange.min, item.estimatedPriceRange.max, item.estimatedPriceRange.currency)}
+                    </span>
+                    {item.material && (
+                      <span className="text-xs text-muted-foreground">{item.material}</span>
+                    )}
+                  </div>
+
+                  {/* Suggested Retailers */}
+                  {item.suggestedRetailers && item.suggestedRetailers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {item.suggestedRetailers.slice(0, 3).map((retailer, rIdx) => (
+                        <span key={rIdx} className="text-xs bg-secondary/50 px-2 py-0.5 rounded text-muted-foreground">
+                          {retailer}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Shopping Link */}
+                  <a 
+                    href={item.shoppingUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Shop Now
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            {/* Shopping Tips */}
+            {itemsExtraction.shoppingTips && itemsExtraction.shoppingTips.length > 0 && (
+              <div className="mt-6 p-4 bg-secondary/30 rounded-lg border border-border">
+                <h3 className="font-medium text-foreground mb-2">Shopping Tips</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  {itemsExtraction.shoppingTips.map((tip, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 3 Processing Indicator */}
+        {activeTab === "visual" && getStepStatus(3) === "processing" && (
+          <div className="w-full max-w-4xl mb-10">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              Generating Shopping List...
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="rounded-lg border border-border bg-card p-4 animate-pulse">
+                  <div className="h-5 bg-secondary rounded w-3/4 mb-3" />
+                  <div className="h-3 bg-secondary rounded w-full mb-2" />
+                  <div className="h-3 bg-secondary rounded w-2/3 mb-4" />
+                  <div className="h-8 bg-primary/20 rounded w-full" />
+                </div>
+              ))}
             </div>
           </div>
         )}
