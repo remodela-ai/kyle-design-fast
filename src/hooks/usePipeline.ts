@@ -157,6 +157,23 @@ export function usePipeline() {
     };
   }, [sessionId]);
 
+  // Auto-start management pipeline when visual pipeline completes
+  useEffect(() => {
+    if (pipelineComplete && !isManagementRunning && !managementComplete && sessionId) {
+      console.log("Visual pipeline complete, auto-starting management pipeline...");
+      // Small delay to let UI update before starting management
+      const timer = setTimeout(() => {
+        const spatialStep = steps.find(s => s.stepNumber === 1);
+        const spatialOutput = spatialStep?.output as { parsedAnalysis?: { elements?: unknown[]; roomType?: string; styleIdentified?: string } } | undefined;
+        
+        if (spatialOutput?.parsedAnalysis) {
+          // Trigger will happen via startManagementPipeline in the component
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [pipelineComplete, isManagementRunning, managementComplete, sessionId, steps]);
+
   // Run Step 8: Video Presentation
   const runVideoPresentation = useCallback(async (
     currentSessionId: string,
