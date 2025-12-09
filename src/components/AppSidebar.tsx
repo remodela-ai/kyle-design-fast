@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import {
   Home,
@@ -78,9 +79,11 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
 
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center glow-red-subtle">
-            <span className="text-primary-foreground font-bold text-xs">Next-X</span>
-          </div>
+          <img 
+            src={logoImage} 
+            alt="Next Interiors Logo" 
+            className="w-10 h-10 rounded-lg glow-red-subtle"
+          />
           {(!collapsed || mobileOpen) && (
             <div className="animate-fade-in">
               <span className="text-xs text-muted-foreground block">Full Stack AI Interior Design</span>
