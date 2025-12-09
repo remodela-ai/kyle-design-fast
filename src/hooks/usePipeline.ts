@@ -682,6 +682,11 @@ export function usePipeline() {
       // Start with step 1 - Spatial Analysis
       console.log("Invoking pipeline-spatial-analysis...");
       
+      // Set step 1 to processing so spinner shows
+      setSteps(prev => prev.map(s => 
+        s.stepNumber === 1 ? { ...s, status: "processing" } : s
+      ));
+      
       const { data, error } = await supabase.functions.invoke("pipeline-spatial-analysis", {
         body: {
           sessionId: newSessionId,
