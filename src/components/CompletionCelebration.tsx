@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
-import { Gift, X } from "lucide-react";
+import { Gift } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CompletionCelebrationProps {
   isOpen: boolean;
@@ -62,10 +64,28 @@ export function CompletionCelebration({ isOpen, onClose, completionTime }: Compl
     if (!email) return;
     
     setIsSubmitting(true);
-    // Simulate sending email
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    onClose();
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("send-design-package", {
+        body: { email, completionTime },
+      });
+
+      if (error) {
+        console.error("Error sending email:", error);
+        toast.error("Failed to send email. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("Email sent successfully:", data);
+      toast.success("Your design package has been sent to your email!");
+      onClose();
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVideoEnd = () => {
