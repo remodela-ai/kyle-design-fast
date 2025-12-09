@@ -59,14 +59,14 @@ const PIPELINE_STEPS = [
 ];
 
 const MANAGEMENT_STEPS = [
-  { number: 1, name: "Propuesta y Presupuesto", fn: "management-proposal-budget" },
-  { number: 2, name: "Lista de Materiales", fn: "management-bom" },
-  { number: 3, name: "Cronograma de Obra", fn: "management-timeline" },
-  { number: 4, name: "Especificaciones Técnicas", fn: "management-specs" },
-  { number: 5, name: "Directorio de Proveedores", fn: "management-suppliers" },
-  { number: 6, name: "Plano de Instalaciones", fn: "management-installation" },
-  { number: 7, name: "Checklist de Entrega", fn: "management-checklist" },
-  { number: 8, name: "Portada de Proyecto", fn: "management-cover" },
+  { number: 1, name: "Proposal & Budget", fn: "management-proposal-budget" },
+  { number: 2, name: "Bill of Materials", fn: "management-bom" },
+  { number: 3, name: "Project Timeline", fn: "management-timeline" },
+  { number: 4, name: "Technical Specs", fn: "management-specs" },
+  { number: 5, name: "Supplier Directory", fn: "management-suppliers" },
+  { number: 6, name: "Installation Plan", fn: "management-installation" },
+  { number: 7, name: "Delivery Checklist", fn: "management-checklist" },
+  { number: 8, name: "Project Cover", fn: "management-cover" },
 ];
 
 export function usePipeline() {
