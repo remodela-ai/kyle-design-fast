@@ -92,6 +92,17 @@ export default function FreeProject360() {
     }
   }, [steps]);
 
+  // Auto-start management pipeline when visual pipeline completes
+  useEffect(() => {
+    if (pipelineComplete && !isManagementRunning && !managementComplete) {
+      console.log("Visual pipeline complete, auto-starting management pipeline...");
+      const timer = setTimeout(() => {
+        startManagementPipeline();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [pipelineComplete, isManagementRunning, managementComplete, startManagementPipeline]);
+
   const getStepStatus = (stepNumber: number) => {
     const step = steps.find(s => s.stepNumber === stepNumber);
     return step?.status || "pending";
