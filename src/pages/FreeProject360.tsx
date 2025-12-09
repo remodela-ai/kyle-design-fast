@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
 import { ImageUploadDialog } from "@/components/ImageUploadDialog";
+import { CompletionCelebration } from "@/components/CompletionCelebration";
 import { toast } from "sonner";
 
 interface ElementData {
@@ -57,6 +58,9 @@ export default function FreeProject360() {
   const [finalTime, setFinalTime] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  
+  // Celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Get the design image URL from navigation state
   const designImageUrl = location.state?.designImageUrl || userUploadedImage;
@@ -114,7 +118,8 @@ export default function FreeProject360() {
       }
       setFinalTime(elapsedTime);
       setTimerStarted(false);
-      toast.success(`¡Proyecto completo en ${formatTime(elapsedTime)}!`);
+      // Show celebration modal instead of toast
+      setShowCelebration(true);
     }
   }, [managementComplete, timerStarted, elapsedTime, finalTime]);
 
@@ -222,7 +227,7 @@ export default function FreeProject360() {
               </span>
             )}
             {finalTime !== null && (
-              <span className="text-xs text-green-500 ml-2">¡Completado!</span>
+              <span className="text-xs text-green-500 ml-2">Complete!</span>
             )}
           </div>
         )}
@@ -897,6 +902,13 @@ export default function FreeProject360() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onImageSelected={handleImageSelected}
+      />
+
+      {/* Completion Celebration Modal */}
+      <CompletionCelebration 
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        completionTime={formatTime(finalTime || elapsedTime)}
       />
     </div>
   );
