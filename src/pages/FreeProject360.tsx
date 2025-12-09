@@ -28,14 +28,14 @@ const visualFeatures = [
 ];
 
 const managementFeatures = [
-  { icon: FileText, label: "Propuesta y Presupuesto", stepNumber: 1 },
-  { icon: ClipboardList, label: "Lista de Materiales", stepNumber: 2 },
-  { icon: Calendar, label: "Cronograma de Obra", stepNumber: 3 },
-  { icon: Wrench, label: "Especificaciones Técnicas", stepNumber: 4 },
-  { icon: Users, label: "Directorio Proveedores", stepNumber: 5 },
-  { icon: Settings, label: "Plano Instalaciones", stepNumber: 6 },
-  { icon: CheckSquare, label: "Checklist Entrega", stepNumber: 7 },
-  { icon: Award, label: "Portada de Proyecto", stepNumber: 8 },
+  { icon: FileText, label: "Proposal & Budget", stepNumber: 1 },
+  { icon: ClipboardList, label: "Bill of Materials", stepNumber: 2 },
+  { icon: Calendar, label: "Project Timeline", stepNumber: 3 },
+  { icon: Wrench, label: "Technical Specs", stepNumber: 4 },
+  { icon: Users, label: "Supplier Directory", stepNumber: 5 },
+  { icon: Settings, label: "Installation Plan", stepNumber: 6 },
+  { icon: CheckSquare, label: "Delivery Checklist", stepNumber: 7 },
+  { icon: Award, label: "Project Cover", stepNumber: 8 },
 ];
 
 export default function FreeProject360() {
