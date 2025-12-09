@@ -38,3 +38,24 @@ verify_jwt = false
 
 [functions.management-proposal-budget]
 verify_jwt = false
+
+[functions.management-bom]
+verify_jwt = false
+
+[functions.management-timeline]
+verify_jwt = false
+
+[functions.management-specs]
+verify_jwt = false
+
+[functions.management-suppliers]
+verify_jwt = false
+
+[functions.management-installation]
+verify_jwt = false
+
+[functions.management-checklist]
+verify_jwt = false
+
+[functions.management-cover]
+verify_jwt = false

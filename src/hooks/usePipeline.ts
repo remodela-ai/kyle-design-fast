@@ -59,14 +59,14 @@ const PIPELINE_STEPS = [
 ];
 
 const MANAGEMENT_STEPS = [
-  { number: 1, name: "Proposal & Budget", fn: "management-proposal-budget" },
-  { number: 2, name: "Client Onboarding", fn: "management-client-onboarding" },
-  { number: 3, name: "Financial Planning", fn: "management-financial-planning" },
-  { number: 4, name: "Procurement", fn: "management-procurement" },
-  { number: 5, name: "Site Coordination", fn: "management-site-coordination" },
-  { number: 6, name: "Vendor Management", fn: "management-vendor-management" },
-  { number: 7, name: "Final Delivery", fn: "management-final-delivery" },
-  { number: 8, name: "Closeout & Portfolio", fn: "management-closeout-portfolio" },
+  { number: 1, name: "Propuesta y Presupuesto", fn: "management-proposal-budget" },
+  { number: 2, name: "Lista de Materiales", fn: "management-bom" },
+  { number: 3, name: "Cronograma de Obra", fn: "management-timeline" },
+  { number: 4, name: "Especificaciones Técnicas", fn: "management-specs" },
+  { number: 5, name: "Directorio de Proveedores", fn: "management-suppliers" },
+  { number: 6, name: "Plano de Instalaciones", fn: "management-installation" },
+  { number: 7, name: "Checklist de Entrega", fn: "management-checklist" },
+  { number: 8, name: "Portada de Proyecto", fn: "management-cover" },
 ];
 
 export function usePipeline() {
@@ -100,8 +100,16 @@ export function usePipeline() {
   );
   const [managementCurrentStep, setManagementCurrentStep] = useState(0);
   const [isManagementRunning, setIsManagementRunning] = useState(false);
-  const [proposalBudgetUrl, setProposalBudgetUrl] = useState<string | null>(null);
   const [managementComplete, setManagementComplete] = useState(false);
+  // Management step URLs
+  const [proposalBudgetUrl, setProposalBudgetUrl] = useState<string | null>(null);
+  const [bomUrl, setBomUrl] = useState<string | null>(null);
+  const [timelineUrl, setTimelineUrl] = useState<string | null>(null);
+  const [specsUrl, setSpecsUrl] = useState<string | null>(null);
+  const [suppliersUrl, setSuppliersUrl] = useState<string | null>(null);
+  const [installationUrl, setInstallationUrl] = useState<string | null>(null);
+  const [checklistUrl, setChecklistUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   // Subscribe to realtime updates for pipeline steps
   useEffect(() => {
@@ -722,69 +730,63 @@ export function usePipeline() {
     setManagementCurrentStep(0);
     setIsManagementRunning(false);
     setProposalBudgetUrl(null);
+    setBomUrl(null);
+    setTimelineUrl(null);
+    setSpecsUrl(null);
+    setSuppliersUrl(null);
+    setInstallationUrl(null);
+    setChecklistUrl(null);
+    setCoverUrl(null);
     setManagementComplete(false);
   }, []);
 
-  // Run Management Step 1: Proposal & Budget
-  const runProposalBudget = useCallback(async (
+  // Generic management step runner
+  const runManagementStep = useCallback(async (
+    stepNumber: number,
+    functionName: string,
     currentSessionId: string,
     elements: unknown[],
     roomType: string,
     styleIdentified: string,
     totalBudget?: { min: number; max: number; currency: string },
     conversationSummary?: string
-  ) => {
-    console.log("Starting Management Step 1: Proposal & Budget");
+  ): Promise<string | null> => {
+    console.log(`Starting Management Step ${stepNumber}: ${MANAGEMENT_STEPS[stepNumber - 1]?.name}`);
     
-    setIsManagementRunning(true);
-    setManagementCurrentStep(1);
+    setManagementCurrentStep(stepNumber);
     setManagementSteps(prev => prev.map(s => 
-      s.stepNumber === 1 ? { ...s, status: "processing" } : s
+      s.stepNumber === stepNumber ? { ...s, status: "processing" } : s
     ));
 
     try {
-      const { data, error } = await supabase.functions.invoke("management-proposal-budget", {
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { sessionId: currentSessionId, elements, roomType, styleIdentified, totalBudget, conversationSummary },
       });
 
       if (error) {
-        console.error("Proposal & Budget generation error:", error);
+        console.error(`Step ${stepNumber} error:`, error);
         throw error;
       }
 
-      console.log("Proposal & Budget result:", data);
-
-      const generatedProposalUrl = data?.imageUrl;
-      setProposalBudgetUrl(generatedProposalUrl);
+      const imageUrl = data?.imageUrl;
 
       setManagementSteps(prev => prev.map(s => 
-        s.stepNumber === 1 
-          ? { 
-              ...s, 
-              status: "completed",
-              output: { proposalBudgetUrl: generatedProposalUrl },
-              visualOutcomeUrl: generatedProposalUrl,
-            } 
+        s.stepNumber === stepNumber 
+          ? { ...s, status: "completed", output: { imageUrl }, visualOutcomeUrl: imageUrl } 
           : s
       ));
 
-      setManagementCurrentStep(2);
-      console.log("Management Step 1 completed successfully");
-
-      // For now, mark management as complete after step 1
-      // Future steps will be chained here
-      setManagementComplete(true);
-      setIsManagementRunning(false);
+      console.log(`Management Step ${stepNumber} completed`);
+      return imageUrl;
 
     } catch (error) {
-      console.error("Error in Management Step 1:", error);
-      
+      console.error(`Error in Management Step ${stepNumber}:`, error);
       setManagementSteps(prev => prev.map(s => 
-        s.stepNumber === 1 
+        s.stepNumber === stepNumber 
           ? { ...s, status: "error", error: error instanceof Error ? error.message : "Unknown error" } 
           : s
       ));
-      setIsManagementRunning(false);
+      return null;
     }
   }, []);
 
@@ -802,9 +804,47 @@ export function usePipeline() {
     const roomType = spatialOutput?.parsedAnalysis?.roomType || "room";
     const styleIdentified = spatialOutput?.parsedAnalysis?.styleIdentified || "modern";
     const totalBudget = itemsExtraction.totalEstimatedBudget;
+    const conversationSummary = memory.conversationSummary as string | undefined;
 
-    await runProposalBudget(sessionId, elements, roomType, styleIdentified, totalBudget);
-  }, [sessionId, pipelineComplete, steps, itemsExtraction.totalEstimatedBudget, runProposalBudget]);
+    setIsManagementRunning(true);
+
+    // Step 1: Proposal & Budget
+    const step1Url = await runManagementStep(1, "management-proposal-budget", sessionId, elements, roomType, styleIdentified, totalBudget, conversationSummary);
+    if (step1Url) setProposalBudgetUrl(step1Url);
+
+    // Step 2: Bill of Materials
+    const step2Url = await runManagementStep(2, "management-bom", sessionId, elements, roomType, styleIdentified, totalBudget);
+    if (step2Url) setBomUrl(step2Url);
+
+    // Step 3: Timeline
+    const step3Url = await runManagementStep(3, "management-timeline", sessionId, elements, roomType, styleIdentified, totalBudget);
+    if (step3Url) setTimelineUrl(step3Url);
+
+    // Step 4: Technical Specs
+    const step4Url = await runManagementStep(4, "management-specs", sessionId, elements, roomType, styleIdentified);
+    if (step4Url) setSpecsUrl(step4Url);
+
+    // Step 5: Suppliers Directory
+    const step5Url = await runManagementStep(5, "management-suppliers", sessionId, elements, roomType, styleIdentified);
+    if (step5Url) setSuppliersUrl(step5Url);
+
+    // Step 6: Installation Plan
+    const step6Url = await runManagementStep(6, "management-installation", sessionId, elements, roomType, styleIdentified);
+    if (step6Url) setInstallationUrl(step6Url);
+
+    // Step 7: Delivery Checklist
+    const step7Url = await runManagementStep(7, "management-checklist", sessionId, elements, roomType, styleIdentified);
+    if (step7Url) setChecklistUrl(step7Url);
+
+    // Step 8: Project Cover
+    const step8Url = await runManagementStep(8, "management-cover", sessionId, elements, roomType, styleIdentified, totalBudget, conversationSummary);
+    if (step8Url) setCoverUrl(step8Url);
+
+    setIsManagementRunning(false);
+    setManagementComplete(true);
+    console.log("🎉 MANAGEMENT PIPELINE COMPLETE!");
+
+  }, [sessionId, pipelineComplete, steps, itemsExtraction.totalEstimatedBudget, memory, runManagementStep]);
 
   return {
     sessionId,
@@ -826,8 +866,16 @@ export function usePipeline() {
     managementSteps,
     managementCurrentStep,
     isManagementRunning,
-    proposalBudgetUrl,
     managementComplete,
     startManagementPipeline,
+    // Management URLs
+    proposalBudgetUrl,
+    bomUrl,
+    timelineUrl,
+    specsUrl,
+    suppliersUrl,
+    installationUrl,
+    checklistUrl,
+    coverUrl,
   };
 }

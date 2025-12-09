@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart, Upload, FileText, Users, DollarSign, Package, MapPin, Building, Truck, FolderCheck } from "lucide-react";
+import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart, Upload, FileText, ClipboardList, Calendar, Wrench, Users, Settings, CheckSquare, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
-
 import { ImageUploadDialog } from "@/components/ImageUploadDialog";
 import { toast } from "sonner";
 
@@ -29,14 +28,14 @@ const visualFeatures = [
 ];
 
 const managementFeatures = [
-  { icon: FileText, label: "Proposal & Budget", stepNumber: 1 },
-  { icon: Users, label: "Client Onboarding", stepNumber: 2 },
-  { icon: DollarSign, label: "Financial Planning", stepNumber: 3 },
-  { icon: Package, label: "Procurement", stepNumber: 4 },
-  { icon: MapPin, label: "Site Coordination", stepNumber: 5 },
-  { icon: Building, label: "Vendor Management", stepNumber: 6 },
-  { icon: Truck, label: "Final Delivery", stepNumber: 7 },
-  { icon: FolderCheck, label: "Closeout & Portfolio", stepNumber: 8 },
+  { icon: FileText, label: "Propuesta y Presupuesto", stepNumber: 1 },
+  { icon: ClipboardList, label: "Lista de Materiales", stepNumber: 2 },
+  { icon: Calendar, label: "Cronograma de Obra", stepNumber: 3 },
+  { icon: Wrench, label: "Especificaciones Técnicas", stepNumber: 4 },
+  { icon: Users, label: "Directorio Proveedores", stepNumber: 5 },
+  { icon: Settings, label: "Plano Instalaciones", stepNumber: 6 },
+  { icon: CheckSquare, label: "Checklist Entrega", stepNumber: 7 },
+  { icon: Award, label: "Portada de Proyecto", stepNumber: 8 },
 ];
 
 export default function FreeProject360() {
@@ -45,7 +44,8 @@ export default function FreeProject360() {
   const location = useLocation();
   const { 
     isRunning, currentStep, steps, architecturalPlans, itemsExtraction, moodboardUrl, flatlayUrl, colorsTexturesUrl, storybookUrl, videoPresentationUrl, pipelineComplete, startPipeline, resetPipeline,
-    managementSteps, managementCurrentStep, isManagementRunning, proposalBudgetUrl, managementComplete, startManagementPipeline
+    managementSteps, managementCurrentStep, isManagementRunning, managementComplete, startManagementPipeline,
+    proposalBudgetUrl, bomUrl, timelineUrl, specsUrl, suppliersUrl, installationUrl, checklistUrl, coverUrl
   } = usePipeline();
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
@@ -638,33 +638,24 @@ export default function FreeProject360() {
                 className="mb-10 gap-2"
               >
                 <FileText className="h-4 w-4" />
-                Generate Proposal & Budget
+                Generar Anteproyecto Completo
               </Button>
             )}
 
-            {/* Proposal & Budget - Shows after Management Step 1 completes */}
-            {proposalBudgetUrl && (
-              <div className="w-full max-w-4xl mb-10">
-                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Proposal & Budget
-                </h2>
-                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
-                  <img 
-                    src={proposalBudgetUrl} 
-                    alt="Proposal & Budget Document" 
-                    className="w-full h-auto"
-                  />
-                </div>
+            {/* Management Pipeline Not Started Message */}
+            {!pipelineComplete && !isManagementRunning && (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Layers className="h-12 w-12 mb-4 text-primary/50" />
+                <p className="text-center">Completa el pipeline de Visual Design primero para desbloquear Management</p>
               </div>
             )}
 
-            {/* Management Step 1 Processing Indicator */}
-            {managementSteps.find(s => s.stepNumber === 1)?.status === "processing" && (
+            {/* Management Step Processing Indicator */}
+            {isManagementRunning && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Creating Proposal & Budget...
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  Generando {managementFeatures.find(f => f.stepNumber === managementCurrentStep)?.label}...
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
                   <div className="aspect-[3/4] bg-secondary flex items-center justify-center">
@@ -674,11 +665,107 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Management Pipeline Not Started Message */}
-            {!pipelineComplete && !isManagementRunning && (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Layers className="h-12 w-12 mb-4 text-primary/50" />
-                <p className="text-center">Complete the Visual Design pipeline first to unlock Management features</p>
+            {/* Step 1: Propuesta y Presupuesto */}
+            {proposalBudgetUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Propuesta y Presupuesto
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={proposalBudgetUrl} alt="Propuesta y Presupuesto" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Lista de Materiales (BOM) */}
+            {bomUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                  Lista de Materiales (BOM)
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={bomUrl} alt="Bill of Materials" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Cronograma de Obra */}
+            {timelineUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Cronograma de Obra
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={timelineUrl} alt="Project Timeline" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Especificaciones Técnicas */}
+            {specsUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-primary" />
+                  Especificaciones Técnicas
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={specsUrl} alt="Technical Specifications" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Directorio de Proveedores */}
+            {suppliersUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Directorio de Proveedores
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={suppliersUrl} alt="Supplier Directory" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Plano de Instalaciones */}
+            {installationUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  Plano de Instalaciones
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={installationUrl} alt="Installation Plan" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 7: Checklist de Entrega */}
+            {checklistUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                  Checklist de Entrega
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={checklistUrl} alt="Delivery Checklist" className="w-full h-auto" />
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Portada de Proyecto */}
+            {coverUrl && (
+              <div className="w-full max-w-4xl mb-10">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-primary" />
+                  Portada de Proyecto
+                </h2>
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+                  <img src={coverUrl} alt="Project Cover" className="w-full h-auto" />
+                </div>
               </div>
             )}
 
@@ -689,10 +776,10 @@ export default function FreeProject360() {
                   <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
                     <span className="text-white text-xl">✓</span>
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">Proposal & Budget Ready!</h2>
+                  <h2 className="text-xl font-bold text-foreground">¡Anteproyecto Completo!</h2>
                 </div>
                 <p className="text-muted-foreground">
-                  Your design proposal and budget document has been generated. More management steps coming soon.
+                  Tu anteproyecto de gestión ha sido generado. Los 8 documentos están listos para descargar.
                 </p>
               </div>
             )}
