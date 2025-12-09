@@ -884,7 +884,7 @@ export default function FreeProject360() {
         {!designImageUrl && !isRunning && (
           <div className="text-center text-muted-foreground mt-8 p-6 rounded-lg bg-secondary/50">
             <p className="mb-3">Click the upload icon above to start with your own image</p>
-            <p className="text-sm mb-4">Or go to <Link to="/shazam" className="text-primary hover:underline">Shazam</Link> to generate a design first.</p>
+            <p className="text-sm mb-4">Or go talk to <Link to="/shazam" className="text-primary hover:underline font-semibold">Kyle</Link> to generate a design first.</p>
             <Button 
               variant="kyle" 
               onClick={() => setUploadDialogOpen(true)}
