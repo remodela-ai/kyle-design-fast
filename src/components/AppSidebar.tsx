@@ -79,12 +79,12 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center glow-red-subtle">
-            <span className="text-primary-foreground font-bold text-lg">K</span>
+            <span className="text-primary-foreground font-bold text-xs">Next-I</span>
           </div>
           {(!collapsed || mobileOpen) && (
             <div className="animate-fade-in">
-              <span className="text-xs text-muted-foreground block">AI Design-OS</span>
-              <span className="text-xl font-semibold text-primary">küster</span>
+              <span className="text-xs text-muted-foreground block">Full Stack AI Interior Design</span>
+              <span className="text-xl font-semibold text-primary">Next Interiors</span>
             </div>
           )}
         </div>
