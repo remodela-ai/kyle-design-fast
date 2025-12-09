@@ -732,7 +732,7 @@ export default function FreeProject360() {
                 className="mb-10 gap-2"
               >
                 <FileText className="h-4 w-4" />
-                Generar Anteproyecto Completo
+                Generate Complete Pre-Project
               </Button>
             )}
 
@@ -740,7 +740,7 @@ export default function FreeProject360() {
             {!pipelineComplete && !isManagementRunning && (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Layers className="h-12 w-12 mb-4 text-primary/50" />
-                <p className="text-center">Completa el pipeline de Visual Design primero para desbloquear Management</p>
+                <p className="text-center">Complete the Visual Design pipeline first to unlock Management</p>
               </div>
             )}
 
@@ -749,7 +749,7 @@ export default function FreeProject360() {
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                  Generando {managementFeatures.find(f => f.stepNumber === managementCurrentStep)?.label}...
+                  Generating {managementFeatures.find(f => f.stepNumber === managementCurrentStep)?.label}...
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card animate-pulse">
                   <div className="aspect-[3/4] bg-secondary flex items-center justify-center">
@@ -759,25 +759,25 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 1: Propuesta y Presupuesto */}
+            {/* Step 1: Proposal & Budget */}
             {proposalBudgetUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  Propuesta y Presupuesto
+                  Proposal & Budget
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
-                  <img src={proposalBudgetUrl} alt="Propuesta y Presupuesto" className="w-full h-auto" />
+                  <img src={proposalBudgetUrl} alt="Proposal & Budget" className="w-full h-auto" />
                 </div>
               </div>
             )}
 
-            {/* Step 2: Lista de Materiales (BOM) */}
+            {/* Step 2: Bill of Materials (BOM) */}
             {bomUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <ClipboardList className="h-5 w-5 text-primary" />
-                  Lista de Materiales (BOM)
+                  Bill of Materials (BOM)
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={bomUrl} alt="Bill of Materials" className="w-full h-auto" />
@@ -785,12 +785,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 3: Cronograma de Obra */}
+            {/* Step 3: Project Timeline */}
             {timelineUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
-                  Cronograma de Obra
+                  Project Timeline
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={timelineUrl} alt="Project Timeline" className="w-full h-auto" />
@@ -798,12 +798,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 4: Especificaciones Técnicas */}
+            {/* Step 4: Technical Specifications */}
             {specsUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Wrench className="h-5 w-5 text-primary" />
-                  Especificaciones Técnicas
+                  Technical Specifications
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={specsUrl} alt="Technical Specifications" className="w-full h-auto" />
@@ -811,12 +811,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 5: Directorio de Proveedores */}
+            {/* Step 5: Supplier Directory */}
             {suppliersUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
-                  Directorio de Proveedores
+                  Supplier Directory
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={suppliersUrl} alt="Supplier Directory" className="w-full h-auto" />
@@ -824,12 +824,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 6: Plano de Instalaciones */}
+            {/* Step 6: Installation Plan */}
             {installationUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
-                  Plano de Instalaciones
+                  Installation Plan
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={installationUrl} alt="Installation Plan" className="w-full h-auto" />
@@ -837,12 +837,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 7: Checklist de Entrega */}
+            {/* Step 7: Delivery Checklist */}
             {checklistUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <CheckSquare className="h-5 w-5 text-primary" />
-                  Checklist de Entrega
+                  Delivery Checklist
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={checklistUrl} alt="Delivery Checklist" className="w-full h-auto" />
@@ -850,12 +850,12 @@ export default function FreeProject360() {
               </div>
             )}
 
-            {/* Step 8: Portada de Proyecto */}
+            {/* Step 8: Project Cover */}
             {coverUrl && (
               <div className="w-full max-w-4xl mb-10">
                 <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Award className="h-5 w-5 text-primary" />
-                  Portada de Proyecto
+                  Project Cover
                 </h2>
                 <div className="rounded-xl border border-border overflow-hidden bg-card shadow-lg">
                   <img src={coverUrl} alt="Project Cover" className="w-full h-auto" />
@@ -870,10 +870,10 @@ export default function FreeProject360() {
                   <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
                     <span className="text-white text-xl">✓</span>
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">¡Anteproyecto Completo!</h2>
+                  <h2 className="text-xl font-bold text-foreground">Pre-Project Complete!</h2>
                 </div>
                 <p className="text-muted-foreground">
-                  Tu anteproyecto de gestión ha sido generado. Los 8 documentos están listos para descargar.
+                  Your management pre-project has been generated. All 8 documents are ready to download.
                 </p>
               </div>
             )}
