@@ -107,12 +107,10 @@ export function CompletionCelebration({ isOpen, onClose, completionTime }: Compl
               <video
                 className="w-full h-full object-cover"
                 autoPlay
-                muted
                 playsInline
                 onEnded={handleVideoEnd}
-                poster="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600&h=340&fit=crop"
               >
-                <source src="https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4" type="video/mp4" />
+                <source src="/videos/james-kyle-welcome.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
