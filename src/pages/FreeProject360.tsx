@@ -4,7 +4,7 @@ import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loa
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
-import { PipelineProgress } from "@/components/PipelineProgress";
+
 import { ImageUploadDialog } from "@/components/ImageUploadDialog";
 import { toast } from "sonner";
 
@@ -138,12 +138,6 @@ export default function FreeProject360() {
           Complete AI-powered interior design pipeline
         </p>
 
-        {/* Pipeline Progress */}
-        {isRunning && (
-          <div className="w-full max-w-md mb-8">
-            <PipelineProgress steps={steps} currentStep={currentStep} />
-          </div>
-        )}
 
         {/* Uploaded Image Preview */}
         {designImageUrl && (
