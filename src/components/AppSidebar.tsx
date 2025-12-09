@@ -78,17 +78,22 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
         </Button>
 
         {/* Logo */}
-        <div className="p-6 flex items-center gap-3">
-          <img 
-            src={logoImage} 
-            alt="Next Interiors Logo" 
-            className="w-10 h-10 rounded-lg glow-red-subtle"
-          />
-          {(!collapsed || mobileOpen) && (
-            <div className="animate-fade-in">
-              <span className="text-xs text-muted-foreground block">Full Stack AI Interior Design</span>
-              <span className="text-xl font-semibold text-primary">Next Interiors</span>
+        <div className="p-6 flex flex-col items-center">
+          {(!collapsed || mobileOpen) ? (
+            <div className="animate-fade-in flex flex-col items-center">
+              <img 
+                src={logoImage} 
+                alt="Next Interiors Logo" 
+                className="h-10 object-contain glow-red-subtle"
+              />
+              <span className="text-xs text-muted-foreground mt-2">Full Stack AI Interior Design</span>
             </div>
+          ) : (
+            <img 
+              src={logoImage} 
+              alt="Next Interiors Logo" 
+              className="w-10 h-10 object-contain rounded-lg glow-red-subtle"
+            />
           )}
         </div>
 
