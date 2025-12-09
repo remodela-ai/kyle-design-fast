@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart, Upload, FileText, ClipboardList, Calendar, Wrench, Users, Settings, CheckSquare, Award } from "lucide-react";
+import { Home, Layers, Grid3X3, Box, Palette, Image, Brush, BookOpen, Video, Loader2, ExternalLink, ShoppingCart, Upload, FileText, ClipboardList, Calendar, Wrench, Users, Settings, CheckSquare, Award, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
@@ -50,6 +50,13 @@ export default function FreeProject360() {
   const [elements, setElements] = useState<ElementData[]>([]);
   const [pipelineStarted, setPipelineStarted] = useState(false);
   const [userUploadedImage, setUserUploadedImage] = useState<string | null>(null);
+  
+  // Timer state
+  const [timerStarted, setTimerStarted] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [finalTime, setFinalTime] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Get the design image URL from navigation state
   const designImageUrl = location.state?.designImageUrl || userUploadedImage;
@@ -60,6 +67,7 @@ export default function FreeProject360() {
     console.log("User uploaded image for pipeline");
     setUserUploadedImage(imageDataUrl);
     setPipelineStarted(true);
+    setFinalTime(null);
     resetPipeline();
     startPipeline(imageDataUrl, "User uploaded design image");
     toast.success("Pipeline started with your image!");
@@ -67,16 +75,64 @@ export default function FreeProject360() {
 
   // Handle logo click to open upload dialog
   const handleLogoClick = () => {
-    if (!isRunning) {
+    if (!isRunning && !isManagementRunning) {
       setUploadDialogOpen(true);
     }
   };
+
+  // Format elapsed time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Start timer when pipeline starts
+  useEffect(() => {
+    if (isRunning && !timerStarted && !finalTime) {
+      console.log("Starting timer...");
+      setTimerStarted(true);
+      startTimeRef.current = Date.now();
+      setElapsedTime(0);
+      
+      timerRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+          setElapsedTime(elapsed);
+        }
+      }, 1000);
+    }
+  }, [isRunning, timerStarted, finalTime]);
+
+  // Stop timer when management pipeline completes
+  useEffect(() => {
+    if (managementComplete && timerStarted && !finalTime) {
+      console.log("Stopping timer - all pipelines complete!");
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setFinalTime(elapsedTime);
+      setTimerStarted(false);
+      toast.success(`¡Proyecto completo en ${formatTime(elapsedTime)}!`);
+    }
+  }, [managementComplete, timerStarted, elapsedTime, finalTime]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   // Auto-start pipeline when page loads with design image
   useEffect(() => {
     if (designImageUrl && !pipelineStarted && !isRunning) {
       console.log("Auto-starting pipeline with image:", designImageUrl);
       setPipelineStarted(true);
+      setFinalTime(null);
       startPipeline(designImageUrl, conversationSummary);
     }
   }, [designImageUrl, conversationSummary, pipelineStarted, isRunning, startPipeline]);
@@ -145,9 +201,31 @@ export default function FreeProject360() {
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 text-center">
           360° Design Project
         </h1>
-        <p className="text-muted-foreground text-center text-base mb-8">
+        <p className="text-muted-foreground text-center text-base mb-4">
           Complete AI-powered interior design pipeline
         </p>
+
+        {/* Timer Display */}
+        {(timerStarted || finalTime !== null) && (
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full mb-6 ${
+            finalTime !== null 
+              ? "bg-green-500/20 border border-green-500/30" 
+              : "bg-primary/20 border border-primary/30"
+          }`}>
+            <Clock className={`h-5 w-5 ${finalTime !== null ? "text-green-500" : "text-primary"}`} />
+            <span className={`font-mono text-lg font-bold ${finalTime !== null ? "text-green-500" : "text-primary"}`}>
+              {formatTime(finalTime !== null ? finalTime : elapsedTime)}
+            </span>
+            {finalTime === null && (
+              <span className="text-xs text-muted-foreground ml-2">
+                {isManagementRunning ? "Management" : "Visual Design"}
+              </span>
+            )}
+            {finalTime !== null && (
+              <span className="text-xs text-green-500 ml-2">¡Completado!</span>
+            )}
+          </div>
+        )}
 
 
         {/* Uploaded Image Preview */}
