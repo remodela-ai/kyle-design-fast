@@ -84,7 +84,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
               <img 
                 src={logoImage} 
                 alt="Next Interiors Logo" 
-                className="h-10 object-contain glow-red-subtle"
+                className="h-20 object-contain glow-red-subtle"
               />
               <span className="text-xs text-muted-foreground mt-2">Full Stack AI Interior Design</span>
             </div>
@@ -92,7 +92,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             <img 
               src={logoImage} 
               alt="Next Interiors Logo" 
-              className="w-10 h-10 object-contain rounded-lg glow-red-subtle"
+              className="w-12 h-12 object-contain rounded-lg glow-red-subtle"
             />
           )}
         </div>
