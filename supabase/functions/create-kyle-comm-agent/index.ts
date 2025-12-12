@@ -20,8 +20,8 @@ serve(async (req) => {
     console.log('Creating Kyle Comm GTM agent...');
 
     // Create Kyle Comm - Agile GTM Expert for Next Interiors Daily Syncs
-    // Using the correct endpoint: POST /v1/convai/agents
-    const response = await fetch('https://api.elevenlabs.io/v1/convai/agents', {
+    // Using the correct endpoint: POST /v1/convai/agents/create
+    const response = await fetch('https://api.elevenlabs.io/v1/convai/agents/create', {
       method: 'POST',
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
