@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.read-task-tts]
 verify_jwt = false
+
+[functions.create-kyle-comm-agent]
+verify_jwt = false
