@@ -18,7 +18,7 @@ serve(async (req) => {
     }
 
     // Create Kyle Comm - Go-to-Market Strategist for Next Interiors
-    const response = await fetch('https://api.elevenlabs.io/v1/convai/agents/create', {
+    const response = await fetch('https://api.elevenlabs.io/v1/convai/agents', {
       method: 'POST',
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
@@ -84,7 +84,24 @@ Be direct, strategic, and always push for clarity and commitment on next steps.`
             language: "en",
           },
           tts: {
-            voice_id: "cjVigY5qzO86Huf0OWal", // Eric voice (Kyle's voice)
+            voice_id: "cjVigY5qzO86Huf0OWal", // Eric voice
+          },
+        },
+        platform_settings: {
+          auth: {
+            enable_auth: false, // Make it public
+          },
+          overrides: {
+            conversation_config_override: {
+              agent: {
+                prompt: true,
+                first_message: true,
+                language: true,
+              },
+              tts: {
+                voice_id: true,
+              },
+            },
           },
         },
       }),
