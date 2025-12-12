@@ -20,6 +20,8 @@ export type Database = {
           id: string
           is_active: boolean
           label: string
+          recurrence: string | null
+          recurrence_days: string[] | null
           time: string
           updated_at: string
         }
@@ -28,6 +30,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string
+          recurrence?: string | null
+          recurrence_days?: string[] | null
           time: string
           updated_at?: string
         }
@@ -36,6 +40,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string
+          recurrence?: string | null
+          recurrence_days?: string[] | null
           time?: string
           updated_at?: string
         }
