@@ -458,10 +458,27 @@ const DailyNextInteriors = () => {
           loadPastSyncs(); // Refresh history
         }
         
-        toast({
-          title: "GTM Plan Ready!",
-          description: "Kyle has synthesized the daily sync",
-        });
+        // Send email notification to team
+        try {
+          await supabase.functions.invoke('send-gtm-synthesis', {
+            body: {
+              synthesis: data.synthesis,
+              orielNotes,
+              jamesNotes,
+              syncDate: new Date().toISOString()
+            }
+          });
+          toast({
+            title: "GTM Plan Ready!",
+            description: "Synthesis sent to oriel@copilotinnoations.com",
+          });
+        } catch (emailErr) {
+          console.error("Email send error:", emailErr);
+          toast({
+            title: "GTM Plan Ready!",
+            description: "Synthesis generated (email notification failed)",
+          });
+        }
       } else {
         throw new Error("No synthesis generated");
       }
