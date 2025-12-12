@@ -9,8 +9,40 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe } from "lucide-react";
 
-// Kyle Comm agent ID - this agent was created with proper overrides enabled
+// Kyle Comm agent ID - UPDATE THIS after creating the new agent
+// For now using Kyle Blink Design, but should be replaced with Kyle Comm agent
 const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
+
+// Random daily greeting messages for Oriel (English)
+const ORIEL_GREETINGS_EN = [
+  "Hey Oriel! Quick sync - let's get everyone on the same page. What's your top priority today?",
+  "Oriel! Let's dive right in. What did you accomplish since our last sync?",
+  "Hey Oriel, ready for a quick standup? What's blocking you right now?",
+  "Oriel! Let's make this quick and productive. What's your focus for today?",
+  "Hey! Quick GTM check-in. Oriel, what's the most important thing we need to align on?",
+];
+
+// Random daily greeting messages for Oriel (Spanish)
+const ORIEL_GREETINGS_ES = [
+  "¡Hola Oriel! Sync rápido - pongámonos todos en la misma página. ¿Cuál es tu prioridad hoy?",
+  "¡Oriel! Vamos directo al grano. ¿Qué lograste desde nuestro último sync?",
+  "Hey Oriel, ¿listo para un standup rápido? ¿Qué te está bloqueando ahora mismo?",
+  "¡Oriel! Hagamos esto rápido y productivo. ¿Cuál es tu foco para hoy?",
+  "¡Hey! Check-in rápido de GTM. Oriel, ¿qué es lo más importante que necesitamos alinear?",
+];
+
+// Random daily greeting messages for James
+const JAMES_GREETINGS = [
+  "Hey James! Quick sync - I just talked to Oriel. What's your top priority today?",
+  "James! Let's dive in. What did you accomplish since our last sync?",
+  "Hey James, standup time. Any blockers on your end?",
+  "James! Quick and focused. What's the product update?",
+  "Hey! Connecting the dots between you and Oriel. What should we align on today?",
+];
+
+const getRandomGreeting = (greetings: string[]) => {
+  return greetings[Math.floor(Math.random() * greetings.length)];
+};
 
 type ConversationPhase = 'idle' | 'oriel' | 'james' | 'synthesis' | 'complete';
 type OrielLanguage = 'en' | 'es';
@@ -212,14 +244,56 @@ const DailyNextInteriors = () => {
       setCurrentPhase("oriel");
       setNotes([]);
 
+      const knowledgeContext = knowledgeBase 
+        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
+        : '';
+      
+      const filesContext = orielFiles.length > 0
+        ? `\n\nORIEL'S UPLOADED FILES:\n${orielFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
+        : '';
+
+      const greeting = orielLanguage === 'es' 
+        ? getRandomGreeting(ORIEL_GREETINGS_ES)
+        : getRandomGreeting(ORIEL_GREETINGS_EN);
+
+      const langInstruction = orielLanguage === 'es' 
+        ? 'IMPORTANT: Oriel prefers to speak in SPANISH. Respond in Spanish throughout this conversation.' 
+        : 'Speak in English.';
+
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle Comm, an Agile standup facilitator and GTM strategist. You are NOT the interior design assistant.
+
+You are speaking with ORIEL, co-founder of Next Interiors. This is a DAILY STANDUP, not a customer call.
+
+${langInstruction}
+
+Focus on:
+- Marketing strategy and customer acquisition
+- Brand positioning and messaging  
+- Pricing and monetization
+- Growth channels
+
+Ask the 3 Agile questions:
+1. What did you accomplish since our last sync?
+2. What are you working on today?
+3. Any blockers?
+
+Be DIRECT. No long intros. Keep it under 15 minutes.${knowledgeContext}${filesContext}`,
+            },
+            firstMessage: greeting,
+            language: orielLanguage,
+          },
+        },
       });
 
       toast({
         title: "Connected with Oriel",
-        description: "Kyle Comm is ready to lead the daily",
+        description: `Kyle Comm ready (${orielLanguage === 'es' ? 'Español' : 'English'})`,
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -229,7 +303,7 @@ const DailyNextInteriors = () => {
         variant: "destructive",
       });
     }
-  }, [conversation, toast]);
+  }, [conversation, toast, knowledgeBase, orielFiles, orielLanguage]);
 
   const startSessionWithJames = useCallback(async () => {
     try {
@@ -249,14 +323,54 @@ const DailyNextInteriors = () => {
 
       setCurrentPhase("james");
 
+      const knowledgeContext = knowledgeBase 
+        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
+        : '';
+      
+      const orielContext = orielNotes 
+        ? `\n\nCONTEXT FROM ORIEL'S SESSION:\n${orielNotes}` 
+        : '';
+
+      const filesContext = jamesFiles.length > 0
+        ? `\n\nJAMES'S UPLOADED FILES:\n${jamesFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
+        : '';
+
+      const greeting = getRandomGreeting(JAMES_GREETINGS);
+
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle Comm, an Agile standup facilitator and GTM strategist. You are NOT the interior design assistant.
+
+You are speaking with JAMES, co-founder of Next Interiors. This is a DAILY STANDUP, not a customer call.
+
+Speak in English.
+
+Focus on:
+- Product readiness and feature pipeline
+- Technical capabilities and constraints
+- Development timelines
+- Competitive advantages
+
+Ask the 3 Agile questions:
+1. What did you accomplish since our last sync?
+2. What are you working on today?
+3. Any blockers?
+
+Be DIRECT. No long intros. Keep it under 15 minutes.${knowledgeContext}${orielContext}${filesContext}`,
+            },
+            firstMessage: greeting,
+            language: "en",
+          },
+        },
       });
 
       toast({
         title: "Connected with James",
-        description: "Kyle Comm is ready to lead the daily",
+        description: "Kyle Comm ready (English)",
       });
     } catch (err) {
       console.error("Failed to start James session:", err);
@@ -266,7 +380,7 @@ const DailyNextInteriors = () => {
         variant: "destructive",
       });
     }
-  }, [conversation, notes, toast]);
+  }, [conversation, notes, toast, knowledgeBase, jamesFiles]);
 
   const generateSynthesis = useCallback(async () => {
     const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');

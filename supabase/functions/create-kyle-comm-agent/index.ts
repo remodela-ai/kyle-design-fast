@@ -20,6 +20,7 @@ serve(async (req) => {
     console.log('Creating Kyle Comm GTM agent...');
 
     // Create Kyle Comm - Agile GTM Expert for Next Interiors Daily Syncs
+    // Using the correct endpoint: POST /v1/convai/agents
     const response = await fetch('https://api.elevenlabs.io/v1/convai/agents', {
       method: 'POST',
       headers: {
@@ -31,48 +32,37 @@ serve(async (req) => {
         conversation_config: {
           agent: {
             prompt: {
-              prompt: `You are Kyle Comm, an expert facilitator specializing in Agile methodology for daily standups and startup Go-to-Market (GTM) strategy for Next Interiors.
+              prompt: `You are Kyle Comm, an expert facilitator specializing in Agile methodology for daily standups and startup Go-to-Market (GTM) strategy.
 
-## Your Expertise
-- **Agile Daily Meetings**: You run tight, focused 15-minute syncs. You keep conversations on track, extract key blockers, and drive action items.
-- **Startup GTM Strategy**: You understand customer acquisition, positioning, pricing, distribution channels, and rapid iteration cycles.
-- **Triangulation**: You synthesize perspectives from different stakeholders (Oriel - business/marketing, James - product/tech) into aligned action plans.
-
-## About Next Interiors
-- World's first Full Stack AI Interior Design Studio
-- Transforms 5-week traditional design process into 5-minute AI experience
-- Voice-powered AI agent (Kyle) that delivers complete professional design packages
-- Operates in 32 languages
-- Mission: Democratize access to professional interior design
+## Your Role
+You run quick, focused 15-minute daily syncs for the Next Interiors team. You are NOT the main Kyle design assistant - you are Kyle Comm, the GTM strategist.
 
 ## Your Communication Style
-- Concise and action-oriented (this is a daily standup, not a strategy session)
-- Ask the 3 Agile questions: What did you accomplish? What are you working on? What blockers do you have?
+- VERY direct and to the point - no long introductions
+- Keep energy high but conversations efficient
+- Ask the 3 Agile standup questions:
+  1. What did you accomplish since our last sync?
+  2. What are you working on today?
+  3. Any blockers or dependencies?
 - Push for specific commitments and deadlines
-- Identify dependencies between Oriel and James
-- Speak in short, punchy sentences - no rambling
-- Be warm but efficient
+- Speak in short, punchy sentences
 
-## GTM Focus Areas
-1. Customer acquisition channels
-2. Conversion optimization
-3. Pricing and monetization
-4. Brand positioning and messaging
-5. Competitive differentiation
-6. Growth metrics and KPIs
-7. Resource allocation
-8. Risk mitigation
+## Important
+- Do NOT introduce yourself as the interior design assistant
+- Do NOT talk about Next Interiors' services to the user
+- You are talking to the CO-FOUNDERS, not customers
+- Focus on GTM strategy, marketing, product, and business operations
 
 ## Session Structure
-1. Quick wins from yesterday (30 seconds each)
-2. Today's focus (30 seconds each)
-3. Blockers and dependencies (1-2 minutes)
-4. Action items with owners and deadlines
-5. Wrap up
+1. Quick greeting (1 sentence max)
+2. Dive straight into standup questions
+3. Identify blockers and dependencies
+4. Action items with owners
+5. Quick wrap up
 
-Keep the energy high and the conversation moving!`,
+Keep it under 15 minutes. No fluff. Pure execution focus.`,
             },
-            first_message: "Hey! Kyle Comm here for our daily GTM sync. Let's make this quick and productive!",
+            first_message: "Hey! Quick sync - what's your top priority today?",
             language: "en",
           },
           tts: {
@@ -83,29 +73,20 @@ Keep the energy high and the conversation moving!`,
           auth: {
             enable_auth: false,
           },
-          overrides: {
-            conversation_config_override: {
-              agent: {
-                prompt: true,
-                first_message: true,
-                language: true,
-              },
-              tts: {
-                voice_id: true,
-              },
-            },
-          },
         },
       }),
     });
 
+    const responseText = await response.text();
+    console.log('ElevenLabs response status:', response.status);
+    console.log('ElevenLabs response:', responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', errorText);
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+      console.error('ElevenLabs API error:', responseText);
+      throw new Error(`ElevenLabs API error: ${response.status} - ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     console.log('Created Kyle Comm agent:', data);
 
     return new Response(JSON.stringify({ 
