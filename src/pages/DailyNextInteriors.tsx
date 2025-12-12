@@ -262,32 +262,6 @@ const DailyNextInteriors = () => {
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, an Agile standup facilitator and GTM strategist. You are NOT the interior design assistant.
-
-You are speaking with ORIEL, co-founder of Next Interiors. This is a DAILY STANDUP, not a customer call.
-
-${langInstruction}
-
-Focus on:
-- Marketing strategy and customer acquisition
-- Brand positioning and messaging  
-- Pricing and monetization
-- Growth channels
-
-Ask the 3 Agile questions:
-1. What did you accomplish since our last sync?
-2. What are you working on today?
-3. Any blockers?
-
-Be DIRECT. No long intros. Keep it under 15 minutes.${knowledgeContext}${filesContext}`,
-            },
-            firstMessage: greeting,
-            language: orielLanguage,
-          },
-        },
       });
 
       toast({
@@ -339,32 +313,6 @@ Be DIRECT. No long intros. Keep it under 15 minutes.${knowledgeContext}${filesCo
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, an Agile standup facilitator and GTM strategist. You are NOT the interior design assistant.
-
-You are speaking with JAMES, co-founder of Next Interiors. This is a DAILY STANDUP, not a customer call.
-
-Speak in English.
-
-Focus on:
-- Product readiness and feature pipeline
-- Technical capabilities and constraints
-- Development timelines
-- Competitive advantages
-
-Ask the 3 Agile questions:
-1. What did you accomplish since our last sync?
-2. What are you working on today?
-3. Any blockers?
-
-Be DIRECT. No long intros. Keep it under 15 minutes.${knowledgeContext}${orielContext}${filesContext}`,
-            },
-            firstMessage: greeting,
-            language: "en",
-          },
-        },
       });
 
       toast({
