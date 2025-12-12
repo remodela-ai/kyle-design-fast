@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useConversation } from "@11labs/react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3 } from "lucide-react";
 
 // Kyle Comm agent ID - dedicated GTM Daily Sync agent
 const KYLE_COMM_AGENT_ID = "agent_5901kc9zv1axfh8ax6atcwnv4w1y";
@@ -61,6 +62,7 @@ interface UploadedFile {
 }
 
 const DailyNextInteriors = () => {
+  const navigate = useNavigate();
   const [currentPhase, setCurrentPhase] = useState<ConversationPhase>('idle');
   const [notes, setNotes] = useState<ConversationNote[]>([]);
   const [orielSummary, setOrielSummary] = useState<string>("");
@@ -551,15 +553,20 @@ const DailyNextInteriors = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center justify-center gap-3">
-            <Target className="w-8 h-8 text-primary" />
-            Daily Next Interiors
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            GTM Triangulation: Kyle ↔ Oriel ↔ James
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center gap-3">
+              <Target className="w-8 h-8 text-primary" />
+              Daily Next Interiors
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              GTM Triangulation: Kyle ↔ Oriel ↔ James
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => navigate('/gtm-analytics')}>
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Analytics
+          </Button>
         </div>
 
         {/* Progress Steps */}

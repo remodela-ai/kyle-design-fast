@@ -11,6 +11,7 @@ import CreateAgent from "./pages/CreateAgent";
 import FreeProject360 from "./pages/FreeProject360";
 import Productivity from "./pages/Productivity";
 import DailyNextInteriors from "./pages/DailyNextInteriors";
+import GTMAnalytics from "./pages/GTMAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/360-free-project" element={<FreeProject360 />} />
             <Route path="/productivity" element={<Productivity />} />
             <Route path="/daily-next-interiors" element={<DailyNextInteriors />} />
+            <Route path="/gtm-analytics" element={<GTMAnalytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </KyleProvider>
