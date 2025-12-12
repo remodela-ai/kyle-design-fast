@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_syncs: {
+        Row: {
+          created_at: string
+          id: string
+          james_notes: string | null
+          knowledge_base: string | null
+          oriel_notes: string | null
+          status: string
+          sync_date: string
+          synthesis: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          james_notes?: string | null
+          knowledge_base?: string | null
+          oriel_notes?: string | null
+          status?: string
+          sync_date?: string
+          synthesis?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          james_notes?: string | null
+          knowledge_base?: string | null
+          oriel_notes?: string | null
+          status?: string
+          sync_date?: string
+          synthesis?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pipeline_steps: {
         Row: {
           completed_at: string | null
@@ -129,6 +165,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      sync_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          phase: string
+          speaker: string
+          sync_id: string
+          timestamp: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          phase: string
+          speaker: string
+          sync_id: string
+          timestamp?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          phase?: string
+          speaker?: string
+          sync_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_messages_sync_id_fkey"
+            columns: ["sync_id"]
+            isOneToOne: false
+            referencedRelation: "daily_syncs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
