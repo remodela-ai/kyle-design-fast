@@ -14,12 +14,14 @@ import {
   Menu,
   X,
   Clock,
+  Target,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 
 const navItems = [
   { icon: Home, label: "Home", active: true, path: "/" },
   { icon: Clock, label: "Productivity", path: "/productivity" },
+  { icon: Target, label: "Daily GTM", path: "/daily-next-interiors" },
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: FolderKanban, label: "Projects", path: "/" },
   { icon: Heart, label: "Collections", path: "/" },
