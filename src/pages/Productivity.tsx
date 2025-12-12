@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { useKyleTasksAgent } from "@/hooks/useKyleTasksAgent";
 import { AudioWaves } from "@/components/AudioWaves";
-import { Clock, Bell, Trash2, CheckCircle2 } from "lucide-react";
+import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X } from "lucide-react";
 
 interface Task {
   id: string;
@@ -23,12 +23,52 @@ interface Task {
   created_at: string;
 }
 
+interface Alarm {
+  id: string;
+  time: string;
+  label: string;
+  isActive: boolean;
+}
+
+const ALARM_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+
 const Productivity = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const [isAlarmRinging, setIsAlarmRinging] = useState(false);
+  const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
-  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent();
+
+  const handleAlarmSet = useCallback((alarm: { time: string; label: string }) => {
+    const newAlarm: Alarm = {
+      id: crypto.randomUUID(),
+      time: alarm.time,
+      label: alarm.label,
+      isActive: true,
+    };
+    setAlarms(prev => [...prev, newAlarm]);
+    toast({
+      title: "⏰ Alarm Set",
+      description: `${alarm.label} at ${alarm.time}`,
+    });
+  }, [toast]);
+
+  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent(handleAlarmSet);
+
+  // Initialize audio
+  useEffect(() => {
+    audioRef.current = new Audio(ALARM_SOUND_URL);
+    audioRef.current.loop = true;
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   // Update clock every second
   useEffect(() => {
@@ -44,6 +84,54 @@ const Productivity = () => {
       Notification.requestPermission();
     }
   }, []);
+
+  // Check for alarms
+  useEffect(() => {
+    const checkAlarms = () => {
+      const now = format(currentTime, "HH:mm");
+      
+      alarms.forEach(alarm => {
+        if (alarm.isActive && alarm.time === now && !isAlarmRinging) {
+          // Trigger alarm
+          setIsAlarmRinging(true);
+          setRingingAlarm(alarm);
+          
+          if (audioRef.current) {
+            audioRef.current.play().catch(console.error);
+          }
+          
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("⏰ Alarm!", {
+              body: alarm.label,
+              icon: "/favicon.png"
+            });
+          }
+        }
+      });
+    };
+
+    checkAlarms();
+  }, [currentTime, alarms, isAlarmRinging]);
+
+  const stopAlarm = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsAlarmRinging(false);
+    
+    if (ringingAlarm) {
+      setAlarms(prev => prev.map(a => 
+        a.id === ringingAlarm.id ? { ...a, isActive: false } : a
+      ));
+    }
+    setRingingAlarm(null);
+  };
+
+  const deleteAlarm = (id: string) => {
+    setAlarms(prev => prev.filter(a => a.id !== id));
+    toast({ title: "Alarm deleted" });
+  };
 
   // Fetch tasks
   useEffect(() => {
@@ -157,6 +245,25 @@ const Productivity = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      {/* Alarm Ringing Overlay */}
+      {isAlarmRinging && ringingAlarm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center animate-pulse">
+          <Card className="bg-card border-primary p-8 text-center max-w-md mx-4">
+            <div className="text-6xl mb-4">⏰</div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">ALARM!</h2>
+            <p className="text-xl text-primary mb-4">{ringingAlarm.label}</p>
+            <p className="text-lg text-muted-foreground mb-6">{ringingAlarm.time}</p>
+            <Button 
+              size="lg" 
+              className="w-full bg-primary hover:bg-primary/90"
+              onClick={stopAlarm}
+            >
+              Stop Alarm
+            </Button>
+          </Card>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header with Clock */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -203,9 +310,12 @@ const Productivity = () => {
                   ? (isSpeaking ? "Kyle is speaking..." : "Listening...") 
                   : "Tap Kyle to add tasks by voice"}
               </p>
-              <p className="text-xs text-muted-foreground/70 text-center">
-                Say: "Add task [title] for [date]" or "Remind me to [task] at [time]"
-              </p>
+              <div className="text-xs text-muted-foreground/70 text-center space-y-1">
+                <p>"Add task [title] for tomorrow"</p>
+                <p>"Set an alarm for 3pm"</p>
+                <p>"Complete task [name]"</p>
+                <p>"List my tasks"</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -305,8 +415,50 @@ const Productivity = () => {
             </CardContent>
           </Card>
 
+          {/* Alarms Section */}
+          <Card className="bg-card/50 border-primary/20 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlarmClock className="w-5 h-5 text-primary" />
+                Alarms
+                <Badge variant="secondary" className="ml-auto">{alarms.filter(a => a.isActive).length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[200px] overflow-y-auto">
+              {alarms.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No alarms set. Ask Kyle to set one!
+                </p>
+              ) : (
+                alarms.map((alarm) => (
+                  <div
+                    key={alarm.id}
+                    className={`p-3 rounded-lg border flex items-center justify-between ${
+                      alarm.isActive 
+                        ? 'bg-card border-primary/30' 
+                        : 'bg-muted/30 border-muted opacity-60'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-mono text-lg text-primary">{alarm.time}</p>
+                      <p className="text-sm text-muted-foreground">{alarm.label}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteAlarm(alarm.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
           {/* All Tasks */}
-          <Card className="bg-card/50 border-primary/20 backdrop-blur-sm lg:col-span-2">
+          <Card className="bg-card/50 border-primary/20 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-lg">All Tasks</CardTitle>
             </CardHeader>
