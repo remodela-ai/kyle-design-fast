@@ -205,140 +205,68 @@ const DailyNextInteriors = () => {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
+          autoGainControl: true,
+        },
       });
-      
-      setCurrentPhase('oriel');
-      setNotes([]);
-      
-      const knowledgeContext = knowledgeBase 
-        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
-        : '';
-      
-      const filesContext = orielFiles.length > 0
-        ? `\n\nORIEL'S UPLOADED FILES:\n${orielFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
-        : '';
 
-      const firstMessageEs = "¡Hola Oriel! Vamos a tener una charla rápida para refinar nuestra estrategia de go-to-market. Después hablaré con James para que todos estemos en la misma página. ¿Cuál es tu prioridad GTM más importante ahora mismo?";
-      const firstMessageEn = "Hey Oriel! Let's have a quick chat to refine our go-to-market strategy. I'll reach out to James after so we're all on the same page. What's your biggest GTM priority right now?";
-      
+      setCurrentPhase("oriel");
+      setNotes([]);
+
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, an expert in Agile methodology and startup Go-to-Market strategy.
-
-You are now speaking with ORIEL, one of the co-founders of Next Interiors. Focus on:
-- Marketing strategy and customer acquisition
-- Brand positioning and messaging
-- Pricing and monetization
-- Target customer segments
-- Growth channels and campaigns
-
-${orielLanguage === 'es' ? 'IMPORTANT: Oriel prefers to speak in SPANISH. Respond in Spanish throughout this conversation.' : 'Speak in English.'}
-
-Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
-1. What did you accomplish since our last sync?
-2. What are you working on today?
-3. Any blockers or dependencies?
-
-${knowledgeContext}${filesContext}`,
-            },
-            firstMessage: orielLanguage === 'es' ? firstMessageEs : firstMessageEn,
-            language: orielLanguage,
-          },
-        },
       });
-      
+
       toast({
         title: "Connected with Oriel",
-        description: `Kyle Comm is ready (${orielLanguage === 'es' ? 'Spanish' : 'English'})`,
+        description: "Kyle Comm is ready to lead the daily",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
       toast({
         title: "Error",
         description: "Could not start the conversation. Check microphone permissions.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
-  }, [conversation, toast, knowledgeBase, orielFiles, orielLanguage]);
+  }, [conversation, toast]);
 
   const startSessionWithJames = useCallback(async () => {
     try {
-      await navigator.mediaDevices.getUserMedia({ 
+      await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
+          autoGainControl: true,
+        },
       });
-      
-      // Save Oriel's session summary
-      const orielNotes = notes.filter(n => n.phase === 'oriel').map(n => `${n.speaker}: ${n.content}`).join('\n');
-      setOrielSummary(orielNotes);
-      
-      setCurrentPhase('james');
-      
-      const knowledgeContext = knowledgeBase 
-        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
-        : '';
-      
-      const orielContext = orielNotes 
-        ? `\n\nCONTEXT FROM ORIEL'S SESSION:\n${orielNotes}` 
-        : '';
 
-      const filesContext = jamesFiles.length > 0
-        ? `\n\nJAMES'S UPLOADED FILES:\n${jamesFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
-        : '';
-      
+      const orielNotes = notes
+        .filter((n) => n.phase === "oriel")
+        .map((n) => `${n.speaker}: ${n.content}`)
+        .join("\n");
+      setOrielSummary(orielNotes);
+
+      setCurrentPhase("james");
+
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, an expert in Agile methodology and startup Go-to-Market strategy.
-
-You are now speaking with JAMES, one of the co-founders of Next Interiors. Focus on:
-- Product readiness and feature pipeline
-- Technical capabilities and constraints
-- Development timelines
-- Competitive advantages
-- Integration with marketing efforts
-
-Speak in English.
-
-Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
-1. What did you accomplish since our last sync?
-2. What are you working on today?
-3. Any blockers or dependencies?
-
-${knowledgeContext}
-${orielContext}${filesContext}`,
-            },
-            firstMessage: "Hey James! Let's have a quick chat to align on our go-to-market. I just synced with Oriel, so I can help connect the dots between product and marketing. What's your main focus this week?",
-            language: "en",
-          },
-        },
       });
-      
+
       toast({
         title: "Connected with James",
-        description: "Kyle Comm is ready (English)",
+        description: "Kyle Comm is ready to lead the daily",
       });
     } catch (err) {
       console.error("Failed to start James session:", err);
       toast({
         title: "Error",
         description: "Could not start the conversation. Check microphone permissions.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
-  }, [conversation, notes, toast, knowledgeBase, jamesFiles]);
+  }, [conversation, notes, toast]);
 
   const generateSynthesis = useCallback(async () => {
     const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');
