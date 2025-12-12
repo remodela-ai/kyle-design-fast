@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useConversation } from "@11labs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,10 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload } from "lucide-react";
 
-// Kyle Comm agent ID - update this after creating the agent
-const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Using existing Kyle until new agent created
+// Kyle Comm agent ID - this agent was created with proper overrides enabled
+const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
 type ConversationPhase = 'idle' | 'oriel' | 'james' | 'synthesis' | 'complete';
 
@@ -27,6 +27,8 @@ const DailyNextInteriors = () => {
   const [orielSummary, setOrielSummary] = useState<string>("");
   const [jamesSummary, setJamesSummary] = useState<string>("");
   const [finalPlan, setFinalPlan] = useState<string>("");
+  const [knowledgeBase, setKnowledgeBase] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const conversation = useConversation({
@@ -80,6 +82,37 @@ const DailyNextInteriors = () => {
     },
   });
 
+  // Handle PDF upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid file",
+        description: "Please upload a PDF file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      setKnowledgeBase(text);
+      toast({
+        title: "Knowledge base loaded",
+        description: `${file.name} has been loaded for Kyle`,
+      });
+    } catch (err) {
+      console.error("Failed to read PDF:", err);
+      toast({
+        title: "Error reading file",
+        description: "Could not process the PDF",
+        variant: "destructive"
+      });
+    }
+  };
+
   const startSessionWithOriel = useCallback(async () => {
     try {
       await navigator.mediaDevices.getUserMedia({ 
@@ -93,38 +126,28 @@ const DailyNextInteriors = () => {
       setCurrentPhase('oriel');
       setNotes([]);
       
+      const knowledgeContext = knowledgeBase 
+        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}...` 
+        : '';
+      
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, the Go-to-Market strategist for Next Interiors. 
-              
-You are now speaking with ORIEL, one of the co-founders. Your goal is to:
-1. Ask Oriel about their current GTM priorities and challenges
-2. Discuss marketing strategies, target customers, and positioning
-3. Understand what resources and budget are available
-4. Identify key decisions that need to be made
-
-Be conversational but focused. Take mental notes of all key points Oriel mentions.
-After gathering information, summarize what you learned and ask if there's anything else to add.
-
-Start by greeting Oriel warmly and asking about the most pressing GTM priority for this week.`
-            },
-            firstMessage: "Hey Oriel! Great to connect for our daily sync. What's the most pressing Go-to-Market priority you want to tackle this week?"
-          }
-        }
+      });
+      
+      toast({
+        title: "Connected with Oriel",
+        description: "Kyle is ready to talk",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
       toast({
         title: "Error",
-        description: "Could not start the conversation",
+        description: "Could not start the conversation. Check microphone permissions.",
         variant: "destructive"
       });
     }
-  }, [conversation, toast]);
+  }, [conversation, toast, knowledgeBase]);
 
   const startSessionWithJames = useCallback(async () => {
     try {
@@ -145,34 +168,17 @@ Start by greeting Oriel warmly and asking about the most pressing GTM priority f
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle Comm, the Go-to-Market strategist for Next Interiors.
-
-You are now speaking with JAMES, one of the co-founders. Your goal is to:
-1. Ask James about their technical capabilities and product roadmap
-2. Discuss what features are ready for market
-3. Understand technical constraints and timelines
-4. Get James's perspective on competitive advantages
-
-Context from earlier conversation with Oriel:
-${orielNotes}
-
-Use this context to ask relevant follow-up questions and identify synergies or conflicts.
-After gathering information, summarize key points and ask if there's anything else to add.
-
-Start by greeting James and asking about the product's current state and what's ready to showcase.`
-            },
-            firstMessage: "Hey James! Just finished syncing with Oriel. Now I'd love to hear your perspective - what's the current state of the product and what features are we ready to showcase to the market?"
-          }
-        }
+      });
+      
+      toast({
+        title: "Connected with James",
+        description: "Kyle is ready to talk",
       });
     } catch (err) {
       console.error("Failed to start James session:", err);
       toast({
         title: "Error",
-        description: "Could not start the conversation",
+        description: "Could not start the conversation. Check microphone permissions.",
         variant: "destructive"
       });
     }
@@ -352,11 +358,10 @@ _This synthesis is based on today's triangulation meeting._
                 
                 {currentPhase === 'oriel' && conversation.status === 'connected' && (
                   <Button 
-                    className="w-full"
-                    variant="outline"
+                    className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    End Oriel Session
+                    It's all from my end for today
                   </Button>
                 )}
                 
@@ -372,11 +377,10 @@ _This synthesis is based on today's triangulation meeting._
                 
                 {currentPhase === 'james' && conversation.status === 'connected' && (
                   <Button 
-                    className="w-full"
-                    variant="outline"
+                    className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    End James Session
+                    It's all from my end for today
                   </Button>
                 )}
                 
@@ -410,17 +414,36 @@ _This synthesis is based on today's triangulation meeting._
                   </Button>
                 )}
                 
-                {/* Admin: Create Kyle Comm Agent */}
+                {/* Knowledge Base Upload */}
                 {currentPhase === 'idle' && (
-                  <Button 
-                    className="w-full"
-                    variant="ghost"
-                    size="sm"
-                    onClick={createKyleCommAgent}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Create Kyle Comm Agent
-                  </Button>
+                  <>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".pdf,.txt"
+                      className="hidden"
+                    />
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {knowledgeBase ? "Knowledge Base Loaded ✓" : "Upload GTM Knowledge Base"}
+                    </Button>
+                    
+                    {/* Admin: Create Kyle Comm Agent */}
+                    <Button 
+                      className="w-full"
+                      variant="ghost"
+                      size="sm"
+                      onClick={createKyleCommAgent}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Create Kyle Comm Agent
+                    </Button>
+                  </>
                 )}
               </div>
             </CardContent>
