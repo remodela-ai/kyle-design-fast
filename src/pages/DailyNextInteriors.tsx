@@ -73,6 +73,7 @@ const DailyNextInteriors = () => {
   const [currentSyncId, setCurrentSyncId] = useState<string | null>(null);
   const [pastSyncs, setPastSyncs] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedPastSync, setSelectedPastSync] = useState<any | null>(null);
   
   // Email recipients for GTM synthesis
   const [emailRecipients, setEmailRecipients] = useState<string[]>(['oriel@copilotinnoations.com']);
@@ -564,15 +565,104 @@ const DailyNextInteriors = () => {
       .single();
     
     if (sync) {
+      setSelectedPastSync(sync);
       setOrielSummary(sync.oriel_notes || "");
       setJamesSummary(sync.james_notes || "");
       setFinalPlan(sync.synthesis || "");
       setCurrentPhase('complete');
-      setShowHistory(false);
       toast({
         title: "Past sync loaded",
         description: `Sync from ${new Date(sync.sync_date).toLocaleDateString()}`,
       });
+    }
+  };
+
+  // Re-run synthesis on a past sync
+  const rerunSynthesis = async (sync: any) => {
+    if (!sync.oriel_notes && !sync.james_notes) {
+      toast({
+        title: "Cannot re-analyze",
+        description: "This sync has no conversation notes",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCurrentSyncId(sync.id);
+    setOrielSummary(sync.oriel_notes || "");
+    setJamesSummary(sync.james_notes || "");
+    setCurrentPhase('synthesis');
+    setIsGeneratingSynthesis(true);
+    setShowHistory(false);
+    
+    try {
+      toast({
+        title: "Re-analyzing sync...",
+        description: `Processing ${new Date(sync.sync_date).toLocaleDateString()}`,
+      });
+
+      const { data, error } = await supabase.functions.invoke('gtm-synthesis', {
+        body: { 
+          orielNotes: sync.oriel_notes || '', 
+          jamesNotes: sync.james_notes || '', 
+          knowledgeBase 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.synthesis) {
+        setFinalPlan(data.synthesis);
+        setCurrentPhase('complete');
+        
+        // Update in database
+        await supabase.from('daily_syncs').update({
+          synthesis: data.synthesis,
+          status: 'complete'
+        }).eq('id', sync.id);
+        
+        loadPastSyncs(); // Refresh history
+        
+        // Send email if recipients configured
+        if (emailRecipients.length > 0) {
+          try {
+            await supabase.functions.invoke('send-gtm-synthesis', {
+              body: {
+                synthesis: data.synthesis,
+                orielNotes: sync.oriel_notes || '',
+                jamesNotes: sync.james_notes || '',
+                syncDate: sync.sync_date,
+                recipients: emailRecipients
+              }
+            });
+            toast({
+              title: "Re-analysis Complete!",
+              description: `New synthesis sent to ${emailRecipients.length} recipient(s)`,
+            });
+          } catch (emailErr) {
+            console.error("Email send error:", emailErr);
+            toast({
+              title: "Re-analysis Complete!",
+              description: "New synthesis generated (email failed)",
+            });
+          }
+        } else {
+          toast({
+            title: "Re-analysis Complete!",
+            description: "New synthesis generated",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Re-analysis error:", err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to re-analyze",
+        variant: "destructive",
+      });
+      setCurrentPhase('complete');
+    } finally {
+      setIsGeneratingSynthesis(false);
     }
   };
 
@@ -958,7 +1048,7 @@ const DailyNextInteriors = () => {
             </CardContent>
           </Card>
 
-          {/* Past Syncs History */}
+        {/* Past Syncs History */}
           {showHistory && pastSyncs.length > 0 && (
             <Card className="bg-card/50 border-primary/20 backdrop-blur-sm lg:col-span-2">
               <CardHeader>
@@ -967,29 +1057,63 @@ const DailyNextInteriors = () => {
                   Past Daily Syncs
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+              <CardContent className="space-y-2 max-h-[400px] overflow-y-auto">
                 {pastSyncs.map((sync) => (
                   <div 
                     key={sync.id}
-                    className="p-3 rounded-lg border border-muted hover:border-primary/50 cursor-pointer transition-colors"
-                    onClick={() => loadPastSync(sync.id)}
+                    className={`p-3 rounded-lg border transition-colors ${
+                      selectedPastSync?.id === sync.id 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-muted hover:border-primary/50'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">
-                        {new Date(sync.sync_date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </span>
-                      <Badge variant={sync.status === 'complete' ? 'default' : 'secondary'}>
-                        {sync.status}
-                      </Badge>
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => loadPastSync(sync.id)}
+                      >
+                        <span className="font-medium text-foreground">
+                          {new Date(sync.sync_date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={sync.status === 'complete' ? 'default' : 'secondary'}>
+                          {sync.status}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            rerunSynthesis(sync);
+                          }}
+                          disabled={isGeneratingSynthesis || (!sync.oriel_notes && !sync.james_notes)}
+                        >
+                          {isGeneratingSynthesis && selectedPastSync?.id === sync.id ? (
+                            <div className="w-3 h-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                          ) : (
+                            <>
+                              <BarChart3 className="w-3 h-3 mr-1" />
+                              Re-analyze
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     {sync.synthesis && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                         {sync.synthesis.substring(0, 150)}...
+                      </p>
+                    )}
+                    {(sync.oriel_notes || sync.james_notes) && !sync.synthesis && (
+                      <p className="text-sm text-muted-foreground/60 mt-2 italic">
+                        Has notes but no synthesis yet
                       </p>
                     )}
                   </div>
