@@ -332,13 +332,22 @@ _This synthesis is based on today's triangulation meeting._
               {/* Action Buttons */}
               <div className="w-full space-y-2">
                 {currentPhase === 'idle' && (
-                  <Button 
-                    className="w-full bg-primary hover:bg-primary/90"
-                    onClick={startSessionWithOriel}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Start with Oriel
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                      onClick={startSessionWithOriel}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      I am Oriel
+                    </Button>
+                    <Button 
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                      onClick={startSessionWithJames}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      I am James
+                    </Button>
+                  </div>
                 )}
                 
                 {currentPhase === 'oriel' && conversation.status === 'connected' && (
