@@ -9,9 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe } from "lucide-react";
 
-// Kyle Comm agent ID - UPDATE THIS after creating the new agent
-// For now using Kyle Blink Design, but should be replaced with Kyle Comm agent
-const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
+// Kyle Comm agent ID - dedicated GTM Daily Sync agent
+const KYLE_COMM_AGENT_ID = "agent_5901kc9zv1axfh8ax6atcwnv4w1y";
 
 // Random daily greeting messages for Oriel (English)
 const ORIEL_GREETINGS_EN = [
