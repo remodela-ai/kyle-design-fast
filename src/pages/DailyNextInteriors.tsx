@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings } from "lucide-react";
 
-// Kyle Comm agent ID - will be updated after agent creation
-const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Placeholder, will use existing Kyle for now
+// Kyle Comm agent ID - update this after creating the agent
+const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6"; // Using existing Kyle until new agent created
 
 type ConversationPhase = 'idle' | 'oriel' | 'james' | 'synthesis' | 'complete';
 
@@ -221,6 +222,35 @@ _This synthesis is based on today's triangulation meeting._
     setFinalPlan("");
   };
 
+  const createKyleCommAgent = async () => {
+    try {
+      toast({
+        title: "Creating Kyle Comm agent...",
+        description: "This may take a moment",
+      });
+      
+      const { data, error } = await supabase.functions.invoke('create-kyle-comm-agent', {
+        body: {}
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Kyle Comm Agent Created!",
+        description: `Agent ID: ${data.agent_id}. Update KYLE_COMM_AGENT_ID in code.`,
+      });
+      
+      console.log("New Kyle Comm Agent ID:", data.agent_id);
+    } catch (err) {
+      console.error("Error creating agent:", err);
+      toast({
+        title: "Error creating agent",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getPhaseStatus = (phase: ConversationPhase) => {
     const phases: ConversationPhase[] = ['idle', 'oriel', 'james', 'synthesis', 'complete'];
     const currentIndex = phases.indexOf(currentPhase);
@@ -368,6 +398,19 @@ _This synthesis is based on today's triangulation meeting._
                     onClick={resetDaily}
                   >
                     Start New Daily
+                  </Button>
+                )}
+                
+                {/* Admin: Create Kyle Comm Agent */}
+                {currentPhase === 'idle' && (
+                  <Button 
+                    className="w-full"
+                    variant="ghost"
+                    size="sm"
+                    onClick={createKyleCommAgent}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Create Kyle Comm Agent
                   </Button>
                 )}
               </div>
