@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { format } from "date-fns";
+import { format, addMinutes } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { useKyleTasksAgent } from "@/hooks/useKyleTasksAgent";
 import { AudioWaves } from "@/components/AudioWaves";
-import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X } from "lucide-react";
+import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X, Timer } from "lucide-react";
 
 interface Task {
   id: string;
@@ -27,7 +27,7 @@ interface Alarm {
   id: string;
   time: string;
   label: string;
-  isActive: boolean;
+  is_active: boolean;
 }
 
 const ALARM_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
@@ -42,21 +42,20 @@ const Productivity = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
-  const handleAlarmSet = useCallback((alarm: { time: string; label: string }) => {
-    const newAlarm: Alarm = {
-      id: crypto.randomUUID(),
-      time: alarm.time,
-      label: alarm.label,
-      isActive: true,
-    };
-    setAlarms(prev => [...prev, newAlarm]);
-    toast({
-      title: "⏰ Alarm Set",
-      description: `${alarm.label} at ${alarm.time}`,
-    });
-  }, [toast]);
+  const fetchAlarms = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('alarms')
+      .select('*')
+      .order('time', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching alarms:', error);
+      return;
+    }
+    setAlarms(data || []);
+  }, []);
 
-  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent(handleAlarmSet);
+  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent(fetchAlarms);
 
   // Initialize audio
   useEffect(() => {
@@ -85,14 +84,31 @@ const Productivity = () => {
     }
   }, []);
 
+  // Fetch alarms on mount and subscribe to realtime
+  useEffect(() => {
+    fetchAlarms();
+    
+    const channel = supabase
+      .channel('alarms-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'alarms' },
+        () => fetchAlarms()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAlarms]);
+
   // Check for alarms
   useEffect(() => {
     const checkAlarms = () => {
       const now = format(currentTime, "HH:mm");
       
       alarms.forEach(alarm => {
-        if (alarm.isActive && alarm.time === now && !isAlarmRinging) {
-          // Trigger alarm
+        if (alarm.is_active && alarm.time === now && !isAlarmRinging) {
           setIsAlarmRinging(true);
           setRingingAlarm(alarm);
           
@@ -113,7 +129,7 @@ const Productivity = () => {
     checkAlarms();
   }, [currentTime, alarms, isAlarmRinging]);
 
-  const stopAlarm = () => {
+  const stopAlarm = async () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -121,23 +137,62 @@ const Productivity = () => {
     setIsAlarmRinging(false);
     
     if (ringingAlarm) {
-      setAlarms(prev => prev.map(a => 
-        a.id === ringingAlarm.id ? { ...a, isActive: false } : a
-      ));
+      await supabase
+        .from('alarms')
+        .update({ is_active: false })
+        .eq('id', ringingAlarm.id);
     }
     setRingingAlarm(null);
   };
 
-  const deleteAlarm = (id: string) => {
-    setAlarms(prev => prev.filter(a => a.id !== id));
+  const snoozeAlarm = async () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsAlarmRinging(false);
+    
+    if (ringingAlarm) {
+      // Calculate new time (5 minutes from now)
+      const newTime = format(addMinutes(currentTime, 5), "HH:mm");
+      
+      await supabase
+        .from('alarms')
+        .update({ time: newTime })
+        .eq('id', ringingAlarm.id);
+      
+      toast({
+        title: "Snoozed",
+        description: `Alarm will ring again at ${newTime}`,
+      });
+    }
+    setRingingAlarm(null);
+  };
+
+  const deleteAlarm = async (id: string) => {
+    const { error } = await supabase
+      .from('alarms')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast({ title: "Error deleting alarm", variant: "destructive" });
+      return;
+    }
     toast({ title: "Alarm deleted" });
+  };
+
+  const toggleAlarmActive = async (id: string, currentState: boolean) => {
+    await supabase
+      .from('alarms')
+      .update({ is_active: !currentState })
+      .eq('id', id);
   };
 
   // Fetch tasks
   useEffect(() => {
     fetchTasks();
     
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('tasks-changes')
       .on(
@@ -160,7 +215,7 @@ const Productivity = () => {
         if (task.reminder_time && !task.is_completed) {
           const reminderTime = new Date(task.reminder_time);
           const diff = Math.abs(now.getTime() - reminderTime.getTime());
-          if (diff < 60000) { // Within 1 minute
+          if (diff < 60000) {
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification("Task Reminder", {
                 body: task.title,
@@ -253,13 +308,24 @@ const Productivity = () => {
             <h2 className="text-2xl font-bold text-foreground mb-2">ALARM!</h2>
             <p className="text-xl text-primary mb-4">{ringingAlarm.label}</p>
             <p className="text-lg text-muted-foreground mb-6">{ringingAlarm.time}</p>
-            <Button 
-              size="lg" 
-              className="w-full bg-primary hover:bg-primary/90"
-              onClick={stopAlarm}
-            >
-              Stop Alarm
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="flex-1 border-primary/50 hover:bg-primary/10"
+                onClick={snoozeAlarm}
+              >
+                <Timer className="w-5 h-5 mr-2" />
+                Snooze 5 min
+              </Button>
+              <Button 
+                size="lg" 
+                className="flex-1 bg-primary hover:bg-primary/90"
+                onClick={stopAlarm}
+              >
+                Stop
+              </Button>
+            </div>
           </Card>
         </div>
       )}
@@ -421,7 +487,7 @@ const Productivity = () => {
               <CardTitle className="text-lg flex items-center gap-2">
                 <AlarmClock className="w-5 h-5 text-primary" />
                 Alarms
-                <Badge variant="secondary" className="ml-auto">{alarms.filter(a => a.isActive).length}</Badge>
+                <Badge variant="secondary" className="ml-auto">{alarms.filter(a => a.is_active).length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 max-h-[200px] overflow-y-auto">
@@ -434,12 +500,15 @@ const Productivity = () => {
                   <div
                     key={alarm.id}
                     className={`p-3 rounded-lg border flex items-center justify-between ${
-                      alarm.isActive 
+                      alarm.is_active 
                         ? 'bg-card border-primary/30' 
                         : 'bg-muted/30 border-muted opacity-60'
                     }`}
                   >
-                    <div>
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => toggleAlarmActive(alarm.id, alarm.is_active)}
+                    >
                       <p className="font-mono text-lg text-primary">{alarm.time}</p>
                       <p className="text-sm text-muted-foreground">{alarm.label}</p>
                     </div>

@@ -18,7 +18,7 @@ interface AlarmToolParams {
   label?: string;
 }
 
-export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: string }) => void) {
+export function useKyleTasksAgent(onAlarmCreated?: () => void) {
   const [error, setError] = useState<string | null>(null);
 
   const conversation = useConversation({
@@ -64,7 +64,6 @@ export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: st
       complete_task: async (params: TaskToolParams) => {
         console.log("Completing task:", params);
         try {
-          // If task_id provided, use it directly
           if (params.task_id) {
             const { data, error } = await supabase.functions.invoke('kyle-tasks', {
               body: { action: 'complete', task: { id: params.task_id } }
@@ -73,7 +72,6 @@ export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: st
             return data?.message || "Task completed";
           }
           
-          // Otherwise find task by title
           const { data: tasks } = await supabase
             .from('tasks')
             .select('id, title')
@@ -100,7 +98,6 @@ export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: st
       delete_task: async (params: TaskToolParams) => {
         console.log("Deleting task:", params);
         try {
-          // If task_id provided, use it directly
           if (params.task_id) {
             const { data, error } = await supabase.functions.invoke('kyle-tasks', {
               body: { action: 'delete', task: { id: params.task_id } }
@@ -109,7 +106,6 @@ export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: st
             return data?.message || "Task deleted";
           }
           
-          // Otherwise find task by title
           const { data: tasks } = await supabase
             .from('tasks')
             .select('id, title')
@@ -160,13 +156,18 @@ export function useKyleTasksAgent(onAlarmSet?: (alarm: { time: string; label: st
       set_alarm: async (params: AlarmToolParams) => {
         console.log("Setting alarm:", params);
         try {
-          const alarm = {
-            time: params.time,
-            label: params.label || "Alarm"
-          };
+          const { error } = await supabase
+            .from('alarms')
+            .insert({
+              time: params.time,
+              label: params.label || "Alarm",
+              is_active: true,
+            });
           
-          if (onAlarmSet) {
-            onAlarmSet(alarm);
+          if (error) throw error;
+          
+          if (onAlarmCreated) {
+            onAlarmCreated();
           }
           
           return `Alarm set for ${params.time}${params.label ? ` - ${params.label}` : ""}`;
