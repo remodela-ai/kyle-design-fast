@@ -7,18 +7,26 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe } from "lucide-react";
 
 // Kyle Comm agent ID - this agent was created with proper overrides enabled
 const KYLE_COMM_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
 type ConversationPhase = 'idle' | 'oriel' | 'james' | 'synthesis' | 'complete';
+type OrielLanguage = 'en' | 'es';
 
 interface ConversationNote {
   phase: string;
   speaker: string;
   content: string;
   timestamp: Date;
+}
+
+interface UploadedFile {
+  name: string;
+  type: string;
+  content?: string;
+  url?: string;
 }
 
 const DailyNextInteriors = () => {
@@ -28,7 +36,17 @@ const DailyNextInteriors = () => {
   const [jamesSummary, setJamesSummary] = useState<string>("");
   const [finalPlan, setFinalPlan] = useState<string>("");
   const [knowledgeBase, setKnowledgeBase] = useState<string>("");
+  
+  // Language selection for Oriel
+  const [orielLanguage, setOrielLanguage] = useState<OrielLanguage>('en');
+  
+  // File uploads per person
+  const [orielFiles, setOrielFiles] = useState<UploadedFile[]>([]);
+  const [jamesFiles, setJamesFiles] = useState<UploadedFile[]>([]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const orielFileInputRef = useRef<HTMLInputElement>(null);
+  const jamesFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const conversation = useConversation({
@@ -82,19 +100,10 @@ const DailyNextInteriors = () => {
     },
   });
 
-  // Handle PDF upload
+  // Handle Knowledge Base upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast({
-        title: "Invalid file",
-        description: "Please upload a PDF file",
-        variant: "destructive"
-      });
-      return;
-    }
 
     try {
       const text = await file.text();
@@ -104,13 +113,90 @@ const DailyNextInteriors = () => {
         description: `${file.name} has been loaded for Kyle`,
       });
     } catch (err) {
-      console.error("Failed to read PDF:", err);
+      console.error("Failed to read file:", err);
       toast({
         title: "Error reading file",
-        description: "Could not process the PDF",
+        description: "Could not process the file",
         variant: "destructive"
       });
     }
+  };
+
+  // Handle file uploads for Oriel
+  const handleOrielFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles: UploadedFile[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileType = file.type;
+      
+      if (fileType.includes('pdf') || fileType.includes('text')) {
+        try {
+          const text = await file.text();
+          newFiles.push({
+            name: file.name,
+            type: 'document',
+            content: text.substring(0, 3000), // Limit content size
+          });
+        } catch (err) {
+          console.error("Failed to read document:", err);
+        }
+      } else if (fileType.includes('audio') || fileType.includes('video')) {
+        // For audio/video, we just track the file name (transcription would require additional API)
+        newFiles.push({
+          name: file.name,
+          type: fileType.includes('audio') ? 'audio' : 'video',
+          content: `[${fileType.includes('audio') ? 'Audio' : 'Video'} file: ${file.name}]`,
+        });
+      }
+    }
+    
+    setOrielFiles(prev => [...prev, ...newFiles]);
+    toast({
+      title: "Files uploaded",
+      description: `${newFiles.length} file(s) added to Oriel's session`,
+    });
+  };
+
+  // Handle file uploads for James
+  const handleJamesFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles: UploadedFile[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileType = file.type;
+      
+      if (fileType.includes('pdf') || fileType.includes('text')) {
+        try {
+          const text = await file.text();
+          newFiles.push({
+            name: file.name,
+            type: 'document',
+            content: text.substring(0, 3000),
+          });
+        } catch (err) {
+          console.error("Failed to read document:", err);
+        }
+      } else if (fileType.includes('audio') || fileType.includes('video')) {
+        newFiles.push({
+          name: file.name,
+          type: fileType.includes('audio') ? 'audio' : 'video',
+          content: `[${fileType.includes('audio') ? 'Audio' : 'Video'} file: ${file.name}]`,
+        });
+      }
+    }
+    
+    setJamesFiles(prev => [...prev, ...newFiles]);
+    toast({
+      title: "Files uploaded",
+      description: `${newFiles.length} file(s) added to James's session`,
+    });
   };
 
   const startSessionWithOriel = useCallback(async () => {
@@ -130,6 +216,13 @@ const DailyNextInteriors = () => {
         ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
         : '';
       
+      const filesContext = orielFiles.length > 0
+        ? `\n\nORIEL'S UPLOADED FILES:\n${orielFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
+        : '';
+
+      const firstMessageEs = "¡Hola Oriel! Vamos a tener una charla rápida para refinar nuestra estrategia de go-to-market. Después hablaré con James para que todos estemos en la misma página. ¿Cuál es tu prioridad GTM más importante ahora mismo?";
+      const firstMessageEn = "Hey Oriel! Let's have a quick chat to refine our go-to-market strategy. I'll reach out to James after so we're all on the same page. What's your biggest GTM priority right now?";
+      
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
@@ -145,22 +238,24 @@ You are now speaking with ORIEL, one of the co-founders of Next Interiors. Focus
 - Target customer segments
 - Growth channels and campaigns
 
+${orielLanguage === 'es' ? 'IMPORTANT: Oriel prefers to speak in SPANISH. Respond in Spanish throughout this conversation.' : 'Speak in English.'}
+
 Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
 1. What did you accomplish since our last sync?
 2. What are you working on today?
 3. Any blockers or dependencies?
 
-${knowledgeContext}`,
+${knowledgeContext}${filesContext}`,
             },
-            firstMessage: "Hey Oriel! Let's have a quick chat to refine our go-to-market strategy. I'll reach out to James after so we're all on the same page. What's your biggest GTM priority right now?",
-            language: "en",
+            firstMessage: orielLanguage === 'es' ? firstMessageEs : firstMessageEn,
+            language: orielLanguage,
           },
         },
       });
       
       toast({
         title: "Connected with Oriel",
-        description: "Kyle Comm is ready for your GTM sync",
+        description: `Kyle Comm is ready (${orielLanguage === 'es' ? 'Spanish' : 'English'})`,
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -170,7 +265,7 @@ ${knowledgeContext}`,
         variant: "destructive"
       });
     }
-  }, [conversation, toast, knowledgeBase]);
+  }, [conversation, toast, knowledgeBase, orielFiles, orielLanguage]);
 
   const startSessionWithJames = useCallback(async () => {
     try {
@@ -195,6 +290,10 @@ ${knowledgeContext}`,
       const orielContext = orielNotes 
         ? `\n\nCONTEXT FROM ORIEL'S SESSION:\n${orielNotes}` 
         : '';
+
+      const filesContext = jamesFiles.length > 0
+        ? `\n\nJAMES'S UPLOADED FILES:\n${jamesFiles.map(f => `- ${f.name}: ${f.content?.substring(0, 500) || f.type}`).join('\n')}`
+        : '';
       
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
@@ -211,13 +310,15 @@ You are now speaking with JAMES, one of the co-founders of Next Interiors. Focus
 - Competitive advantages
 - Integration with marketing efforts
 
+Speak in English.
+
 Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
 1. What did you accomplish since our last sync?
 2. What are you working on today?
 3. Any blockers or dependencies?
 
 ${knowledgeContext}
-${orielContext}`,
+${orielContext}${filesContext}`,
             },
             firstMessage: "Hey James! Let's have a quick chat to align on our go-to-market. I just synced with Oriel, so I can help connect the dots between product and marketing. What's your main focus this week?",
             language: "en",
@@ -227,7 +328,7 @@ ${orielContext}`,
       
       toast({
         title: "Connected with James",
-        description: "Kyle Comm is ready for your GTM sync",
+        description: "Kyle Comm is ready (English)",
       });
     } catch (err) {
       console.error("Failed to start James session:", err);
@@ -237,7 +338,7 @@ ${orielContext}`,
         variant: "destructive"
       });
     }
-  }, [conversation, notes, toast, knowledgeBase]);
+  }, [conversation, notes, toast, knowledgeBase, jamesFiles]);
 
   const generateSynthesis = useCallback(async () => {
     const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');
@@ -391,24 +492,120 @@ _This synthesis is based on today's triangulation meeting._
               </p>
 
               {/* Action Buttons */}
-              <div className="w-full space-y-2">
+              <div className="w-full space-y-3">
                 {currentPhase === 'idle' && (
-                  <div className="flex gap-2">
-                    <Button 
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      onClick={startSessionWithOriel}
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      I am Oriel
-                    </Button>
-                    <Button 
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      onClick={startSessionWithJames}
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      I am James
-                    </Button>
-                  </div>
+                  <>
+                    {/* Language Selection for Oriel */}
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Oriel's language:</span>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={orielLanguage === 'en' ? 'default' : 'outline'}
+                          onClick={() => setOrielLanguage('en')}
+                          className="h-7 px-2"
+                        >
+                          EN
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={orielLanguage === 'es' ? 'default' : 'outline'}
+                          onClick={() => setOrielLanguage('es')}
+                          className="h-7 px-2"
+                        >
+                          ES
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* File Upload Sections */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Oriel's Files */}
+                      <div className="space-y-1">
+                        <input
+                          type="file"
+                          ref={orielFileInputRef}
+                          onChange={handleOrielFileUpload}
+                          accept=".pdf,.txt,.mp3,.mp4,.wav,.m4a"
+                          multiple
+                          className="hidden"
+                        />
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => orielFileInputRef.current?.click()}
+                        >
+                          <Upload className="w-3 h-3 mr-1" />
+                          Oriel Files
+                        </Button>
+                        {orielFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {orielFiles.map((f, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {f.type === 'document' && <FileText className="w-3 h-3 mr-1" />}
+                                {f.type === 'audio' && <Music className="w-3 h-3 mr-1" />}
+                                {f.type === 'video' && <Video className="w-3 h-3 mr-1" />}
+                                {f.name.substring(0, 10)}...
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* James's Files */}
+                      <div className="space-y-1">
+                        <input
+                          type="file"
+                          ref={jamesFileInputRef}
+                          onChange={handleJamesFileUpload}
+                          accept=".pdf,.txt,.mp3,.mp4,.wav,.m4a"
+                          multiple
+                          className="hidden"
+                        />
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => jamesFileInputRef.current?.click()}
+                        >
+                          <Upload className="w-3 h-3 mr-1" />
+                          James Files
+                        </Button>
+                        {jamesFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {jamesFiles.map((f, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {f.type === 'document' && <FileText className="w-3 h-3 mr-1" />}
+                                {f.type === 'audio' && <Music className="w-3 h-3 mr-1" />}
+                                {f.type === 'video' && <Video className="w-3 h-3 mr-1" />}
+                                {f.name.substring(0, 10)}...
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Start Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        onClick={startSessionWithOriel}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        I am Oriel
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        onClick={startSessionWithJames}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        I am James
+                      </Button>
+                    </div>
+                  </>
                 )}
                 
                 {currentPhase === 'oriel' && conversation.status === 'connected' && (
