@@ -127,17 +127,40 @@ const DailyNextInteriors = () => {
       setNotes([]);
       
       const knowledgeContext = knowledgeBase 
-        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}...` 
+        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
         : '';
       
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle Comm, an expert in Agile methodology and startup Go-to-Market strategy.
+
+You are now speaking with ORIEL, one of the co-founders of Next Interiors. Focus on:
+- Marketing strategy and customer acquisition
+- Brand positioning and messaging
+- Pricing and monetization
+- Target customer segments
+- Growth channels and campaigns
+
+Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
+1. What did you accomplish since our last sync?
+2. What are you working on today?
+3. Any blockers or dependencies?
+
+${knowledgeContext}`,
+            },
+            firstMessage: "Hey Oriel! Let's have a quick chat to refine our go-to-market strategy. I'll reach out to James after so we're all on the same page. What's your biggest GTM priority right now?",
+            language: "en",
+          },
+        },
       });
       
       toast({
         title: "Connected with Oriel",
-        description: "Kyle is ready to talk",
+        description: "Kyle Comm is ready for your GTM sync",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -165,14 +188,46 @@ const DailyNextInteriors = () => {
       
       setCurrentPhase('james');
       
+      const knowledgeContext = knowledgeBase 
+        ? `\n\nKNOWLEDGE BASE CONTEXT:\n${knowledgeBase.substring(0, 2000)}` 
+        : '';
+      
+      const orielContext = orielNotes 
+        ? `\n\nCONTEXT FROM ORIEL'S SESSION:\n${orielNotes}` 
+        : '';
+      
       await conversation.startSession({
         agentId: KYLE_COMM_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle Comm, an expert in Agile methodology and startup Go-to-Market strategy.
+
+You are now speaking with JAMES, one of the co-founders of Next Interiors. Focus on:
+- Product readiness and feature pipeline
+- Technical capabilities and constraints
+- Development timelines
+- Competitive advantages
+- Integration with marketing efforts
+
+Keep the conversation focused and action-oriented. Ask the 3 Agile questions:
+1. What did you accomplish since our last sync?
+2. What are you working on today?
+3. Any blockers or dependencies?
+
+${knowledgeContext}
+${orielContext}`,
+            },
+            firstMessage: "Hey James! Let's have a quick chat to align on our go-to-market. I just synced with Oriel, so I can help connect the dots between product and marketing. What's your main focus this week?",
+            language: "en",
+          },
+        },
       });
       
       toast({
         title: "Connected with James",
-        description: "Kyle is ready to talk",
+        description: "Kyle Comm is ready for your GTM sync",
       });
     } catch (err) {
       console.error("Failed to start James session:", err);
@@ -182,7 +237,7 @@ const DailyNextInteriors = () => {
         variant: "destructive"
       });
     }
-  }, [conversation, notes, toast]);
+  }, [conversation, notes, toast, knowledgeBase]);
 
   const generateSynthesis = useCallback(async () => {
     const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');
