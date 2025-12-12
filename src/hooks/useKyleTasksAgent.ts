@@ -1,192 +1,100 @@
 import { useConversation } from "@11labs/react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const KYLE_TASKS_AGENT_ID = "agent_4501kc9n5339ffxaymhzm1d9cgen";
 
-interface TaskToolParams {
-  title?: string;
-  description?: string;
-  due_date?: string;
-  reminder_time?: string;
-  priority?: string;
-  task_id?: string;
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
-interface AlarmToolParams {
-  time: string;
-  label?: string;
-  recurrence?: 'none' | 'daily' | 'weekly';
-  recurrence_days?: string[];
-}
-
-export function useKyleTasksAgent(onAlarmCreated?: () => void) {
+export function useKyleTasksAgent(onAlarmCreated?: () => void, onTasksChanged?: () => void) {
   const [error, setError] = useState<string | null>(null);
+  const [isProcessingCommand, setIsProcessingCommand] = useState(false);
+  const conversationHistoryRef = useRef<ConversationMessage[]>([]);
+  const { toast } = useToast();
+
+  const processVoiceCommand = useCallback(async (userMessage: string) => {
+    console.log("Processing voice command:", userMessage);
+    setIsProcessingCommand(true);
+    
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('kyle-tasks-ai', {
+        body: {
+          userMessage,
+          conversationHistory: conversationHistoryRef.current.slice(-6) // Last 6 messages for context
+        }
+      });
+
+      if (fnError) throw fnError;
+
+      console.log("Command result:", data);
+
+      // Add to conversation history
+      conversationHistoryRef.current.push({ role: 'user', content: userMessage });
+      conversationHistoryRef.current.push({ role: 'assistant', content: data?.message || 'Done' });
+
+      // Notify about changes
+      if (data?.success) {
+        if (data.action === 'set_alarm' && onAlarmCreated) {
+          onAlarmCreated();
+        }
+        if (['create_task', 'complete_task', 'delete_task'].includes(data.action) && onTasksChanged) {
+          onTasksChanged();
+        }
+        
+        toast({
+          title: "Command executed",
+          description: data.message,
+        });
+      } else if (data?.message) {
+        toast({
+          title: "Kyle",
+          description: data.message,
+          variant: "default",
+        });
+      }
+
+      return data;
+    } catch (err) {
+      console.error("Error processing command:", err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to process command",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsProcessingCommand(false);
+    }
+  }, [onAlarmCreated, onTasksChanged, toast]);
 
   const conversation = useConversation({
     onConnect: () => {
       console.log("Kyle Tasks connected");
       setError(null);
+      conversationHistoryRef.current = []; // Reset history on new conversation
     },
     onDisconnect: () => {
       console.log("Kyle Tasks disconnected");
     },
-    onMessage: (message) => {
+    onMessage: async (message) => {
       console.log("Kyle Tasks message:", message);
+      
+      // Detect user messages and process them through our AI
+      if (message.source === 'user' && message.message && typeof message.message === 'string') {
+        const userText = message.message.trim();
+        if (userText.length > 2) {
+          // Process the voice command through Lovable AI
+          await processVoiceCommand(userText);
+        }
+      }
     },
     onError: (errorMessage) => {
       console.error("Kyle Tasks error:", errorMessage);
       setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
-    },
-    clientTools: {
-      create_task: async (params: TaskToolParams) => {
-        console.log("Creating task:", params);
-        try {
-          const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-            body: {
-              action: 'create',
-              task: {
-                title: params.title || "New task",
-                description: params.description,
-                due_date: params.due_date,
-                reminder_time: params.reminder_time,
-                priority: params.priority || 'medium',
-              }
-            }
-          });
-          
-          if (error) throw error;
-          return data?.message || "Task created successfully";
-        } catch (err) {
-          console.error("Error creating task:", err);
-          return "Sorry, I couldn't create the task. Please try again.";
-        }
-      },
-      
-      complete_task: async (params: TaskToolParams) => {
-        console.log("Completing task:", params);
-        try {
-          if (params.task_id) {
-            const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-              body: { action: 'complete', task: { id: params.task_id } }
-            });
-            if (error) throw error;
-            return data?.message || "Task completed";
-          }
-          
-          const { data: tasks } = await supabase
-            .from('tasks')
-            .select('id, title')
-            .eq('is_completed', false)
-            .ilike('title', `%${params.title}%`)
-            .limit(1);
-          
-          if (!tasks || tasks.length === 0) {
-            return `I couldn't find a task matching "${params.title}"`;
-          }
-          
-          const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-            body: { action: 'complete', task: { id: tasks[0].id } }
-          });
-          
-          if (error) throw error;
-          return data?.message || `Task "${tasks[0].title}" marked as complete`;
-        } catch (err) {
-          console.error("Error completing task:", err);
-          return "Sorry, I couldn't complete the task. Please try again.";
-        }
-      },
-      
-      delete_task: async (params: TaskToolParams) => {
-        console.log("Deleting task:", params);
-        try {
-          if (params.task_id) {
-            const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-              body: { action: 'delete', task: { id: params.task_id } }
-            });
-            if (error) throw error;
-            return data?.message || "Task deleted";
-          }
-          
-          const { data: tasks } = await supabase
-            .from('tasks')
-            .select('id, title')
-            .ilike('title', `%${params.title}%`)
-            .limit(1);
-          
-          if (!tasks || tasks.length === 0) {
-            return `I couldn't find a task matching "${params.title}"`;
-          }
-          
-          const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-            body: { action: 'delete', task: { id: tasks[0].id } }
-          });
-          
-          if (error) throw error;
-          return data?.message || `Task "${tasks[0].title}" deleted`;
-        } catch (err) {
-          console.error("Error deleting task:", err);
-          return "Sorry, I couldn't delete the task. Please try again.";
-        }
-      },
-      
-      list_tasks: async () => {
-        console.log("Listing tasks");
-        try {
-          const { data, error } = await supabase.functions.invoke('kyle-tasks', {
-            body: { action: 'list', task: {} }
-          });
-          
-          if (error) throw error;
-          
-          const tasks = data?.tasks || [];
-          if (tasks.length === 0) {
-            return "You don't have any pending tasks.";
-          }
-          
-          const taskList = tasks.map((t: { title: string; priority: string }) => 
-            `${t.title} (${t.priority} priority)`
-          ).join(", ");
-          
-          return `You have ${tasks.length} pending tasks: ${taskList}`;
-        } catch (err) {
-          console.error("Error listing tasks:", err);
-          return "Sorry, I couldn't get your tasks. Please try again.";
-        }
-      },
-      
-      set_alarm: async (params: AlarmToolParams) => {
-        console.log("Setting alarm:", params);
-        try {
-          const { error } = await supabase
-            .from('alarms')
-            .insert({
-              time: params.time,
-              label: params.label || "Alarm",
-              is_active: true,
-              recurrence: params.recurrence || 'none',
-              recurrence_days: params.recurrence_days || null,
-            });
-          
-          if (error) throw error;
-          
-          if (onAlarmCreated) {
-            onAlarmCreated();
-          }
-          
-          let message = `Alarm set for ${params.time}`;
-          if (params.label) message += ` - ${params.label}`;
-          if (params.recurrence === 'daily') message += ` (repeats daily)`;
-          if (params.recurrence === 'weekly' && params.recurrence_days) {
-            message += ` (repeats on ${params.recurrence_days.join(', ')})`;
-          }
-          
-          return message;
-        } catch (err) {
-          console.error("Error setting alarm:", err);
-          return "Sorry, I couldn't set the alarm. Please try again.";
-        }
-      },
     },
   });
 
@@ -226,9 +134,11 @@ export function useKyleTasksAgent(onAlarmCreated?: () => void) {
     status: conversation.status,
     isSpeaking: conversation.isSpeaking,
     isConnected: conversation.status === "connected",
+    isProcessingCommand,
     error,
     startConversation,
     stopConversation,
     toggleConversation,
+    processVoiceCommand, // Expose for manual testing
   };
 }

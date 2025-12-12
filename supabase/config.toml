@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.create-kyle-tasks-agent]
 verify_jwt = false
+
+[functions.kyle-tasks-ai]
+verify_jwt = false
