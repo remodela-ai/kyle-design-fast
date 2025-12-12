@@ -59,7 +59,20 @@ const Productivity = () => {
     setAlarms(data || []);
   }, []);
 
-  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent(fetchAlarms);
+  const fetchTasks = async () => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      return;
+    }
+    setTasks(data || []);
+  };
+
+  const { isConnected, isSpeaking, isProcessingCommand, toggleConversation } = useKyleTasksAgent(fetchAlarms, fetchTasks);
 
   // Initialize audio
   useEffect(() => {
@@ -303,18 +316,7 @@ const Productivity = () => {
     return () => clearInterval(reminderInterval);
   }, [tasks, toast]);
 
-  const fetchTasks = async () => {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching tasks:', error);
-      return;
-    }
-    setTasks(data || []);
-  };
+  // fetchTasks is defined above with useKyleTasksAgent
 
   const toggleTaskComplete = async (taskId: string, isCompleted: boolean) => {
     const { error } = await supabase
@@ -446,9 +448,11 @@ const Productivity = () => {
               />
               {isConnected && <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />}
               <p className="text-sm text-muted-foreground text-center">
-                {isConnected 
-                  ? (isSpeaking ? "Kyle is speaking..." : "Listening...") 
-                  : "Tap Kyle to add tasks by voice"}
+                {isProcessingCommand 
+                  ? "Processing command..." 
+                  : isConnected 
+                    ? (isSpeaking ? "Kyle is speaking..." : "Listening...") 
+                    : "Tap Kyle to add tasks by voice"}
               </p>
               <div className="text-xs text-muted-foreground/70 text-center space-y-1">
                 <p>"Add task [title] for tomorrow"</p>
