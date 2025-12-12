@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { useKyleTasksAgent } from "@/hooks/useKyleTasksAgent";
 import { AudioWaves } from "@/components/AudioWaves";
-import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X, Timer, Repeat, CalendarDays } from "lucide-react";
+import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X, Timer, Repeat, CalendarDays, Volume2 } from "lucide-react";
 
 interface Task {
   id: string;
@@ -33,6 +33,7 @@ interface Alarm {
 }
 
 const ALARM_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+const TASK_NOTIFICATION_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"; // pip pip pip beep
 const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 const Productivity = () => {
@@ -43,7 +44,10 @@ const Productivity = () => {
   const [isAlarmRinging, setIsAlarmRinging] = useState(false);
   const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
   const [triggeredAlarmIds, setTriggeredAlarmIds] = useState<Set<string>>(new Set());
+  const [isReadingTask, setIsReadingTask] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const taskNotificationRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   const fetchAlarms = useCallback(async () => {
@@ -78,10 +82,19 @@ const Productivity = () => {
   useEffect(() => {
     audioRef.current = new Audio(ALARM_SOUND_URL);
     audioRef.current.loop = true;
+    taskNotificationRef.current = new Audio(TASK_NOTIFICATION_SOUND_URL);
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (taskNotificationRef.current) {
+        taskNotificationRef.current.pause();
+        taskNotificationRef.current = null;
+      }
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current = null;
       }
     };
   }, []);
@@ -288,7 +301,7 @@ const Productivity = () => {
     };
   }, []);
 
-  // Check for reminders
+  // Check for reminders and play notification sound
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -297,6 +310,11 @@ const Productivity = () => {
           const reminderTime = new Date(task.reminder_time);
           const diff = Math.abs(now.getTime() - reminderTime.getTime());
           if (diff < 60000) {
+            // Play pip pip pip notification sound
+            if (taskNotificationRef.current) {
+              taskNotificationRef.current.play().catch(console.error);
+            }
+            
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification("Task Reminder", {
                 body: task.title,
@@ -315,6 +333,52 @@ const Productivity = () => {
     const reminderInterval = setInterval(checkReminders, 30000);
     return () => clearInterval(reminderInterval);
   }, [tasks, toast]);
+
+  // Read task with TTS
+  const readTaskWithTTS = async (task: Task) => {
+    if (isReadingTask) {
+      // Stop current reading
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current = null;
+      }
+      setIsReadingTask(null);
+      return;
+    }
+
+    setIsReadingTask(task.id);
+    
+    try {
+      const textToRead = task.description 
+        ? `${task.title}. ${task.description}` 
+        : task.title;
+
+      const { data, error } = await supabase.functions.invoke('read-task-tts', {
+        body: { text: textToRead }
+      });
+
+      if (error) throw error;
+
+      const audioBlob = new Blob([data], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      ttsAudioRef.current = new Audio(audioUrl);
+      
+      ttsAudioRef.current.onended = () => {
+        setIsReadingTask(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await ttsAudioRef.current.play();
+    } catch (err) {
+      console.error('Error reading task:', err);
+      toast({
+        title: "Error reading task",
+        description: "Could not generate audio",
+        variant: "destructive"
+      });
+      setIsReadingTask(null);
+    }
+  };
 
   // fetchTasks is defined above with useKyleTasksAgent
 
@@ -544,14 +608,25 @@ const Productivity = () => {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteTask(task.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`text-muted-foreground hover:text-primary ${isReadingTask === task.id ? 'text-primary animate-pulse' : ''}`}
+                          onClick={() => readTaskWithTTS(task)}
+                          title="Read task with Kyle's voice"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteTask(task.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))

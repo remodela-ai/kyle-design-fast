@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.kyle-tasks-ai]
 verify_jwt = false
+
+[functions.read-task-tts]
+verify_jwt = false
