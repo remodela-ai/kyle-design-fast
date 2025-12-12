@@ -440,7 +440,7 @@ const DailyNextInteriors = () => {
     try {
       toast({
         title: "Generating GTM Synthesis...",
-        description: "Kyle is analyzing both sessions",
+        description: "Processing... (usually 5-10 seconds)",
       });
 
       const { data, error } = await supabase.functions.invoke('gtm-synthesis', {
