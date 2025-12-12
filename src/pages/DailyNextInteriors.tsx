@@ -637,23 +637,62 @@ const DailyNextInteriors = () => {
 
   // Re-run synthesis on a past sync
   const rerunSynthesis = async (sync: any) => {
-    if (!sync.oriel_notes && !sync.james_notes) {
-      toast({
-        title: "Cannot re-analyze",
-        description: "This sync has no conversation notes",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setCurrentSyncId(sync.id);
-    setOrielSummary(sync.oriel_notes || "");
-    setJamesSummary(sync.james_notes || "");
     setCurrentPhase('synthesis');
     setIsGeneratingSynthesis(true);
     setShowHistory(false);
     
     try {
+      // First, try to get notes from sync, otherwise reconstruct from messages
+      let orielNotes = sync.oriel_notes || "";
+      let jamesNotes = sync.james_notes || "";
+      
+      // If notes are empty, try to reconstruct from sync_messages
+      if (!orielNotes || !jamesNotes) {
+        const { data: messages } = await supabase
+          .from('sync_messages')
+          .select('*')
+          .eq('sync_id', sync.id)
+          .order('timestamp', { ascending: true });
+        
+        if (messages && messages.length > 0) {
+          if (!orielNotes) {
+            orielNotes = messages
+              .filter(m => m.phase === 'oriel')
+              .map(m => `${m.speaker}: ${m.content}`)
+              .join('\n');
+          }
+          if (!jamesNotes) {
+            jamesNotes = messages
+              .filter(m => m.phase === 'james')
+              .map(m => `${m.speaker}: ${m.content}`)
+              .join('\n');
+          }
+          
+          // Save reconstructed notes back to daily_syncs
+          if (orielNotes || jamesNotes) {
+            await supabase.from('daily_syncs').update({
+              oriel_notes: orielNotes || null,
+              james_notes: jamesNotes || null
+            }).eq('id', sync.id);
+          }
+        }
+      }
+      
+      if (!orielNotes && !jamesNotes) {
+        toast({
+          title: "Cannot re-analyze",
+          description: "This sync has no conversation notes or messages",
+          variant: "destructive"
+        });
+        setCurrentPhase('idle');
+        setIsGeneratingSynthesis(false);
+        return;
+      }
+
+      setOrielSummary(orielNotes);
+      setJamesSummary(jamesNotes);
+      
       toast({
         title: "Re-analyzing sync...",
         description: `Processing ${new Date(sync.sync_date).toLocaleDateString()}`,
@@ -661,8 +700,8 @@ const DailyNextInteriors = () => {
 
       const { data, error } = await supabase.functions.invoke('gtm-synthesis', {
         body: { 
-          orielNotes: sync.oriel_notes || '', 
-          jamesNotes: sync.james_notes || '', 
+          orielNotes, 
+          jamesNotes, 
           knowledgeBase 
         }
       });
@@ -1153,7 +1192,7 @@ const DailyNextInteriors = () => {
                             e.stopPropagation();
                             rerunSynthesis(sync);
                           }}
-                          disabled={isGeneratingSynthesis || (!sync.oriel_notes && !sync.james_notes)}
+                          disabled={isGeneratingSynthesis}
                         >
                           {isGeneratingSynthesis && selectedPastSync?.id === sync.id ? (
                             <div className="w-3 h-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
