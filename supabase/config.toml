@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.create-kyle-comm-agent]
 verify_jwt = false
+
+[functions.gtm-synthesis]
+verify_jwt = false

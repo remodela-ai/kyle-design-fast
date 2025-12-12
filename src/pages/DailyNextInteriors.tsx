@@ -329,37 +329,57 @@ const DailyNextInteriors = () => {
     }
   }, [conversation, notes, toast, knowledgeBase, jamesFiles]);
 
+  const [isGeneratingSynthesis, setIsGeneratingSynthesis] = useState(false);
+
   const generateSynthesis = useCallback(async () => {
+    setCurrentPhase('synthesis');
+    setIsGeneratingSynthesis(true);
+    
+    const orielNotes = notes.filter(n => n.phase === 'oriel').map(n => `${n.speaker}: ${n.content}`).join('\n');
     const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');
+    
+    setOrielSummary(orielNotes);
     setJamesSummary(jamesNotes);
     
-    // Generate the final GTM plan based on both conversations
-    const allNotes = notes.map(n => `[${n.phase.toUpperCase()}] ${n.speaker}: ${n.content}`).join('\n\n');
-    
-    setFinalPlan(`
-**Go-to-Market Daily Sync Summary**
+    try {
+      toast({
+        title: "Generating GTM Synthesis...",
+        description: "Kyle is analyzing both sessions",
+      });
 
-📋 **From Oriel's Session:**
-${orielSummary || "No notes captured"}
+      const { data, error } = await supabase.functions.invoke('gtm-synthesis', {
+        body: { 
+          orielNotes, 
+          jamesNotes, 
+          knowledgeBase 
+        }
+      });
 
-🔧 **From James's Session:**
-${jamesNotes || "No notes captured"}
+      if (error) throw error;
 
-🎯 **Action Items:**
-- Review captured insights
-- Align on priorities
-- Execute GTM strategy
-
-_This synthesis is based on today's triangulation meeting._
-    `);
-    
-    setCurrentPhase('complete');
-    
-    toast({
-      title: "GTM Plan Ready",
-      description: "Kyle has synthesized the daily sync",
-    });
-  }, [notes, orielSummary, toast]);
+      if (data?.synthesis) {
+        setFinalPlan(data.synthesis);
+        setCurrentPhase('complete');
+        
+        toast({
+          title: "GTM Plan Ready!",
+          description: "Kyle has synthesized the daily sync",
+        });
+      } else {
+        throw new Error("No synthesis generated");
+      }
+    } catch (err) {
+      console.error("Synthesis error:", err);
+      toast({
+        title: "Synthesis Error",
+        description: err instanceof Error ? err.message : "Failed to generate synthesis",
+        variant: "destructive",
+      });
+      setCurrentPhase('james'); // Go back to allow retry
+    } finally {
+      setIsGeneratingSynthesis(false);
+    }
+  }, [notes, knowledgeBase, toast]);
 
   const endCurrentSession = useCallback(async () => {
     await conversation.endSession();
@@ -629,20 +649,27 @@ _This synthesis is based on today's triangulation meeting._
                   <Button 
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={generateSynthesis}
+                    disabled={isGeneratingSynthesis}
                   >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Generate GTM Plan
+                    {isGeneratingSynthesis ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                        Generating Synthesis...
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Generate GTM Plan
+                      </>
+                    )}
                   </Button>
                 )}
                 
                 {currentPhase === 'synthesis' && (
-                  <Button 
-                    className="w-full bg-primary hover:bg-primary/90"
-                    onClick={generateSynthesis}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Finalize Plan
-                  </Button>
+                  <div className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground">
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Kyle is analyzing both sessions...
+                  </div>
                 )}
                 
                 {currentPhase === 'complete' && (
