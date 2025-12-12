@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      alarms: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pipeline_steps: {
         Row: {
           completed_at: string | null
