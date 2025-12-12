@@ -13,16 +13,18 @@ import {
   ChevronRight,
   Menu,
   X,
+  Clock,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 
 const navItems = [
-  { icon: Home, label: "Home", active: true },
-  { icon: LayoutDashboard, label: "Dashboard" },
-  { icon: FolderKanban, label: "Projects" },
-  { icon: Heart, label: "Collections" },
-  { icon: CreditCard, label: "Billing" },
-  { icon: HelpCircle, label: "Help" },
+  { icon: Home, label: "Home", active: true, path: "/" },
+  { icon: Clock, label: "Productivity", path: "/productivity" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: FolderKanban, label: "Projects", path: "/" },
+  { icon: Heart, label: "Collections", path: "/" },
+  { icon: CreditCard, label: "Billing", path: "/" },
+  { icon: HelpCircle, label: "Help", path: "/" },
 ];
 
 interface AppSidebarProps {
@@ -110,9 +112,9 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
                 <SidebarNavItem
                   icon={item.icon}
                   label={item.label}
-                  active={item.active}
                   collapsed={collapsed && !mobileOpen}
                   onClick={onMobileClose}
+                  path={item.path}
                 />
               </li>
             ))}
