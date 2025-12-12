@@ -16,6 +16,8 @@ interface TaskToolParams {
 interface AlarmToolParams {
   time: string;
   label?: string;
+  recurrence?: 'none' | 'daily' | 'weekly';
+  recurrence_days?: string[];
 }
 
 export function useKyleTasksAgent(onAlarmCreated?: () => void) {
@@ -162,6 +164,8 @@ export function useKyleTasksAgent(onAlarmCreated?: () => void) {
               time: params.time,
               label: params.label || "Alarm",
               is_active: true,
+              recurrence: params.recurrence || 'none',
+              recurrence_days: params.recurrence_days || null,
             });
           
           if (error) throw error;
@@ -170,7 +174,14 @@ export function useKyleTasksAgent(onAlarmCreated?: () => void) {
             onAlarmCreated();
           }
           
-          return `Alarm set for ${params.time}${params.label ? ` - ${params.label}` : ""}`;
+          let message = `Alarm set for ${params.time}`;
+          if (params.label) message += ` - ${params.label}`;
+          if (params.recurrence === 'daily') message += ` (repeats daily)`;
+          if (params.recurrence === 'weekly' && params.recurrence_days) {
+            message += ` (repeats on ${params.recurrence_days.join(', ')})`;
+          }
+          
+          return message;
         } catch (err) {
           console.error("Error setting alarm:", err);
           return "Sorry, I couldn't set the alarm. Please try again.";

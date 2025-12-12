@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { useKyleTasksAgent } from "@/hooks/useKyleTasksAgent";
 import { AudioWaves } from "@/components/AudioWaves";
-import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X, Timer } from "lucide-react";
+import { Clock, Bell, Trash2, CheckCircle2, AlarmClock, X, Timer, Repeat, CalendarDays } from "lucide-react";
 
 interface Task {
   id: string;
@@ -28,9 +28,12 @@ interface Alarm {
   time: string;
   label: string;
   is_active: boolean;
+  recurrence: string | null;
+  recurrence_days: string[] | null;
 }
 
 const ALARM_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 const Productivity = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -39,6 +42,7 @@ const Productivity = () => {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [isAlarmRinging, setIsAlarmRinging] = useState(false);
   const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
+  const [triggeredAlarmIds, setTriggeredAlarmIds] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
@@ -77,6 +81,14 @@ const Productivity = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Reset triggered alarms at minute change
+  useEffect(() => {
+    const seconds = currentTime.getSeconds();
+    if (seconds === 0) {
+      setTriggeredAlarmIds(new Set());
+    }
+  }, [currentTime]);
+
   // Request notification permission
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -102,13 +114,32 @@ const Productivity = () => {
     };
   }, [fetchAlarms]);
 
+  // Check if alarm should trigger based on recurrence
+  const shouldAlarmTrigger = (alarm: Alarm): boolean => {
+    const now = format(currentTime, "HH:mm");
+    if (alarm.time !== now || !alarm.is_active) return false;
+    
+    // Already triggered this minute
+    if (triggeredAlarmIds.has(alarm.id)) return false;
+    
+    const recurrence = alarm.recurrence || 'none';
+    
+    if (recurrence === 'none') return true;
+    if (recurrence === 'daily') return true;
+    if (recurrence === 'weekly' && alarm.recurrence_days) {
+      const todayName = DAYS_OF_WEEK[currentTime.getDay()];
+      return alarm.recurrence_days.includes(todayName);
+    }
+    
+    return true;
+  };
+
   // Check for alarms
   useEffect(() => {
     const checkAlarms = () => {
-      const now = format(currentTime, "HH:mm");
-      
       alarms.forEach(alarm => {
-        if (alarm.is_active && alarm.time === now && !isAlarmRinging) {
+        if (shouldAlarmTrigger(alarm) && !isAlarmRinging) {
+          setTriggeredAlarmIds(prev => new Set(prev).add(alarm.id));
           setIsAlarmRinging(true);
           setRingingAlarm(alarm);
           
@@ -137,10 +168,16 @@ const Productivity = () => {
     setIsAlarmRinging(false);
     
     if (ringingAlarm) {
-      await supabase
-        .from('alarms')
-        .update({ is_active: false })
-        .eq('id', ringingAlarm.id);
+      const recurrence = ringingAlarm.recurrence || 'none';
+      
+      // Only deactivate if it's not recurring
+      if (recurrence === 'none') {
+        await supabase
+          .from('alarms')
+          .update({ is_active: false })
+          .eq('id', ringingAlarm.id);
+      }
+      // Recurring alarms stay active
     }
     setRingingAlarm(null);
   };
@@ -153,13 +190,27 @@ const Productivity = () => {
     setIsAlarmRinging(false);
     
     if (ringingAlarm) {
-      // Calculate new time (5 minutes from now)
       const newTime = format(addMinutes(currentTime, 5), "HH:mm");
       
-      await supabase
-        .from('alarms')
-        .update({ time: newTime })
-        .eq('id', ringingAlarm.id);
+      // For recurring alarms, create a temporary one-time snooze alarm
+      const recurrence = ringingAlarm.recurrence || 'none';
+      
+      if (recurrence !== 'none') {
+        // Create a temporary alarm for snooze
+        await supabase
+          .from('alarms')
+          .insert({
+            time: newTime,
+            label: `${ringingAlarm.label} (snoozed)`,
+            is_active: true,
+            recurrence: 'none',
+          });
+      } else {
+        await supabase
+          .from('alarms')
+          .update({ time: newTime })
+          .eq('id', ringingAlarm.id);
+      }
       
       toast({
         title: "Snoozed",
@@ -187,6 +238,23 @@ const Productivity = () => {
       .from('alarms')
       .update({ is_active: !currentState })
       .eq('id', id);
+  };
+
+  const getRecurrenceIcon = (alarm: Alarm) => {
+    const recurrence = alarm.recurrence || 'none';
+    if (recurrence === 'daily') return <Repeat className="w-3 h-3" />;
+    if (recurrence === 'weekly') return <CalendarDays className="w-3 h-3" />;
+    return null;
+  };
+
+  const getRecurrenceLabel = (alarm: Alarm) => {
+    const recurrence = alarm.recurrence || 'none';
+    if (recurrence === 'daily') return 'Daily';
+    if (recurrence === 'weekly' && alarm.recurrence_days) {
+      const shortDays = alarm.recurrence_days.map(d => d.slice(0, 3).toUpperCase());
+      return shortDays.join(', ');
+    }
+    return null;
   };
 
   // Fetch tasks
@@ -306,9 +374,15 @@ const Productivity = () => {
           <Card className="bg-card border-primary p-8 text-center max-w-md mx-4">
             <div className="text-6xl mb-4">⏰</div>
             <h2 className="text-2xl font-bold text-foreground mb-2">ALARM!</h2>
-            <p className="text-xl text-primary mb-4">{ringingAlarm.label}</p>
-            <p className="text-lg text-muted-foreground mb-6">{ringingAlarm.time}</p>
-            <div className="flex gap-3">
+            <p className="text-xl text-primary mb-2">{ringingAlarm.label}</p>
+            <p className="text-lg text-muted-foreground mb-2">{ringingAlarm.time}</p>
+            {getRecurrenceLabel(ringingAlarm) && (
+              <Badge variant="outline" className="mb-4">
+                {getRecurrenceIcon(ringingAlarm)}
+                <span className="ml-1">{getRecurrenceLabel(ringingAlarm)}</span>
+              </Badge>
+            )}
+            <div className="flex gap-3 mt-4">
               <Button 
                 size="lg" 
                 variant="outline"
@@ -378,9 +452,9 @@ const Productivity = () => {
               </p>
               <div className="text-xs text-muted-foreground/70 text-center space-y-1">
                 <p>"Add task [title] for tomorrow"</p>
-                <p>"Set an alarm for 3pm"</p>
+                <p>"Set a daily alarm for 7am"</p>
+                <p>"Set alarm for Monday and Friday at 9am"</p>
                 <p>"Complete task [name]"</p>
-                <p>"List my tasks"</p>
               </div>
             </CardContent>
           </Card>
@@ -509,7 +583,15 @@ const Productivity = () => {
                       className="flex-1 cursor-pointer"
                       onClick={() => toggleAlarmActive(alarm.id, alarm.is_active)}
                     >
-                      <p className="font-mono text-lg text-primary">{alarm.time}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono text-lg text-primary">{alarm.time}</p>
+                        {getRecurrenceLabel(alarm) && (
+                          <Badge variant="outline" className="text-xs flex items-center gap-1">
+                            {getRecurrenceIcon(alarm)}
+                            {getRecurrenceLabel(alarm)}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">{alarm.label}</p>
                     </div>
                     <Button
