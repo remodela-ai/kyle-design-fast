@@ -160,15 +160,33 @@ const DailyNextInteriors = () => {
     onConnect: () => {
       console.log("Kyle Comm connected");
     },
-    onDisconnect: () => {
+    onDisconnect: async () => {
       console.log("Kyle Comm disconnected, phase:", currentPhaseRef.current);
-      // Handle phase transitions
-      if (currentPhaseRef.current === 'oriel') {
+      const phase = currentPhaseRef.current;
+      
+      // Handle phase transitions and save notes
+      if (phase === 'oriel') {
+        // Save Oriel's notes to database immediately
+        if (currentSyncId) {
+          const orielNotes = notes.filter(n => n.phase === 'oriel').map(n => `${n.speaker}: ${n.content}`).join('\n');
+          await supabase.from('daily_syncs').update({
+            oriel_notes: orielNotes
+          }).eq('id', currentSyncId);
+        }
         toast({
           title: "Session with Oriel complete",
           description: "Ready to talk with James",
         });
-      } else if (currentPhaseRef.current === 'james') {
+      } else if (phase === 'james') {
+        // Save James's notes to database immediately
+        if (currentSyncId) {
+          const jamesNotes = notes.filter(n => n.phase === 'james').map(n => `${n.speaker}: ${n.content}`).join('\n');
+          const orielNotes = notes.filter(n => n.phase === 'oriel').map(n => `${n.speaker}: ${n.content}`).join('\n');
+          await supabase.from('daily_syncs').update({
+            oriel_notes: orielNotes,
+            james_notes: jamesNotes
+          }).eq('id', currentSyncId);
+        }
         toast({
           title: "Session with James complete",
           description: "Kyle is synthesizing the GTM plan",
@@ -558,21 +576,61 @@ const DailyNextInteriors = () => {
   };
 
   const loadPastSync = async (syncId: string) => {
+    // Load sync metadata
     const { data: sync } = await supabase
       .from('daily_syncs')
       .select('*')
       .eq('id', syncId)
       .single();
     
+    // Load conversation messages
+    const { data: messages } = await supabase
+      .from('sync_messages')
+      .select('*')
+      .eq('sync_id', syncId)
+      .order('timestamp', { ascending: true });
+    
     if (sync) {
       setSelectedPastSync(sync);
-      setOrielSummary(sync.oriel_notes || "");
-      setJamesSummary(sync.james_notes || "");
+      
+      // If notes are stored, use them; otherwise reconstruct from messages
+      let orielNotes = sync.oriel_notes || "";
+      let jamesNotes = sync.james_notes || "";
+      
+      if (messages && messages.length > 0) {
+        // Reconstruct notes from messages if not stored in sync
+        if (!orielNotes) {
+          orielNotes = messages
+            .filter(m => m.phase === 'oriel')
+            .map(m => `${m.speaker}: ${m.content}`)
+            .join('\n');
+        }
+        if (!jamesNotes) {
+          jamesNotes = messages
+            .filter(m => m.phase === 'james')
+            .map(m => `${m.speaker}: ${m.content}`)
+            .join('\n');
+        }
+        
+        // Also load notes into state for potential re-analysis
+        const loadedNotes: ConversationNote[] = messages.map(m => ({
+          phase: m.phase,
+          speaker: m.speaker,
+          content: m.content,
+          timestamp: new Date(m.timestamp)
+        }));
+        setNotes(loadedNotes);
+      }
+      
+      setOrielSummary(orielNotes);
+      setJamesSummary(jamesNotes);
       setFinalPlan(sync.synthesis || "");
       setCurrentPhase('complete');
+      setCurrentSyncId(sync.id);
+      
       toast({
         title: "Past sync loaded",
-        description: `Sync from ${new Date(sync.sync_date).toLocaleDateString()}`,
+        description: `Sync from ${new Date(sync.sync_date).toLocaleDateString()} - ${messages?.length || 0} messages`,
       });
     }
   };
