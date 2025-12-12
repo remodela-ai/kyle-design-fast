@@ -353,13 +353,24 @@ const Productivity = () => {
         ? `${task.title}. ${task.description}` 
         : task.title;
 
-      const { data, error } = await supabase.functions.invoke('read-task-tts', {
-        body: { text: textToRead }
-      });
+      // Use fetch directly to get audio as blob
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/read-task-tts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: textToRead }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
 
-      const audioBlob = new Blob([data], { type: 'audio/mpeg' });
+      const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       ttsAudioRef.current = new Audio(audioUrl);
       
