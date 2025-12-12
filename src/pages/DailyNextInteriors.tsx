@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useConversation } from "@11labs/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History } from "lucide-react";
 
 // Kyle Comm agent ID - dedicated GTM Daily Sync agent
 const KYLE_COMM_AGENT_ID = "agent_5901kc9zv1axfh8ax6atcwnv4w1y";
@@ -67,6 +67,17 @@ const DailyNextInteriors = () => {
   const [jamesSummary, setJamesSummary] = useState<string>("");
   const [finalPlan, setFinalPlan] = useState<string>("");
   const [knowledgeBase, setKnowledgeBase] = useState<string>("");
+  const [currentSyncId, setCurrentSyncId] = useState<string | null>(null);
+  const [pastSyncs, setPastSyncs] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  
+  // Use ref to track current phase for callbacks (avoids stale closure)
+  const currentPhaseRef = useRef<ConversationPhase>('idle');
+  
+  // Update ref whenever phase changes
+  useEffect(() => {
+    currentPhaseRef.current = currentPhase;
+  }, [currentPhase]);
   
   // Language selection for Oriel
   const [orielLanguage, setOrielLanguage] = useState<OrielLanguage>('en');
@@ -80,19 +91,76 @@ const DailyNextInteriors = () => {
   const jamesFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Load past syncs on mount
+  useEffect(() => {
+    loadPastSyncs();
+  }, []);
+
+  const loadPastSyncs = async () => {
+    const { data, error } = await supabase
+      .from('daily_syncs')
+      .select('*')
+      .order('sync_date', { ascending: false })
+      .limit(10);
+    
+    if (data && !error) {
+      setPastSyncs(data);
+    }
+  };
+
+  // Create a new sync session in database
+  const createSyncSession = async () => {
+    const { data, error } = await supabase
+      .from('daily_syncs')
+      .insert({ 
+        status: 'in_progress',
+        knowledge_base: knowledgeBase || null
+      })
+      .select()
+      .single();
+    
+    if (data && !error) {
+      setCurrentSyncId(data.id);
+      console.log("Created sync session:", data.id);
+      return data.id;
+    }
+    return null;
+  };
+
+  // Save a message to database
+  const saveMessage = async (syncId: string, phase: string, speaker: string, content: string) => {
+    await supabase.from('sync_messages').insert({
+      sync_id: syncId,
+      phase,
+      speaker,
+      content,
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  // Update sync with notes and synthesis
+  const updateSyncNotes = async (syncId: string, orielNotes: string, jamesNotes: string, synthesis?: string) => {
+    await supabase.from('daily_syncs').update({
+      oriel_notes: orielNotes,
+      james_notes: jamesNotes,
+      synthesis: synthesis || null,
+      status: synthesis ? 'complete' : 'in_progress'
+    }).eq('id', syncId);
+  };
+
   const conversation = useConversation({
     onConnect: () => {
       console.log("Kyle Comm connected");
     },
     onDisconnect: () => {
-      console.log("Kyle Comm disconnected");
+      console.log("Kyle Comm disconnected, phase:", currentPhaseRef.current);
       // Handle phase transitions
-      if (currentPhase === 'oriel') {
+      if (currentPhaseRef.current === 'oriel') {
         toast({
           title: "Session with Oriel complete",
           description: "Ready to talk with James",
         });
-      } else if (currentPhase === 'james') {
+      } else if (currentPhaseRef.current === 'james') {
         toast({
           title: "Session with James complete",
           description: "Kyle is synthesizing the GTM plan",
@@ -100,25 +168,40 @@ const DailyNextInteriors = () => {
         setCurrentPhase('synthesis');
       }
     },
-    onMessage: (message) => {
-      console.log("Kyle Comm message:", message);
+    onMessage: async (message) => {
+      const phase = currentPhaseRef.current;
+      console.log("Kyle Comm message (phase:", phase, "):", message);
       
       // Capture conversation notes
       if (message.source === 'user' && typeof message.message === 'string') {
-        const speakerName = currentPhase === 'oriel' ? 'Oriel' : currentPhase === 'james' ? 'James' : 'User';
+        const speakerName = phase === 'oriel' ? 'Oriel' : phase === 'james' ? 'James' : 'User';
+        const content = message.message as string;
+        
         setNotes(prev => [...prev, {
-          phase: currentPhase,
+          phase: phase,
           speaker: speakerName,
-          content: message.message as string,
+          content,
           timestamp: new Date()
         }]);
+        
+        // Save to database
+        if (currentSyncId) {
+          saveMessage(currentSyncId, phase, speakerName, content);
+        }
       } else if (message.source === 'ai' && typeof message.message === 'string') {
+        const content = message.message as string;
+        
         setNotes(prev => [...prev, {
-          phase: currentPhase,
+          phase: phase,
           speaker: 'Kyle',
-          content: message.message as string,
+          content,
           timestamp: new Date()
         }]);
+        
+        // Save to database
+        if (currentSyncId) {
+          saveMessage(currentSyncId, phase, 'Kyle', content);
+        }
       }
     },
     onError: (error) => {
@@ -239,6 +322,12 @@ const DailyNextInteriors = () => {
           autoGainControl: true,
         },
       });
+
+      // Create sync session in database
+      const syncId = await createSyncSession();
+      if (!syncId) {
+        console.warn("Could not create sync session, continuing without persistence");
+      }
 
       setCurrentPhase("oriel");
       setNotes([]);
@@ -361,6 +450,12 @@ const DailyNextInteriors = () => {
         setFinalPlan(data.synthesis);
         setCurrentPhase('complete');
         
+        // Save to database
+        if (currentSyncId) {
+          await updateSyncNotes(currentSyncId, orielNotes, jamesNotes, data.synthesis);
+          loadPastSyncs(); // Refresh history
+        }
+        
         toast({
           title: "GTM Plan Ready!",
           description: "Kyle has synthesized the daily sync",
@@ -379,7 +474,7 @@ const DailyNextInteriors = () => {
     } finally {
       setIsGeneratingSynthesis(false);
     }
-  }, [notes, knowledgeBase, toast]);
+  }, [notes, knowledgeBase, toast, currentSyncId]);
 
   const endCurrentSession = useCallback(async () => {
     await conversation.endSession();
@@ -387,10 +482,31 @@ const DailyNextInteriors = () => {
 
   const resetDaily = () => {
     setCurrentPhase('idle');
+    setCurrentSyncId(null);
     setNotes([]);
     setOrielSummary("");
     setJamesSummary("");
     setFinalPlan("");
+  };
+
+  const loadPastSync = async (syncId: string) => {
+    const { data: sync } = await supabase
+      .from('daily_syncs')
+      .select('*')
+      .eq('id', syncId)
+      .single();
+    
+    if (sync) {
+      setOrielSummary(sync.oriel_notes || "");
+      setJamesSummary(sync.james_notes || "");
+      setFinalPlan(sync.synthesis || "");
+      setCurrentPhase('complete');
+      setShowHistory(false);
+      toast({
+        title: "Past sync loaded",
+        description: `Sync from ${new Date(sync.sync_date).toLocaleDateString()}`,
+      });
+    }
   };
 
   const createKyleCommAgent = async () => {
@@ -700,6 +816,16 @@ const DailyNextInteriors = () => {
                       <Upload className="w-4 h-4 mr-2" />
                       {knowledgeBase ? "Knowledge Base Loaded ✓" : "Upload GTM Knowledge Base"}
                     </Button>
+
+                    {/* View Past Syncs */}
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => setShowHistory(!showHistory)}
+                    >
+                      <History className="w-4 h-4 mr-2" />
+                      {showHistory ? "Hide History" : "View Past Syncs"}
+                    </Button>
                     
                     {/* Admin: Create Kyle Comm Agent */}
                     <Button 
@@ -716,6 +842,46 @@ const DailyNextInteriors = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Past Syncs History */}
+          {showHistory && pastSyncs.length > 0 && (
+            <Card className="bg-card/50 border-primary/20 backdrop-blur-sm lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary" />
+                  Past Daily Syncs
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+                {pastSyncs.map((sync) => (
+                  <div 
+                    key={sync.id}
+                    className="p-3 rounded-lg border border-muted hover:border-primary/50 cursor-pointer transition-colors"
+                    onClick={() => loadPastSync(sync.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">
+                        {new Date(sync.sync_date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                      <Badge variant={sync.status === 'complete' ? 'default' : 'secondary'}>
+                        {sync.status}
+                      </Badge>
+                    </div>
+                    {sync.synthesis && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {sync.synthesis.substring(0, 150)}...
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Conversation Notes */}
           <Card className="bg-card/50 border-primary/20 backdrop-blur-sm lg:col-span-2">
