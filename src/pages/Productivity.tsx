@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { useKyle } from "@/contexts/KyleContext";
+import { useKyleTasksAgent } from "@/hooks/useKyleTasksAgent";
 import { AudioWaves } from "@/components/AudioWaves";
 import { Clock, Bell, Trash2, CheckCircle2 } from "lucide-react";
 
@@ -28,7 +28,7 @@ const Productivity = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
   const { toast } = useToast();
-  const { isConnected, isSpeaking } = useKyle();
+  const { isConnected, isSpeaking, toggleConversation } = useKyleTasksAgent();
 
   // Update clock every second
   useEffect(() => {
@@ -191,7 +191,12 @@ const Productivity = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              <KyleAvatar size="lg" />
+              <KyleAvatar 
+                size="lg" 
+                onClickOverride={toggleConversation}
+                isConnectedOverride={isConnected}
+                isSpeakingOverride={isSpeaking}
+              />
               {isConnected && <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />}
               <p className="text-sm text-muted-foreground text-center">
                 {isConnected 
