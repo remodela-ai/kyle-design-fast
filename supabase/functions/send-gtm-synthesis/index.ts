@@ -12,6 +12,7 @@ interface GTMSynthesisEmailRequest {
   orielNotes: string;
   jamesNotes: string;
   syncDate: string;
+  recipients?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,9 +21,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { synthesis, orielNotes, jamesNotes, syncDate }: GTMSynthesisEmailRequest = await req.json();
+    const { synthesis, orielNotes, jamesNotes, syncDate, recipients }: GTMSynthesisEmailRequest = await req.json();
 
-    console.log("Sending GTM synthesis email for date:", syncDate);
+    // Validate and sanitize recipients
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const defaultRecipient = "oriel@copilotinnoations.com";
+    const validRecipients = recipients && recipients.length > 0
+      ? recipients.filter(email => emailRegex.test(email.trim())).map(e => e.trim().toLowerCase())
+      : [defaultRecipient];
+
+    console.log("Sending GTM synthesis email to:", validRecipients);
 
     const formattedDate = new Date(syncDate).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -128,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Next Interiors <onboarding@resend.dev>",
-        to: ["oriel@copilotinnoations.com"],
+        to: validRecipients,
         subject: `🎯 Daily GTM Sync Complete - ${formattedDate}`,
         html: htmlContent,
       }),

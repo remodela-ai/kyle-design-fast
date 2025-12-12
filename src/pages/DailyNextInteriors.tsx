@@ -8,7 +8,8 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3 } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3, Mail, Plus, X, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 // Kyle Comm agent ID - dedicated GTM Daily Sync agent
 const KYLE_COMM_AGENT_ID = "agent_5901kc9zv1axfh8ax6atcwnv4w1y";
@@ -72,6 +73,10 @@ const DailyNextInteriors = () => {
   const [currentSyncId, setCurrentSyncId] = useState<string | null>(null);
   const [pastSyncs, setPastSyncs] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  
+  // Email recipients for GTM synthesis
+  const [emailRecipients, setEmailRecipients] = useState<string[]>(['oriel@copilotinnoations.com']);
+  const [newEmail, setNewEmail] = useState<string>('');
   
   // Use ref to track current phase for callbacks (avoids stale closure)
   const currentPhaseRef = useRef<ConversationPhase>('idle');
@@ -459,24 +464,32 @@ const DailyNextInteriors = () => {
         }
         
         // Send email notification to team
-        try {
-          await supabase.functions.invoke('send-gtm-synthesis', {
-            body: {
-              synthesis: data.synthesis,
-              orielNotes,
-              jamesNotes,
-              syncDate: new Date().toISOString()
-            }
-          });
+        if (emailRecipients.length > 0) {
+          try {
+            await supabase.functions.invoke('send-gtm-synthesis', {
+              body: {
+                synthesis: data.synthesis,
+                orielNotes,
+                jamesNotes,
+                syncDate: new Date().toISOString(),
+                recipients: emailRecipients
+              }
+            });
+            toast({
+              title: "GTM Plan Ready!",
+              description: `Synthesis sent to ${emailRecipients.length} recipient(s)`,
+            });
+          } catch (emailErr) {
+            console.error("Email send error:", emailErr);
+            toast({
+              title: "GTM Plan Ready!",
+              description: "Synthesis generated (email notification failed)",
+            });
+          }
+        } else {
           toast({
             title: "GTM Plan Ready!",
-            description: "Synthesis sent to oriel@copilotinnoations.com",
-          });
-        } catch (emailErr) {
-          console.error("Email send error:", emailErr);
-          toast({
-            title: "GTM Plan Ready!",
-            description: "Synthesis generated (email notification failed)",
+            description: "Synthesis generated (no recipients configured)",
           });
         }
       } else {
@@ -493,11 +506,46 @@ const DailyNextInteriors = () => {
     } finally {
       setIsGeneratingSynthesis(false);
     }
-  }, [notes, knowledgeBase, toast, currentSyncId]);
+  }, [notes, knowledgeBase, toast, currentSyncId, emailRecipients]);
 
   const endCurrentSession = useCallback(async () => {
     await conversation.endSession();
   }, [conversation]);
+
+  // Email recipient management
+  const addEmailRecipient = () => {
+    const email = newEmail.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!email) return;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (emailRecipients.includes(email)) {
+      toast({
+        title: "Duplicate email",
+        description: "This email is already in the list",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setEmailRecipients(prev => [...prev, email]);
+    setNewEmail('');
+    toast({
+      title: "Recipient added",
+      description: email
+    });
+  };
+
+  const removeEmailRecipient = (email: string) => {
+    setEmailRecipients(prev => prev.filter(e => e !== email));
+  };
 
   const resetDaily = () => {
     setCurrentPhase('idle');
@@ -734,6 +782,49 @@ const DailyNextInteriors = () => {
                             ))}
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Email Recipients */}
+                    <div className="space-y-2 border border-muted rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-foreground">Email Recipients</span>
+                      </div>
+                      
+                      {/* Current recipients */}
+                      <div className="flex flex-wrap gap-1">
+                        {emailRecipients.map((email) => (
+                          <Badge key={email} variant="secondary" className="text-xs flex items-center gap-1">
+                            {email.length > 20 ? `${email.substring(0, 20)}...` : email}
+                            <button
+                              onClick={() => removeEmailRecipient(email)}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {/* Add new recipient */}
+                      <div className="flex gap-1">
+                        <Input
+                          type="email"
+                          placeholder="Add email..."
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addEmailRecipient()}
+                          className="h-8 text-xs"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={addEmailRecipient}
+                          className="h-8 px-2"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
 
