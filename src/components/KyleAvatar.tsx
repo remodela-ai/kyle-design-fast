@@ -5,10 +5,21 @@ import { useKyle } from "@/contexts/KyleContext";
 interface KyleAvatarProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
   onClickOverride?: () => void;
+  isConnectedOverride?: boolean;
+  isSpeakingOverride?: boolean;
 }
 
-export function KyleAvatar({ size = "lg", onClickOverride }: KyleAvatarProps) {
-  const { toggleConversation, isConnected, isSpeaking } = useKyle();
+export function KyleAvatar({ 
+  size = "lg", 
+  onClickOverride,
+  isConnectedOverride,
+  isSpeakingOverride 
+}: KyleAvatarProps) {
+  const kyle = useKyle();
+  
+  const isConnected = isConnectedOverride ?? kyle.isConnected;
+  const isSpeaking = isSpeakingOverride ?? kyle.isSpeaking;
+  const handleClick = onClickOverride ?? kyle.toggleConversation;
 
   const sizeClasses = {
     sm: "w-16 h-16",
@@ -19,8 +30,6 @@ export function KyleAvatar({ size = "lg", onClickOverride }: KyleAvatarProps) {
   };
 
   const speaking = isConnected && isSpeaking;
-
-  const handleClick = onClickOverride || toggleConversation;
 
   return (
     <button

@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.send-design-package]
 verify_jwt = false
+
+[functions.kyle-tasks]
+verify_jwt = false
+
+[functions.create-kyle-tasks-agent]
+verify_jwt = false
