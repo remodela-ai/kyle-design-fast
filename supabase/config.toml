@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.gtm-synthesis]
 verify_jwt = false
+
+[functions.send-gtm-synthesis]
+verify_jwt = false
