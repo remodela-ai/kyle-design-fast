@@ -836,6 +836,16 @@ const DailyNextInteriors = () => {
                 {currentPhase === 'complete' && "Daily sync complete!"}
               </p>
 
+              {/* View Past Syncs - always visible */}
+              <Button 
+                className="w-full"
+                variant="outline"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History className="w-4 h-4 mr-2" />
+                {showHistory ? "Hide History" : "View Past Syncs"} ({pastSyncs.length})
+              </Button>
+
               {/* Action Buttons */}
               <div className="w-full space-y-3">
                 {currentPhase === 'idle' && (
@@ -1080,15 +1090,7 @@ const DailyNextInteriors = () => {
                       {knowledgeBase ? "Knowledge Base Loaded ✓" : "Upload GTM Knowledge Base"}
                     </Button>
 
-                    {/* View Past Syncs */}
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => setShowHistory(!showHistory)}
-                    >
-                      <History className="w-4 h-4 mr-2" />
-                      {showHistory ? "Hide History" : "View Past Syncs"}
-                    </Button>
+                {/* View Past Syncs - moved outside idle check */}
                     
                     {/* Admin: Create Kyle Comm Agent */}
                     <Button 
