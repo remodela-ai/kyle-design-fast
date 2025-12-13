@@ -8,8 +8,10 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3, Mail, Plus, X, Send } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3, Mail, Plus, X, Send, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Kyle Comm agent ID - dedicated GTM Daily Sync agent
 const KYLE_COMM_AGENT_ID = "agent_5901kc9zv1axfh8ax6atcwnv4w1y";
@@ -74,6 +76,9 @@ const DailyNextInteriors = () => {
   const [pastSyncs, setPastSyncs] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedPastSync, setSelectedPastSync] = useState<any | null>(null);
+  const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
+  const [transcriptMessages, setTranscriptMessages] = useState<any[]>([]);
+  const [transcriptSyncDate, setTranscriptSyncDate] = useState<string>("");
   
   // Email recipients for GTM synthesis
   const [emailRecipients, setEmailRecipients] = useState<string[]>(['oriel@copilotinnoations.com']);
@@ -635,6 +640,27 @@ const DailyNextInteriors = () => {
     }
   };
 
+  // View full transcript for a past sync
+  const viewTranscript = async (sync: any) => {
+    try {
+      const { data: messages } = await supabase
+        .from('sync_messages')
+        .select('*')
+        .eq('sync_id', sync.id)
+        .order('timestamp', { ascending: true });
+      
+      setTranscriptMessages(messages || []);
+      setTranscriptSyncDate(sync.sync_date);
+      setTranscriptDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error loading transcript",
+        description: "Could not load conversation messages",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Re-run synthesis on a past sync
   const rerunSynthesis = async (sync: any) => {
     setCurrentSyncId(sync.id);
@@ -1186,6 +1212,18 @@ const DailyNextInteriors = () => {
                         </Badge>
                         <Button
                           size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            viewTranscript(sync);
+                          }}
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          Transcript
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="outline"
                           className="h-7 px-2 text-xs"
                           onClick={(e) => {
@@ -1278,6 +1316,57 @@ const DailyNextInteriors = () => {
           </Card>
         )}
       </div>
+
+      {/* Transcript Dialog */}
+      <Dialog open={transcriptDialogOpen} onOpenChange={setTranscriptDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Conversation Transcript
+              <span className="text-muted-foreground font-normal text-sm ml-2">
+                {transcriptSyncDate && new Date(transcriptSyncDate).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            {transcriptMessages.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No conversation messages found for this sync
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {transcriptMessages.map((msg, idx) => (
+                  <div 
+                    key={idx}
+                    className={`p-3 rounded-lg border ${
+                      msg.speaker === 'Kyle' 
+                        ? 'bg-primary/10 border-primary/30' 
+                        : 'bg-muted/30 border-muted'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={msg.phase === 'oriel' ? 'default' : 'secondary'}>
+                        {msg.phase}
+                      </Badge>
+                      <span className="font-medium text-foreground">{msg.speaker}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{msg.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
