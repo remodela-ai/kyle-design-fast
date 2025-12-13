@@ -36,28 +36,34 @@ serve(async (req) => {
       });
     }
 
-    // Simplified prompt for faster response
-    const systemPrompt = `Eres Cortex, analista de patrones de pensamiento. Genera un documento CONCISO en español.
+    // Dynamic prompt based on who has spoken
+    const speakerName = hasCarlos && !hasOriel ? 'Carlos' : hasOriel && !hasCarlos ? 'Oriel' : 'Carlos y Oriel';
+    const isSingleSpeaker = (hasCarlos && !hasOriel) || (hasOriel && !hasCarlos);
+    
+    const systemPrompt = `Eres Cortex, analista de patrones de pensamiento de alto calibre. Genera un documento CONCISO en español.
+
+${isSingleSpeaker ? `NOTA: Solo ${speakerName} ha hablado. Genera un análisis individual profundo de su conversación.` : 'Analiza las conversaciones de ambos participantes y encuentra conexiones.'}
 
 Estructura:
-## 🧠 Síntesis de Patrones
+## 🧠 Síntesis de Patrones - ${speakerName}
 
 ### 📊 Datos/Métricas Mencionados
-[Lista cualquier número, fecha, porcentaje]
+[Lista cualquier número, fecha, porcentaje mencionado]
 
-### 🔍 Análisis${hasOriel ? ' de Oriel' : ''}${hasCarlos ? (hasOriel ? ' y Carlos' : ' de Carlos') : ''}
-[Temas centrales, preocupaciones ocultas, oportunidades]
+### 🔍 Análisis de ${speakerName}
+[Temas centrales, preocupaciones profundas, oportunidades no obvias]
 
-### 🔗 Conexiones/Patrones
-[2-3 conexiones o patrones identificados]
+${!isSingleSpeaker ? `### 🔗 Conexiones Entre Perspectivas
+[2-3 conexiones o patrones entre las perspectivas de ambos]` : `### 🧩 Patrones Identificados
+[2-3 patrones o frameworks mentales detectados en su pensamiento]`}
 
 ### 💡 Insight Principal
-[Una conclusión poderosa]
+[Una conclusión poderosa y accionable]
 
 ### ⚡ Próximos Pasos
-[2-3 acciones concretas]
+[2-3 acciones concretas basadas en el análisis]
 
-Sé CONCISO pero profundo. Máximo 500 palabras.`;
+Sé CONCISO pero profundo. Máximo 400 palabras.`;
 
     const userPrompt = `Analiza esta conversación:
 
