@@ -13,6 +13,7 @@ import Productivity from "./pages/Productivity";
 import DailyNextInteriors from "./pages/DailyNextInteriors";
 import DailyOrielCarlos from "./pages/DailyOrielCarlos";
 import GTMAnalytics from "./pages/GTMAnalytics";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/daily-next-interiors" element={<DailyNextInteriors />} />
             <Route path="/daily-oriel-carlos" element={<DailyOrielCarlos />} />
             <Route path="/gtm-analytics" element={<GTMAnalytics />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </KyleProvider>

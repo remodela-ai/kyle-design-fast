@@ -15,6 +15,7 @@ import {
   X,
   Clock,
   Target,
+  UserCheck,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 
@@ -23,6 +24,7 @@ const navItems = [
   { icon: Clock, label: "Productivity", path: "/productivity" },
   { icon: Target, label: "Daily GTM", path: "/daily-next-interiors" },
   { icon: Target, label: "Daily O-C", path: "/daily-oriel-carlos" },
+  { icon: UserCheck, label: "Onboarding", path: "/onboarding" },
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: FolderKanban, label: "Projects", path: "/" },
   { icon: Heart, label: "Collections", path: "/" },
