@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.create-kyle-oriel-carlos-agent]
 verify_jwt = false
+
+[functions.create-kyle-onboarding-agent]
+verify_jwt = false
+
+[functions.extract-onboarding-insights]
+verify_jwt = false

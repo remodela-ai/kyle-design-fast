@@ -83,6 +83,90 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_sessions: {
+        Row: {
+          conversation_transcript: string | null
+          created_at: string
+          extracted_insights: Json | null
+          id: string
+          person_name: string
+          session_focus: string | null
+          session_number: number
+        }
+        Insert: {
+          conversation_transcript?: string | null
+          created_at?: string
+          extracted_insights?: Json | null
+          id?: string
+          person_name: string
+          session_focus?: string | null
+          session_number: number
+        }
+        Update: {
+          conversation_transcript?: string | null
+          created_at?: string
+          extracted_insights?: Json | null
+          id?: string
+          person_name?: string
+          session_focus?: string | null
+          session_number?: number
+        }
+        Relationships: []
+      }
+      person_profiles: {
+        Row: {
+          communication_style: string | null
+          created_at: string
+          decision_style: string | null
+          feedback_preferences: string | null
+          frustrations: Json | null
+          id: string
+          onboarding_completed: boolean | null
+          person_name: string
+          personality_summary: string | null
+          priorities: Json | null
+          sessions_completed: number | null
+          strengths: Json | null
+          updated_at: string
+          values_and_motivations: string | null
+          work_style: string | null
+        }
+        Insert: {
+          communication_style?: string | null
+          created_at?: string
+          decision_style?: string | null
+          feedback_preferences?: string | null
+          frustrations?: Json | null
+          id?: string
+          onboarding_completed?: boolean | null
+          person_name: string
+          personality_summary?: string | null
+          priorities?: Json | null
+          sessions_completed?: number | null
+          strengths?: Json | null
+          updated_at?: string
+          values_and_motivations?: string | null
+          work_style?: string | null
+        }
+        Update: {
+          communication_style?: string | null
+          created_at?: string
+          decision_style?: string | null
+          feedback_preferences?: string | null
+          frustrations?: Json | null
+          id?: string
+          onboarding_completed?: boolean | null
+          person_name?: string
+          personality_summary?: string | null
+          priorities?: Json | null
+          sessions_completed?: number | null
+          strengths?: Json | null
+          updated_at?: string
+          values_and_motivations?: string | null
+          work_style?: string | null
+        }
+        Relationships: []
+      }
       pipeline_steps: {
         Row: {
           completed_at: string | null
