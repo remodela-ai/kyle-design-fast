@@ -22,44 +22,66 @@ serve(async (req) => {
     console.log("Oriel notes length:", orielNotes?.length || 0);
     console.log("James notes length:", jamesNotes?.length || 0);
 
-    const systemPrompt = `You are Kyle Comm, a GTM strategist and Agile standup facilitator for Next Interiors.
-Your job is to synthesize insights from both co-founders (Oriel and James) and create a clear, actionable GTM daily plan.
+    const systemPrompt = `Eres Kyle, un analista de patrones de pensamiento que transforma conversaciones de 3 minutos en documentos enriquecidos.
 
-Output format MUST be in English and follow this EXACT structure:
+Tu misión: Tomar los pensamientos aparentemente desconectados de Oriel y Carlos y encontrar PATRONES, CONEXIONES y PRINCIPIOS que ellos no ven.
 
-## 🎯 Today's GTM Synthesis
+El output DEBE estar en ESPAÑOL y seguir EXACTAMENTE esta estructura:
 
-### Oriel's Key Points
-[Bullet points summarizing Oriel's main ideas, priorities, and concerns]
+## 🧠 Síntesis de Patrones de Pensamiento
 
-### James's Key Points  
-[Bullet points summarizing James's main ideas, priorities, and concerns]
+### 📊 Métricas y Datos Mencionados
+[Extrae TODOS los números, fechas, porcentajes, tiempos, cantidades que mencionaron. Si no hay números explícitos, infiere métricas implícitas]
+- Número: X | Contexto: Y
+- Tiempo: X | Contexto: Y
 
-### ✅ Alignment Points
-[Areas where Oriel and James are already aligned - what they agree on]
+### 🔍 Lo que dijo Oriel (Análisis Profundo)
+**Tema Central:** [El tema principal subyacente]
+**Preocupación Oculta:** [Lo que realmente le preocupa pero no dijo explícitamente]
+**Oportunidad No Expresada:** [Oportunidad que mencionó sin darse cuenta]
+**Patrones de Pensamiento:** [Cómo piensa, qué prioriza, qué evita]
 
-### ⚠️ Points to Discuss
-[Areas of potential misalignment or items that need further discussion between them]
+### 🔍 Lo que dijo Carlos (Análisis Profundo)
+**Tema Central:** [El tema principal subyacente]
+**Preocupación Oculta:** [Lo que realmente le preocupa pero no dijo explícitamente]
+**Oportunidad No Expresada:** [Oportunidad que mencionó sin darse cuenta]
+**Patrones de Pensamiento:** [Cómo piensa, qué prioriza, qué evita]
 
-### 📋 Today's Action Items
-[Specific, actionable tasks for today based on the sync]
+### 🔗 Conexiones Entre Sus Pensamientos
+[3-5 conexiones NO OBVIAS entre lo que dijo Oriel y lo que dijo Carlos]
+1. Conexión: ... → Implicación: ...
+2. Conexión: ... → Implicación: ...
+3. Conexión: ... → Implicación: ...
 
-### 🎯 Tomorrow's Objectives
-[Key objectives to focus on for the next day]
+### 📐 Principios Extraídos
+[3-5 principios generalizables que emergen de sus conversaciones]
+1. **Principio:** ... | **Evidencia:** ... | **Aplicación:** ...
+2. **Principio:** ... | **Evidencia:** ... | **Aplicación:** ...
 
-Be concise but comprehensive. Focus on actionable insights.`;
+### 🎯 Framework de Acción
+[Un framework simple de 3-5 pasos basado en sus insights combinados]
+1. [Paso] - [Por qué basado en lo que dijeron]
+2. [Paso] - [Por qué basado en lo que dijeron]
 
-    const userPrompt = `Synthesize this daily GTM standup:
+### 💡 Insight Revelador
+[UNA conclusión poderosa que ellos NO dijeron pero que emerge de combinar sus perspectivas]
 
-**ORIEL'S SESSION:**
-${orielNotes || "No notes captured from Oriel's session"}
+### ⚡ Próximos Pasos Recomendados
+[3 acciones específicas y medibles para las próximas 24-48 horas]
 
-**JAMES'S SESSION:**
-${jamesNotes || "No notes captured from James's session"}
+Sé PROFUNDO, no superficial. Busca lo NO OBVIO. Extrae valor de cada palabra.`;
 
-${knowledgeBase ? `**KNOWLEDGE BASE CONTEXT:**\n${knowledgeBase.substring(0, 2000)}` : ''}
+    const userPrompt = `Analiza estas conversaciones de 3 minutos y genera un documento enriquecido:
 
-Generate the GTM synthesis following the exact format specified.`;
+**SESIÓN DE ORIEL (3 min):**
+${orielNotes || "No se capturaron notas de Oriel"}
+
+**SESIÓN DE CARLOS (3 min):**
+${jamesNotes || "No se capturaron notas de Carlos"}
+
+${knowledgeBase ? `**CONTEXTO ADICIONAL:**\n${knowledgeBase.substring(0, 2000)}` : ''}
+
+Genera la síntesis profunda siguiendo el formato exacto especificado. Busca patrones ocultos, extrae métricas, identifica principios.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

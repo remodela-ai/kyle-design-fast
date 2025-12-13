@@ -8,7 +8,7 @@ import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3, Mail, Plus, X, Eye } from "lucide-react";
+import { Users, ArrowRight, CheckCircle2, MessageSquare, Target, Settings, Upload, FileText, Music, Video, Globe, History, BarChart3, Mail, Plus, X, Eye, Timer, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -107,6 +107,50 @@ const DailyOrielCarlos = () => {
   // Previous context for Kyle memory
   const [previousContext, setPreviousContext] = useState<string>("");
   const [isLoadingContext, setIsLoadingContext] = useState(true);
+  
+  // 3-minute timer for each session
+  const [sessionTimer, setSessionTimer] = useState<number>(180); // 3 minutes in seconds
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Timer effect
+  useEffect(() => {
+    if (isTimerRunning && sessionTimer > 0) {
+      timerIntervalRef.current = setInterval(() => {
+        setSessionTimer(prev => {
+          if (prev <= 1) {
+            // Time's up - show notification
+            toast({
+              title: "⏰ ¡Tiempo!",
+              description: "Los 3 minutos han terminado. Puedes continuar o terminar tu sesión.",
+            });
+            setIsTimerRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [isTimerRunning, toast]);
+  
+  // Reset timer when starting a new session
+  const resetAndStartTimer = () => {
+    setSessionTimer(180); // Reset to 3 minutes
+    setIsTimerRunning(true);
+  };
+  
+  // Format timer display
+  const formatTimer = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Load past syncs on mount and build context
   useEffect(() => {
@@ -425,6 +469,7 @@ const DailyOrielCarlos = () => {
 
       setCurrentPhase("oriel");
       setNotes([]);
+      resetAndStartTimer(); // Start 3-minute timer
 
       // Build dynamic prompt with previous context
       const contextInfo = previousContext 
@@ -451,10 +496,8 @@ const DailyOrielCarlos = () => {
       });
 
       toast({
-        title: "Conectado con Oriel",
-        description: previousContext 
-          ? `Kyle listo con memoria de ${pastSyncs.filter(s => s.status === 'complete').length} sesiones anteriores` 
-          : "Kyle listo (primera sesión)",
+        title: "⏱️ Sesión de Oriel iniciada",
+        description: "3 minutos para compartir lo que quieras",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -483,6 +526,7 @@ const DailyOrielCarlos = () => {
       setOrielSummary(orielNotes);
 
       setCurrentPhase("carlos");
+      resetAndStartTimer(); // Start 3-minute timer
 
       const filesContext = carlosFiles.length > 0 
         ? `\n\n## Archivos de Carlos:\n${carlosFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
@@ -498,8 +542,8 @@ const DailyOrielCarlos = () => {
       });
 
       toast({
-        title: "Conectado con Carlos",
-        description: "Kyle listo con contexto de Oriel",
+        title: "⏱️ Sesión de Carlos iniciada",
+        description: "3 minutos para compartir lo que quieras",
       });
     } catch (err) {
       console.error("Failed to start Carlos session:", err);
@@ -889,10 +933,10 @@ const DailyOrielCarlos = () => {
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center gap-3">
               <Target className="w-8 h-8 text-primary" />
-              Daily Oriel-Carlos
+              Thought Synthesizer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Sync: Kyle ↔ Oriel ↔ Carlos
+              3 min cada uno → Kyle encuentra patrones → Documento enriquecido
             </p>
           </div>
         </div>
@@ -900,10 +944,10 @@ const DailyOrielCarlos = () => {
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {[
-            { phase: 'oriel' as ConversationPhase, label: 'Oriel', icon: Users },
-            { phase: 'carlos' as ConversationPhase, label: 'Carlos', icon: Users },
-            { phase: 'synthesis' as ConversationPhase, label: 'Synthesis', icon: MessageSquare },
-            { phase: 'complete' as ConversationPhase, label: 'Plan Ready', icon: CheckCircle2 },
+            { phase: 'oriel' as ConversationPhase, label: 'Oriel (3 min)', icon: Users },
+            { phase: 'carlos' as ConversationPhase, label: 'Carlos (3 min)', icon: Users },
+            { phase: 'synthesis' as ConversationPhase, label: 'Análisis', icon: MessageSquare },
+            { phase: 'complete' as ConversationPhase, label: 'Documento', icon: CheckCircle2 },
           ].map((step, idx) => (
             <div key={step.phase} className="flex items-center gap-2">
               <div className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
@@ -943,13 +987,27 @@ const DailyOrielCarlos = () => {
                 <AudioWaves isActive={true} isSpeaking={conversation.isSpeaking} />
               )}
               
+              {/* 3-minute Timer */}
+              {(currentPhase === 'oriel' || currentPhase === 'carlos') && conversation.status === 'connected' && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
+                  sessionTimer <= 30 
+                    ? 'bg-destructive/20 border-destructive text-destructive animate-pulse' 
+                    : sessionTimer <= 60 
+                      ? 'bg-yellow-500/20 border-yellow-500 text-yellow-500'
+                      : 'bg-primary/20 border-primary text-primary'
+                }`}>
+                  <Clock className="w-5 h-5" />
+                  <span className="text-2xl font-bold font-mono">{formatTimer(sessionTimer)}</span>
+                </div>
+              )}
+              
               <p className="text-sm text-muted-foreground text-center">
-                {isLoadingContext && "Loading previous sessions..."}
-                {!isLoadingContext && currentPhase === 'idle' && "Ready to start the daily sync"}
-                {currentPhase === 'oriel' && (conversation.isSpeaking ? "Kyle is speaking with Oriel..." : "Listening to Oriel...")}
-                {currentPhase === 'carlos' && (conversation.isSpeaking ? "Kyle is speaking with Carlos..." : "Listening to Carlos...")}
-                {currentPhase === 'synthesis' && "Generating synthesis..."}
-                {currentPhase === 'complete' && "Daily sync complete!"}
+                {isLoadingContext && "Cargando sesiones anteriores..."}
+                {!isLoadingContext && currentPhase === 'idle' && "Listo para comenzar - 3 min cada uno"}
+                {currentPhase === 'oriel' && (conversation.isSpeaking ? "Kyle escuchando..." : "Oriel hablando...")}
+                {currentPhase === 'carlos' && (conversation.isSpeaking ? "Kyle escuchando..." : "Carlos hablando...")}
+                {currentPhase === 'synthesis' && "Analizando patrones y generando documento..."}
+                {currentPhase === 'complete' && "¡Documento enriquecido listo!"}
               </p>
 
               {/* View Past Syncs */}
@@ -1108,15 +1166,15 @@ const DailyOrielCarlos = () => {
                         className="flex-1 bg-primary hover:bg-primary/90"
                         onClick={startSessionWithOriel}
                       >
-                        <Users className="w-4 h-4 mr-2" />
-                        I am Oriel
+                        <Timer className="w-4 h-4 mr-2" />
+                        Soy Oriel (3 min)
                       </Button>
                       <Button 
                         className="flex-1 bg-primary hover:bg-primary/90"
                         onClick={startSessionWithCarlos}
                       >
-                        <Users className="w-4 h-4 mr-2" />
-                        I am Carlos
+                        <Timer className="w-4 h-4 mr-2" />
+                        Soy Carlos (3 min)
                       </Button>
                     </div>
                   </>
@@ -1127,7 +1185,7 @@ const DailyOrielCarlos = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    It's all from my end for today
+                    Terminé mi sesión
                   </Button>
                 )}
                 
@@ -1136,8 +1194,8 @@ const DailyOrielCarlos = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={startSessionWithCarlos}
                   >
-                    <Users className="w-4 h-4 mr-2" />
-                    Continue with Carlos
+                    <Timer className="w-4 h-4 mr-2" />
+                    Ahora Carlos (3 min)
                   </Button>
                 )}
                 
@@ -1146,7 +1204,7 @@ const DailyOrielCarlos = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    It's all from my end for today
+                    Terminé mi sesión
                   </Button>
                 )}
                 
@@ -1159,12 +1217,12 @@ const DailyOrielCarlos = () => {
                     {isGeneratingSynthesis ? (
                       <>
                         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                        Generating Synthesis...
+                        Analizando patrones...
                       </>
                     ) : (
                       <>
                         <MessageSquare className="w-4 h-4 mr-2" />
-                        Generate Plan
+                        Generar Documento Enriquecido
                       </>
                     )}
                   </Button>
@@ -1173,7 +1231,7 @@ const DailyOrielCarlos = () => {
                 {currentPhase === 'synthesis' && (
                   <div className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground">
                     <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    Kyle is analyzing both sessions...
+                    Kyle analizando patrones y generando documento...
                   </div>
                 )}
                 
@@ -1183,7 +1241,7 @@ const DailyOrielCarlos = () => {
                     variant="outline"
                     onClick={resetDaily}
                   >
-                    Start New Daily
+                    Nueva Sesión
                   </Button>
                 )}
                 
