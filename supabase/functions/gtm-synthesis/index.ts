@@ -15,124 +15,143 @@ serve(async (req) => {
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Generating GTM synthesis...");
-    console.log("Oriel notes length:", orielNotes?.length || 0);
-    console.log("James notes length:", jamesNotes?.length || 0);
+    console.log("=== GTM Synthesis Started ===");
+    console.log("Oriel notes:", orielNotes?.substring(0, 200) || "EMPTY");
+    console.log("Carlos notes:", jamesNotes?.substring(0, 200) || "EMPTY");
 
-    const systemPrompt = `Eres Kyle, un analista de patrones de pensamiento que transforma conversaciones de 3 minutos en documentos enriquecidos.
+    // Handle case where only one person has spoken
+    const hasOriel = orielNotes && orielNotes.trim().length > 0;
+    const hasCarlos = jamesNotes && jamesNotes.trim().length > 0;
 
-Tu misión: Tomar los pensamientos aparentemente desconectados de Oriel y Carlos y encontrar PATRONES, CONEXIONES y PRINCIPIOS que ellos no ven.
-
-El output DEBE estar en ESPAÑOL y seguir EXACTAMENTE esta estructura:
-
-## 🧠 Síntesis de Patrones de Pensamiento
-
-### 📊 Métricas y Datos Mencionados
-[Extrae TODOS los números, fechas, porcentajes, tiempos, cantidades que mencionaron. Si no hay números explícitos, infiere métricas implícitas]
-- Número: X | Contexto: Y
-- Tiempo: X | Contexto: Y
-
-### 🔍 Lo que dijo Oriel (Análisis Profundo)
-**Tema Central:** [El tema principal subyacente]
-**Preocupación Oculta:** [Lo que realmente le preocupa pero no dijo explícitamente]
-**Oportunidad No Expresada:** [Oportunidad que mencionó sin darse cuenta]
-**Patrones de Pensamiento:** [Cómo piensa, qué prioriza, qué evita]
-
-### 🔍 Lo que dijo Carlos (Análisis Profundo)
-**Tema Central:** [El tema principal subyacente]
-**Preocupación Oculta:** [Lo que realmente le preocupa pero no dijo explícitamente]
-**Oportunidad No Expresada:** [Oportunidad que mencionó sin darse cuenta]
-**Patrones de Pensamiento:** [Cómo piensa, qué prioriza, qué evita]
-
-### 🔗 Conexiones Entre Sus Pensamientos
-[3-5 conexiones NO OBVIAS entre lo que dijo Oriel y lo que dijo Carlos]
-1. Conexión: ... → Implicación: ...
-2. Conexión: ... → Implicación: ...
-3. Conexión: ... → Implicación: ...
-
-### 📐 Principios Extraídos
-[3-5 principios generalizables que emergen de sus conversaciones]
-1. **Principio:** ... | **Evidencia:** ... | **Aplicación:** ...
-2. **Principio:** ... | **Evidencia:** ... | **Aplicación:** ...
-
-### 🎯 Framework de Acción
-[Un framework simple de 3-5 pasos basado en sus insights combinados]
-1. [Paso] - [Por qué basado en lo que dijeron]
-2. [Paso] - [Por qué basado en lo que dijeron]
-
-### 💡 Insight Revelador
-[UNA conclusión poderosa que ellos NO dijeron pero que emerge de combinar sus perspectivas]
-
-### ⚡ Próximos Pasos Recomendados
-[3 acciones específicas y medibles para las próximas 24-48 horas]
-
-Sé PROFUNDO, no superficial. Busca lo NO OBVIO. Extrae valor de cada palabra.`;
-
-    const userPrompt = `Analiza estas conversaciones de 3 minutos y genera un documento enriquecido:
-
-**SESIÓN DE ORIEL (3 min):**
-${orielNotes || "No se capturaron notas de Oriel"}
-
-**SESIÓN DE CARLOS (3 min):**
-${jamesNotes || "No se capturaron notas de Carlos"}
-
-${knowledgeBase ? `**CONTEXTO ADICIONAL:**\n${knowledgeBase.substring(0, 2000)}` : ''}
-
-Genera la síntesis profunda siguiendo el formato exacto especificado. Busca patrones ocultos, extrae métricas, identifica principios.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits to your workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI gateway error: ${response.status}`);
+    if (!hasOriel && !hasCarlos) {
+      return new Response(JSON.stringify({ 
+        error: "No conversation notes to analyze",
+        synthesis: "⚠️ No hay notas de conversación para analizar. Habla con Cortex primero."
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const data = await response.json();
-    const synthesis = data.choices?.[0]?.message?.content || "Unable to generate synthesis";
+    // Simplified prompt for faster response
+    const systemPrompt = `Eres Cortex, analista de patrones de pensamiento. Genera un documento CONCISO en español.
 
-    console.log("Synthesis generated successfully");
+Estructura:
+## 🧠 Síntesis de Patrones
 
-    return new Response(JSON.stringify({ synthesis }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+### 📊 Datos/Métricas Mencionados
+[Lista cualquier número, fecha, porcentaje]
+
+### 🔍 Análisis${hasOriel ? ' de Oriel' : ''}${hasCarlos ? (hasOriel ? ' y Carlos' : ' de Carlos') : ''}
+[Temas centrales, preocupaciones ocultas, oportunidades]
+
+### 🔗 Conexiones/Patrones
+[2-3 conexiones o patrones identificados]
+
+### 💡 Insight Principal
+[Una conclusión poderosa]
+
+### ⚡ Próximos Pasos
+[2-3 acciones concretas]
+
+Sé CONCISO pero profundo. Máximo 500 palabras.`;
+
+    const userPrompt = `Analiza esta conversación:
+
+${hasCarlos ? `**CARLOS:**\n${jamesNotes}\n` : ''}
+${hasOriel ? `**ORIEL:**\n${orielNotes}\n` : ''}
+${knowledgeBase ? `**CONTEXTO:**\n${knowledgeBase.substring(0, 1000)}` : ''}
+
+Genera la síntesis.`;
+
+    console.log("Calling Lovable AI...");
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
+    try {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log("AI response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ 
+            error: "Rate limit exceeded",
+            synthesis: "⚠️ Límite de velocidad excedido. Intenta en un momento."
+          }), {
+            status: 200, // Return 200 with error in body so UI can handle it
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ 
+            error: "Payment required",
+            synthesis: "⚠️ Se requieren créditos adicionales."
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        
+        throw new Error(`AI error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const synthesis = data.choices?.[0]?.message?.content || "No se pudo generar síntesis";
+
+      console.log("=== Synthesis Generated Successfully ===");
+      console.log("Length:", synthesis.length);
+
+      return new Response(JSON.stringify({ synthesis }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } catch (fetchError: unknown) {
+      clearTimeout(timeoutId);
+      const err = fetchError as Error;
+      if (err.name === 'AbortError') {
+        console.error("Request timed out");
+        return new Response(JSON.stringify({ 
+          error: "Timeout",
+          synthesis: "⚠️ La generación tardó demasiado. Intenta de nuevo."
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw fetchError;
+    }
 
   } catch (error) {
     console.error("Error in gtm-synthesis:", error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error" 
+      error: error instanceof Error ? error.message : "Unknown error",
+      synthesis: `⚠️ Error: ${error instanceof Error ? error.message : "Error desconocido"}`
     }), {
-      status: 500,
+      status: 200, // Return 200 so UI receives the error message
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
