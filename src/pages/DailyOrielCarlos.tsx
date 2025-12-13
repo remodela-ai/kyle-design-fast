@@ -103,10 +103,14 @@ const DailyOrielCarlos = () => {
   const orielFileInputRef = useRef<HTMLInputElement>(null);
   const carlosFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Previous context for Kyle memory
+  const [previousContext, setPreviousContext] = useState<string>("");
 
-  // Load past syncs on mount
+  // Load past syncs on mount and build context
   useEffect(() => {
     loadPastSyncs();
+    loadPreviousContext();
   }, []);
 
   const loadPastSyncs = async () => {
@@ -118,6 +122,60 @@ const DailyOrielCarlos = () => {
     
     if (data && !error) {
       setPastSyncs(data);
+    }
+  };
+
+  // Load previous conversation context for Kyle's memory
+  const loadPreviousContext = async () => {
+    try {
+      // Get the last 3 completed syncs
+      const { data: recentSyncs, error } = await supabase
+        .from('daily_syncs')
+        .select('id, sync_date, oriel_notes, james_notes, synthesis')
+        .eq('status', 'complete')
+        .order('sync_date', { ascending: false })
+        .limit(3);
+      
+      if (error || !recentSyncs || recentSyncs.length === 0) {
+        setPreviousContext("");
+        return;
+      }
+      
+      // Build context summary from recent syncs
+      let contextParts: string[] = [];
+      
+      for (const sync of recentSyncs) {
+        const syncDate = new Date(sync.sync_date).toLocaleDateString('es-MX', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        let syncSummary = `\n### Sesión del ${syncDate}:\n`;
+        
+        if (sync.synthesis) {
+          syncSummary += `**Síntesis:** ${sync.synthesis.substring(0, 500)}...\n`;
+        }
+        
+        if (sync.oriel_notes) {
+          syncSummary += `**Temas de Oriel:** ${sync.oriel_notes.substring(0, 300)}...\n`;
+        }
+        
+        if (sync.james_notes) { // Carlos notes
+          syncSummary += `**Temas de Carlos:** ${sync.james_notes.substring(0, 300)}...\n`;
+        }
+        
+        contextParts.push(syncSummary);
+      }
+      
+      const fullContext = contextParts.join('\n---\n');
+      setPreviousContext(fullContext);
+      console.log("Loaded previous context for Kyle:", fullContext.substring(0, 200) + "...");
+      
+    } catch (err) {
+      console.error("Error loading previous context:", err);
+      setPreviousContext("");
     }
   };
 
@@ -363,14 +421,68 @@ const DailyOrielCarlos = () => {
       setCurrentPhase("oriel");
       setNotes([]);
 
+      // Build dynamic prompt with previous context
+      const contextInfo = previousContext 
+        ? `\n\n## Contexto de sesiones anteriores:\n${previousContext}` 
+        : '';
+      
+      const filesContext = orielFiles.length > 0 
+        ? `\n\n## Archivos de Oriel:\n${orielFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
+        : '';
+      
+      const kbContext = knowledgeBase 
+        ? `\n\n## Base de conocimiento:\n${knowledgeBase.substring(0, 1000)}` 
+        : '';
+
+      console.log("Starting session with context:", { 
+        hasContext: !!previousContext, 
+        hasFiles: orielFiles.length > 0, 
+        hasKB: !!knowledgeBase 
+      });
+
       await conversation.startSession({
         agentId: KYLE_ORIEL_CARLOS_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `Eres Kyle, un asistente de IA bilingüe altamente inteligente que facilita conversaciones diarias entre Oriel y Carlos.
+
+## Tu Personalidad
+- Hablas español mexicano de manera natural y fluida
+- Eres amigable pero directo, sin rodeos innecesarios  
+- Tienes sentido del humor mexicano sutil
+- Eres analítico y puedes profundizar en cualquier tema
+- RECUERDAS las conversaciones anteriores y haces referencias a ellas
+
+## Tus Capacidades
+1. Multi-tema: Cualquier tema - tecnología, negocios, filosofía, creatividad, estrategia
+2. Memoria contextual: Referencias a discusiones pasadas
+3. Razonamiento: Analizar problemas, proponer soluciones, debatir
+4. Facilitación: Ayudar a llegar a conclusiones
+5. Síntesis: Resumir puntos clave
+
+${contextInfo}${filesContext}${kbContext}
+
+## Importante
+- Habla como mexicano (órale, chido, no manches, a huevo cuando sea apropiado)
+- Sé conciso pero profundo
+- Haz referencias a temas discutidos anteriormente
+- Si recuerdas algo relevante de sesiones pasadas, menciónalo`,
+            },
+            firstMessage: previousContext 
+              ? "¡Qué onda! Soy Kyle. Me acuerdo de lo que platicamos antes. ¿Qué temas traen hoy?" 
+              : "¡Qué onda! Soy Kyle, listo para nuestra sesión. ¿Qué temas traen hoy para discutir?",
+            language: "es",
+          },
+        },
       });
 
       toast({
-        title: "Connected with Oriel",
-        description: `Kyle ready (${orielLanguage === 'es' ? 'Español' : 'English'})`,
+        title: "Conectado con Oriel",
+        description: previousContext 
+          ? `Kyle listo con memoria de ${pastSyncs.filter(s => s.status === 'complete').length} sesiones anteriores` 
+          : "Kyle listo (primera sesión)",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -380,7 +492,7 @@ const DailyOrielCarlos = () => {
         variant: "destructive",
       });
     }
-  }, [conversation, toast, knowledgeBase, orielFiles, orielLanguage]);
+  }, [conversation, toast, knowledgeBase, orielFiles, orielLanguage, previousContext, pastSyncs]);
 
   const startSessionWithCarlos = useCallback(async () => {
     try {
@@ -400,14 +512,42 @@ const DailyOrielCarlos = () => {
 
       setCurrentPhase("carlos");
 
+      const filesContext = carlosFiles.length > 0 
+        ? `\n\n## Archivos de Carlos:\n${carlosFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
+        : '';
+      
+      const kbContext = knowledgeBase 
+        ? `\n\n## Base de conocimiento:\n${knowledgeBase.substring(0, 1000)}` 
+        : '';
+
       await conversation.startSession({
         agentId: KYLE_ORIEL_CARLOS_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `Eres Kyle, un asistente de IA bilingüe. Estás hablando ahora con Carlos.
+
+## Contexto de la sesión con Oriel:
+${orielNotes}
+
+${previousContext ? `## Contexto de sesiones anteriores:\n${previousContext}` : ''}${filesContext}${kbContext}
+
+## Tu rol ahora
+- Facilita la discusión con Carlos
+- Haz referencias a lo que Oriel mencionó
+- Ayuda a encontrar puntos de alineación
+- Habla español mexicano natural`,
+            },
+            firstMessage: `¡Qué onda Carlos! Acabo de platicar con Oriel. ¿Qué temas traes tú hoy?`,
+            language: "es",
+          },
+        },
       });
 
       toast({
-        title: "Connected with Carlos",
-        description: "Kyle ready (English)",
+        title: "Conectado con Carlos",
+        description: "Kyle listo con contexto de Oriel",
       });
     } catch (err) {
       console.error("Failed to start Carlos session:", err);
@@ -417,7 +557,7 @@ const DailyOrielCarlos = () => {
         variant: "destructive",
       });
     }
-  }, [conversation, notes, toast, knowledgeBase, carlosFiles]);
+  }, [conversation, notes, toast, knowledgeBase, carlosFiles, previousContext]);
 
   const [isGeneratingSynthesis, setIsGeneratingSynthesis] = useState(false);
 
