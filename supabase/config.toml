@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.send-gtm-synthesis]
 verify_jwt = false
+
+[functions.create-kyle-oriel-carlos-agent]
+verify_jwt = false
