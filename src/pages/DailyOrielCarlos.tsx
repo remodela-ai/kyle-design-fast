@@ -106,11 +106,16 @@ const DailyOrielCarlos = () => {
   
   // Previous context for Kyle memory
   const [previousContext, setPreviousContext] = useState<string>("");
+  const [isLoadingContext, setIsLoadingContext] = useState(true);
 
   // Load past syncs on mount and build context
   useEffect(() => {
-    loadPastSyncs();
-    loadPreviousContext();
+    const loadData = async () => {
+      setIsLoadingContext(true);
+      await Promise.all([loadPastSyncs(), loadPreviousContext()]);
+      setIsLoadingContext(false);
+    };
+    loadData();
   }, []);
 
   const loadPastSyncs = async () => {
@@ -939,7 +944,8 @@ const DailyOrielCarlos = () => {
               )}
               
               <p className="text-sm text-muted-foreground text-center">
-                {currentPhase === 'idle' && "Ready to start the daily sync"}
+                {isLoadingContext && "Loading previous sessions..."}
+                {!isLoadingContext && currentPhase === 'idle' && "Ready to start the daily sync"}
                 {currentPhase === 'oriel' && (conversation.isSpeaking ? "Kyle is speaking with Oriel..." : "Listening to Oriel...")}
                 {currentPhase === 'carlos' && (conversation.isSpeaking ? "Kyle is speaking with Carlos..." : "Listening to Carlos...")}
                 {currentPhase === 'synthesis' && "Generating synthesis..."}
@@ -958,7 +964,7 @@ const DailyOrielCarlos = () => {
 
               {/* Action Buttons */}
               <div className="w-full space-y-3">
-                {currentPhase === 'idle' && (
+                {currentPhase === 'idle' && !isLoadingContext && (
                   <>
                     {/* Language Selection for Oriel */}
                     <div className="flex items-center justify-center gap-2 mb-2">
