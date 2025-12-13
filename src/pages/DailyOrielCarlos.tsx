@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Kyle Oriel-Carlos agent ID - will be updated after agent creation
-const KYLE_ORIEL_CARLOS_AGENT_ID = "agent_placeholder"; // TODO: Update after creating the agent
+const KYLE_ORIEL_CARLOS_AGENT_ID = "agent_9601kcaqrkejf8nvzjfh9efvetaj";
 
 // Random daily greeting messages for Oriel (English)
 const ORIEL_GREETINGS_EN = [

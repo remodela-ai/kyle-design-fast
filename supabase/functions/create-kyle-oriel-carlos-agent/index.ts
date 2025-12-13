@@ -73,6 +73,7 @@ ${previousContext ? previousContext : 'Esta es la primera conversación del día
           },
           tts: {
             voice_id: "onwK4e9ZLuTAKqWW03F9", // Daniel - sounds natural in Spanish
+            model_id: "eleven_turbo_v2_5", // Required for non-English agents
           },
         },
         platform_settings: {
