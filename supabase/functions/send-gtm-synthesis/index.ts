@@ -25,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validate and sanitize recipients
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const defaultRecipient = "oriel@copilotinnoations.com";
+    const defaultRecipient = "oriel@copilotinnovations.com";
     const validRecipients = recipients && recipients.length > 0
       ? recipients.filter(email => emailRegex.test(email.trim())).map(e => e.trim().toLowerCase())
       : [defaultRecipient];
