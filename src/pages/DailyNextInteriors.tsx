@@ -81,7 +81,7 @@ const DailyNextInteriors = () => {
   const [transcriptSyncDate, setTranscriptSyncDate] = useState<string>("");
   
   // Email recipients for GTM synthesis
-  const [emailRecipients, setEmailRecipients] = useState<string[]>(['oriel@copilotinnoations.com']);
+  const [emailRecipients, setEmailRecipients] = useState<string[]>(['oriel@copilotinnovations.com']);
   const [newEmail, setNewEmail] = useState<string>('');
   
   // Use ref to track current phase for callbacks (avoids stale closure)
