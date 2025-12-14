@@ -11,25 +11,33 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Menu,
   X,
   Clock,
   Target,
   UserCheck,
+  LogOut,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
-const navItems = [
-  { icon: Home, label: "Home", active: true, path: "/" },
-  { icon: Clock, label: "Productivity", path: "/productivity" },
-  { icon: Target, label: "Daily GTM", path: "/daily-next-interiors" },
-  { icon: Target, label: "Daily O-C", path: "/daily-oriel-carlos" },
-  { icon: UserCheck, label: "Onboarding", path: "/onboarding" },
+// Public nav items visible to everyone
+const publicNavItems = [
+  { icon: Home, label: "Home", path: "/" },
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: FolderKanban, label: "Projects", path: "/" },
   { icon: Heart, label: "Collections", path: "/" },
   { icon: CreditCard, label: "Billing", path: "/" },
   { icon: HelpCircle, label: "Help", path: "/" },
+];
+
+// Admin-only nav items
+const adminNavItems = [
+  { icon: Clock, label: "Productivity", path: "/productivity" },
+  { icon: Target, label: "Daily GTM", path: "/daily-next-interiors" },
+  { icon: Target, label: "Daily O-C", path: "/daily-oriel-carlos" },
+  { icon: UserCheck, label: "Onboarding", path: "/onboarding" },
 ];
 
 interface AppSidebarProps {
@@ -40,6 +48,25 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) {
+  const { isSuperAdmin, isAuthenticated, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({ title: "Sesión cerrada" });
+    navigate("/");
+  };
+
+  const handleSignIn = () => {
+    navigate("/auth");
+  };
+
+  // Combine nav items based on auth status
+  const visibleNavItems = isSuperAdmin 
+    ? [...adminNavItems, ...publicNavItems]
+    : publicNavItems;
+
   return (
     <>
       {/* Mobile overlay */}
@@ -112,7 +139,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             </span>
           )}
           <ul className="space-y-1">
-          {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <li key={item.label}>
                 <SidebarNavItem
                   icon={item.icon}
@@ -126,13 +153,23 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
           </ul>
         </nav>
 
-        {/* Sign In */}
+        {/* Sign In/Out */}
         <div className="p-3 border-t border-sidebar-border">
-          <SidebarNavItem
-            icon={User}
-            label="Sign In"
-            collapsed={collapsed && !mobileOpen}
-          />
+          {isAuthenticated ? (
+            <SidebarNavItem
+              icon={LogOut}
+              label="Cerrar Sesión"
+              collapsed={collapsed && !mobileOpen}
+              onClick={handleSignOut}
+            />
+          ) : (
+            <SidebarNavItem
+              icon={User}
+              label="Sign In"
+              collapsed={collapsed && !mobileOpen}
+              onClick={handleSignIn}
+            />
+          )}
         </div>
       </aside>
     </>
