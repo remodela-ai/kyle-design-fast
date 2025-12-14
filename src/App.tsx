@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { KyleProvider } from "@/contexts/KyleContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
@@ -14,6 +15,7 @@ import DailyNextInteriors from "./pages/DailyNextInteriors";
 import DailyOrielCarlos from "./pages/DailyOrielCarlos";
 import GTMAnalytics from "./pages/GTMAnalytics";
 import Onboarding from "./pages/Onboarding";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,16 +28,21 @@ const App = () => (
       <BrowserRouter>
         <KyleProvider>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/blink-design" element={<BlinkDesign />} />
             <Route path="/shazam" element={<Shazam />} />
             <Route path="/create-agent" element={<CreateAgent />} />
             <Route path="/360-free-project" element={<FreeProject360 />} />
-            <Route path="/productivity" element={<Productivity />} />
-            <Route path="/daily-next-interiors" element={<DailyNextInteriors />} />
-            <Route path="/daily-oriel-carlos" element={<DailyOrielCarlos />} />
-            <Route path="/gtm-analytics" element={<GTMAnalytics />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Protected routes - Super Admin only */}
+            <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
+            <Route path="/daily-next-interiors" element={<ProtectedRoute><DailyNextInteriors /></ProtectedRoute>} />
+            <Route path="/daily-oriel-carlos" element={<ProtectedRoute><DailyOrielCarlos /></ProtectedRoute>} />
+            <Route path="/gtm-analytics" element={<ProtectedRoute><GTMAnalytics /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </KyleProvider>
