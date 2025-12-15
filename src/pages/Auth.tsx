@@ -16,18 +16,20 @@ const loginSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, isAuthenticated, isSuperAdmin, loading: authLoading } = useAuth();
+  const { signIn, signUp, isAuthenticated, isSuperAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && isSuperAdmin) {
-      navigate('/productivity');
+    if (isAuthenticated) {
+      // All authenticated users go to home, super admin can then navigate to admin routes
+      navigate('/');
     }
-  }, [isAuthenticated, isSuperAdmin, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,24 +48,47 @@ const Auth = () => {
     }
 
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
+    
+    if (isSignUp) {
+      const { error } = await signUp(email, password);
+      setLoading(false);
 
-    if (error) {
+      if (error) {
+        toast({
+          title: 'Error de registro',
+          description: error.message === 'User already registered' 
+            ? 'Este email ya está registrado' 
+            : error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       toast({
-        title: 'Error de autenticación',
-        description: error.message === 'Invalid login credentials' 
-          ? 'Credenciales inválidas' 
-          : error.message,
-        variant: 'destructive',
+        title: 'Registro exitoso',
+        description: 'Bienvenido a Next Interiors',
       });
-      return;
-    }
+      navigate('/');
+    } else {
+      const { error } = await signIn(email, password);
+      setLoading(false);
 
-    toast({
-      title: 'Bienvenido',
-      description: 'Acceso autorizado',
-    });
+      if (error) {
+        toast({
+          title: 'Error de autenticación',
+          description: error.message === 'Invalid login credentials' 
+            ? 'Credenciales inválidas' 
+            : error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Bienvenido',
+        description: 'Acceso autorizado',
+      });
+    }
   };
 
   if (authLoading) {
@@ -81,9 +106,13 @@ const Auth = () => {
           <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Lock className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Acceso Restringido</CardTitle>
+          <CardTitle className="text-2xl">
+            {isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
+          </CardTitle>
           <CardDescription>
-            Esta sección requiere autorización de administrador
+            {isSignUp 
+              ? 'Regístrate para acceder a Next Interiors' 
+              : 'Ingresa tus credenciales para continuar'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,7 +122,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@ejemplo.com"
+                placeholder="tu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -120,13 +149,24 @@ const Auth = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verificando...
+                  {isSignUp ? 'Registrando...' : 'Verificando...'}
                 </>
               ) : (
-                'Iniciar Sesión'
+                isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'
               )}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isSignUp 
+                ? '¿Ya tienes cuenta? Inicia sesión' 
+                : '¿No tienes cuenta? Regístrate'}
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>

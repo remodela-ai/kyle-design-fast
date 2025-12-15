@@ -37,6 +37,18 @@ export const useAuth = () => {
     return { error };
   };
 
+  const signUp = async (email: string, password: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -49,6 +61,7 @@ export const useAuth = () => {
     session,
     loading,
     signIn,
+    signUp,
     signOut,
     isSuperAdmin,
     isAuthenticated: !!session,
