@@ -29,12 +29,16 @@ export default function Shazam() {
     resetGenerating
   } = useKyle();
 
-  // Build prompt from conversation
+  // Build prompt from conversation - focus on USER messages only
   const prompt = useMemo(() => {
     if (messages.length === 0) return null;
     
-    const text = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-    return `Based on this interior design conversation, generate a photorealistic interior design visualization:\n\n${text}\n\nCreate a beautiful, professional interior design image.`;
+    // Only use user messages to avoid Kyle's generic greetings affecting the design
+    const userMessages = messages.filter(m => m.role === "user");
+    if (userMessages.length === 0) return null;
+    
+    const userText = userMessages.map(m => m.content).join('\n');
+    return `Create a photorealistic interior design visualization based on this client request:\n\n${userText}\n\nGenerate exactly what the client described - the specific room type, style, colors, and features mentioned.`;
   }, [messages]);
 
   // Generate design function
