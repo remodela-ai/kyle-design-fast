@@ -35,8 +35,22 @@ serve(async (req) => {
       auth: REPLICATE_API_KEY,
     });
 
-    const imagePrompt = `Professional interior design photograph: ${prompt}. Photorealistic, high-end architectural photography, excellent natural lighting, magazine quality composition. 8K ultra HD resolution.`;
-    console.log("[blink-design] Using prompt:", imagePrompt.substring(0, 200) + "...");
+    // Check if prompt is already a full transcript-based prompt (contains TRANSCRIPT marker)
+    const isFullTranscript = prompt.includes('CONVERSATION TRANSCRIPT') || prompt.includes('---TRANSCRIPT---');
+    
+    let imagePrompt: string;
+    if (isFullTranscript) {
+      // Use the transcript-based prompt directly - it already has instructions
+      imagePrompt = `${prompt}
+
+Generate a photorealistic interior design photograph based on the above conversation. Style: high-end architectural photography, excellent natural lighting, magazine quality composition, 8K ultra HD resolution.`;
+    } else {
+      // Simple prompt - wrap with standard formatting
+      imagePrompt = `Professional interior design photograph: ${prompt}. Photorealistic, high-end architectural photography, excellent natural lighting, magazine quality composition. 8K ultra HD resolution.`;
+    }
+    
+    console.log("[blink-design] Prompt type:", isFullTranscript ? "full transcript" : "simple");
+    console.log("[blink-design] Using prompt:", imagePrompt.substring(0, 300) + "...");
 
     // Build input parameters
     const input: Record<string, unknown> = {
