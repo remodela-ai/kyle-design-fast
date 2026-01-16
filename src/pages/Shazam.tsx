@@ -29,16 +29,26 @@ export default function Shazam() {
     resetGenerating
   } = useKyle();
 
-  // Build prompt from conversation - focus on USER messages only
+  // Build prompt from conversation - use ALL messages for full context
   const prompt = useMemo(() => {
     if (messages.length === 0) return null;
     
-    // Only use user messages to avoid Kyle's generic greetings affecting the design
+    // Log all messages for debugging
+    console.log("📝 All messages for prompt:", messages.map(m => `[${m.role}] ${m.content}`));
+    
+    // Use ALL messages to build full conversation context
+    // This ensures we capture everything the user said (black furniture, no plants, etc.)
     const userMessages = messages.filter(m => m.role === "user");
+    console.log("📝 User messages only:", userMessages.map(m => m.content));
+    
     if (userMessages.length === 0) return null;
     
+    // Combine all user messages preserving their order
     const userText = userMessages.map(m => m.content).join('\n');
-    return `Create a photorealistic interior design visualization based on this client request:\n\n${userText}\n\nGenerate exactly what the client described - the specific room type, style, colors, and features mentioned.`;
+    
+    console.log("📝 Final prompt text:", userText);
+    
+    return `Create a photorealistic interior design visualization following these EXACT client requirements:\n\n${userText}\n\nIMPORTANT: Follow ALL specifications mentioned - specific furniture colors, items to include, items to EXCLUDE (like "no plants"), room type, and style. Do NOT add elements the client didn't request.`;
   }, [messages]);
 
   // Generate design function
