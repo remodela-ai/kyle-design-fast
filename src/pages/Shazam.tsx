@@ -36,26 +36,37 @@ export default function Shazam() {
     resetGenerating
   } = useKyle();
 
-  // Build prompt from conversation - use ALL messages for full context
+  // Build prompt from FULL conversation transcript - Kyle's questions + user responses
   const prompt = useMemo(() => {
     if (messages.length === 0) return null;
     
     // Log all messages for debugging
-    console.log("📝 All messages for prompt:", messages.map(m => `[${m.role}] ${m.content}`));
+    console.log("📝 Full transcript for prompt:", messages.map(m => `[${m.role}] ${m.content}`));
     
-    // Use ALL messages to build full conversation context
-    // This ensures we capture everything the user said (black furniture, no plants, etc.)
-    const userMessages = messages.filter(m => m.role === "user");
-    console.log("📝 User messages only:", userMessages.map(m => m.content));
+    // Build full conversation transcript with both roles
+    const fullTranscript = messages.map(m => {
+      const role = m.role === "user" ? "Client" : "Kyle";
+      return `${role}: ${m.content}`;
+    }).join('\n\n');
     
-    if (userMessages.length === 0) return null;
+    console.log("📝 Full transcript:", fullTranscript);
     
-    // Combine all user messages preserving their order
-    const userText = userMessages.map(m => m.content).join('\n');
-    
-    console.log("📝 Final prompt text:", userText);
-    
-    return `Create a photorealistic interior design visualization following these EXACT client requirements:\n\n${userText}\n\nIMPORTANT: Follow ALL specifications mentioned - specific furniture colors, items to include, items to EXCLUDE (like "no plants"), room type, and style. Do NOT add elements the client didn't request.`;
+    return `Based on the following interior design consultation between Kyle (design assistant) and a client, create a photorealistic interior design visualization that captures ALL discussed requirements:
+
+---CONVERSATION TRANSCRIPT---
+${fullTranscript}
+---END TRANSCRIPT---
+
+INSTRUCTIONS: Analyze the full conversation to extract:
+1. Room type and dimensions mentioned
+2. Style preferences (modern, minimalist, cozy, etc.)
+3. Specific furniture and colors requested
+4. Materials and textures discussed
+5. Items to EXCLUDE (if client said "no plants", "no rug", etc.)
+6. Lighting preferences
+7. Any reference images or inspirations mentioned
+
+Create a design that accurately reflects everything discussed in the conversation. Do NOT add elements not discussed or ignore specific exclusions.`;
   }, [messages]);
 
   // Generate design function
