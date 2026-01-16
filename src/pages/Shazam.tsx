@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X } from "lucide-react";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -9,6 +9,12 @@ import { useKyle } from "@/contexts/KyleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImageUploadDialog } from "@/components/ImageUploadDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Shazam() {
   const navigate = useNavigate();
@@ -16,6 +22,7 @@ export default function Shazam() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   
   const { 
@@ -256,8 +263,29 @@ export default function Shazam() {
               <RotateCcw className="h-4 w-4" />
               New
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowPromptDialog(true)}
+              className="rounded-full gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Ver prompt
+            </Button>
           </div>
         )}
+
+        {/* Prompt Dialog */}
+        <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Prompt utilizado</DialogTitle>
+            </DialogHeader>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono">
+              {prompt || "No prompt available"}
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
