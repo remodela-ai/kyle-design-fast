@@ -280,21 +280,27 @@ export default function FreeProject360() {
           <div className="grid grid-cols-4 gap-4 md:gap-6 max-w-md w-full mb-10">
             {visualFeatures.map((feature, index) => {
               const status = getStepStatus(feature.stepNumber);
+              // Show spinner for step 1 immediately when pipeline starts (even if status is still "pending")
+              const showSpinner = status === "processing" || 
+                (feature.stepNumber === 1 && isRunning && status === "pending");
+              const isCompleted = status === "completed";
+              const isError = status === "error";
+              
               return (
                 <div
                   key={index}
                   className="flex flex-col items-center gap-2"
                 >
                   <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 cursor-pointer ${
-                    status === "completed" 
+                    isCompleted 
                       ? "bg-green-500 shadow-green-500/30" 
-                      : status === "processing"
+                      : showSpinner
                       ? "bg-primary shadow-primary/30 animate-pulse"
-                      : status === "error"
+                      : isError
                       ? "bg-destructive shadow-destructive/30"
                       : "bg-primary/30 shadow-primary/20"
                   } hover:scale-105`}>
-                    {status === "processing" ? (
+                    {showSpinner ? (
                       <Loader2 className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground animate-spin" />
                     ) : (
                       <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-primary-foreground" />
