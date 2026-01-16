@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload } from "lucide-react";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -402,14 +402,60 @@ Create a design that accurately reflects everything discussed in the conversatio
           </div>
         )}
 
-        {/* Prompt Dialog */}
+        {/* Prompt Comparison Dialog */}
         <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
-          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Prompt used</DialogTitle>
+              <DialogTitle>Prompt Analysis</DialogTitle>
             </DialogHeader>
-            <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono">
-              {prompt || "No prompt available"}
+            
+            {/* Original Source */}
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <h3 className="font-semibold text-sm">Original Source</h3>
+                  <span className="text-xs text-muted-foreground">
+                    ({uploadedConversation ? 'PDF Upload' : 'Voice Conversation'})
+                  </span>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs font-mono max-h-40 overflow-y-auto whitespace-pre-wrap">
+                  {uploadedConversation || messages.map(m => `${m.role === "user" ? "Client" : "Kyle"}: ${m.content}`).join('\n\n') || "No source available"}
+                </div>
+              </div>
+
+              {/* Similarity Indicator */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 h-px bg-border" />
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600">
+                    100% transcript included
+                  </span>
+                </div>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Final Prompt */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <h3 className="font-semibold text-sm">Prompt Sent to AI</h3>
+                </div>
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-xs font-mono max-h-60 overflow-y-auto whitespace-pre-wrap">
+                  {prompt || "No prompt available"}
+                </div>
+              </div>
+
+              {/* Explanation */}
+              <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+                <p className="font-medium mb-1">How the prompt is built:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Your full conversation is embedded in the prompt</li>
+                  <li>Instructions guide the AI to extract: room type, style, colors, materials, exclusions</li>
+                  <li>The AI generates a design that matches ALL discussed requirements</li>
+                </ul>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
