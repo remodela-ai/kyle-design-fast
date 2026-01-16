@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified, conversationSummary } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, conversationSummary, referenceImage } = await req.json();
 
     console.log("Starting Video Presentation generation for session:", sessionId);
 
@@ -20,84 +21,48 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Update step status to processing
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
+    }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
+
     await supabase.from("pipeline_steps").update({
       status: "processing",
       started_at: new Date().toISOString(),
     }).eq("session_id", sessionId).eq("step_number", 8);
 
-    // Build context from elements
     const elementNames = elements?.map((el: { name: string }) => el.name).slice(0, 5).join(", ") || "elegant furniture";
 
-    const prompt = `Create a cinematic video presentation thumbnail/poster for an interior design project showcase.
+    const prompt = `Cinematic video presentation poster for interior design project showcase. ${roomType || 'Living Space'} in ${styleIdentified || 'Modern Contemporary'} style. Concept: ${conversationSummary || 'A luxurious and inviting interior space'}. Key elements: ${elementNames}. Dramatic photorealistic rendering of completed interior space, cinematic lighting with volumetric rays and golden hour atmosphere, professional architectural photography, depth of field effect on key design elements, luxury real estate marketing quality. Elegant centered play button icon, "DESIGN PRESENTATION" text at bottom, project title "${roomType || 'Interior'} | ${styleIdentified || 'Modern'} Collection", stylish film grain, cinematic color grading, letterboxing for cinematic feel. Warm inviting lighting, magazine-cover and film-poster quality, high-end design studio presentation. 16:9 widescreen cinematic aspect ratio, 8K ultra HD resolution.`;
 
-Project details:
-- Room: ${roomType || 'Living Space'}
-- Style: ${styleIdentified || 'Modern Contemporary'}
-- Concept: ${conversationSummary || 'A luxurious and inviting interior space'}
-- Key elements: ${elementNames}
+    console.log("Calling Replicate for video presentation generation...");
 
-Design a stunning cinematic poster that includes:
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "16:9",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-VISUAL ELEMENTS:
-- A dramatic, photorealistic rendering of the completed interior space
-- Cinematic lighting with volumetric rays or golden hour atmosphere
-- Professional architectural photography style
-- Depth of field effect focusing on key design elements
-- Luxury real estate marketing quality
-
-OVERLAY ELEMENTS:
-- Elegant play button icon (subtle, centered)
-- "DESIGN PRESENTATION" text at bottom
-- Project title: "${roomType || 'Interior'} | ${styleIdentified || 'Modern'} Collection"
-- Stylish film grain or cinematic color grading
-- Aspect ratio indicators or letterboxing for cinematic feel
-
-ATMOSPHERE:
-- Warm, inviting lighting
-- Professional interior photography mood
-- Magazine-cover or film-poster quality
-- High-end design studio presentation level
-
-Create a single stunning video presentation thumbnail that would be used to represent a walkthrough video of this interior design project. Ultra high resolution, 16:9 widescreen cinematic aspect ratio.`;
-
-    console.log("Calling AI for video presentation generation...");
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.3;
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    console.log("Video Presentation generation completed");
-
-    const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const description = aiData.choices?.[0]?.message?.content || "Video Presentation poster generated successfully";
-
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image was generated");
     }
 
-    // Update pipeline step with results
+    const imageUrl = typeof output === 'string' ? output : String(output);
+    const description = "Video Presentation poster generated with Flux 2 Pro";
+
+    console.log("Video Presentation generation completed");
+
     await supabase.from("pipeline_steps").update({
       status: "completed",
       output_data: {
@@ -110,7 +75,6 @@ Create a single stunning video presentation thumbnail that would be used to repr
       completed_at: new Date().toISOString(),
     }).eq("session_id", sessionId).eq("step_number", 8);
 
-    // Mark pipeline as complete by updating the session
     await supabase.from("project_sessions").update({
       updated_at: new Date().toISOString(),
     }).eq("session_id", sessionId);

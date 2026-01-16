@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,112 +12,44 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, roomType, styleIdentified, elements } = await req.json();
+    const { sessionId, roomType, styleIdentified, elements, referenceImage } = await req.json();
 
     console.log("Management Step 7: Delivery Checklist");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
     const itemCount = Array.isArray(elements) ? elements.length : 10;
 
-    const prompt = `Create a professional Delivery/Quality Control Checklist document image for an interior design project.
+    const prompt = `Professional Delivery and Quality Control Checklist document for interior design project. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} style. Approximately ${itemCount} items. Header "DELIVERY & QUALITY CHECKLIST". Sections: PRE-DELIVERY VERIFICATION with checkboxes for items ordered confirmed, delivery dates scheduled, access arrangements, storage space, insurance. FURNITURE INSPECTION checkboxes for correct items, no damage, dimensions match, color finish correct, assembly parts, hardware. LIGHTING CHECK for fixtures, wattage, bulbs, mounting hardware. TEXTILES SOFT GOODS for fabric color, defects, size specifications, care labels. INSTALLATION QUALITY for level aligned, secure mounting, no scratches, spacing, functionality. FINAL WALKTHROUGH for all items placed, electrical working, no damage, cleaned, client satisfied. SIGN-OFF section with date, inspector, client signature, notes fields. Clear checkbox format, space for notes comments, photo documentation placeholders, professional form layout. Portrait aspect ratio, 8K ultra HD resolution, professional checklist form, clean organized layout.`;
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
-- Approximate items: ${itemCount}
+    console.log("Generating checklist image with Flux 2 Pro...");
 
-Document Sections:
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-1. PRE-DELIVERY VERIFICATION
-   □ All items ordered and confirmed
-   □ Delivery dates scheduled
-   □ Access arrangements made
-   □ Storage space prepared
-   □ Insurance verified
-
-2. FURNITURE INSPECTION
-   □ Correct items received
-   □ No damage to packaging
-   □ Dimensions match specifications
-   □ Color/finish as specified
-   □ Assembly parts complete
-   □ Hardware included
-
-3. LIGHTING CHECK
-   □ All fixtures received
-   □ Correct wattage/specifications
-   □ Bulbs included
-   □ Mounting hardware present
-
-4. TEXTILES & SOFT GOODS
-   □ Correct fabric/color
-   □ No defects or stains
-   □ Size specifications match
-   □ Care labels attached
-
-5. INSTALLATION QUALITY
-   □ Level and aligned
-   □ Secure mounting
-   □ No scratches or marks
-   □ Proper spacing
-   □ Functionality tested
-
-6. FINAL WALKTHROUGH
-   □ All items in place
-   □ Electrical working
-   □ No damage to walls/floors
-   □ Space cleaned
-   □ Client satisfied
-
-7. SIGN-OFF
-   - Date: _____________
-   - Inspector: _____________
-   - Client signature: _____________
-   - Notes: _____________
-
-Document Requirements:
-1. Header: "DELIVERY & QUALITY CHECKLIST"
-2. Clear checkbox format
-3. Space for notes/comments
-4. Photo documentation placeholders
-5. Professional form layout
-6. Signature/date fields
-
-Style: Ultra high resolution, professional checklist form, clean organized layout, premium aesthetic`;
-
-    console.log("Generating checklist image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.15;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Checklist image generated successfully");
 
     return new Response(
