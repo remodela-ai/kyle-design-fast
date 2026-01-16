@@ -181,9 +181,15 @@ Create a design that accurately reflects everything discussed in the conversatio
     setGeneratedImage(null);
   };
 
+  const clearUploadedConversation = () => {
+    setUploadedConversation(null);
+    toast.success("Conversation cleared");
+  };
+
   const getStatusText = () => {
     if (localGenerating || isGenerating) return "Creating your design...";
     if (voiceCommandDetected) return "Voice command detected!";
+    if (uploadedConversation) return ""; // Hide status when PDF loaded
     if (isConnected) return "";
     if (generatedImage) return "";
     return "Tap Kyle to start";
@@ -280,14 +286,46 @@ Create a design that accurately reflects everything discussed in the conversatio
             </div>
           </div>
           
-          {/* Status Text with Bouncing Arrow */}
+          {/* Status Text with Bouncing Arrow OR Uploaded Conversation Card */}
           <div className="flex flex-col items-center gap-3">
-            {!isConnected && !generatedImage && !showLoading && (
-              <ChevronUp className="h-10 w-10 text-foreground animate-bounce" />
+            {uploadedConversation && !generatedImage && !showLoading ? (
+              <div className="bg-card border border-border rounded-xl p-4 max-w-sm w-full shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-5 w-5 text-green-500" />
+                  <span className="font-medium text-foreground">Conversation loaded</span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                  {uploadedConversation.substring(0, 150)}...
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="kyle" 
+                    size="sm" 
+                    onClick={generateDesign}
+                    className="flex-1 gap-2"
+                  >
+                    <Loader2 className={`h-4 w-4 ${showLoading ? 'animate-spin' : 'hidden'}`} />
+                    Generate Design
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={clearUploadedConversation}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {!isConnected && !generatedImage && !showLoading && !uploadedConversation && (
+                  <ChevronUp className="h-10 w-10 text-foreground animate-bounce" />
+                )}
+                <p className="text-muted-foreground text-lg font-medium">
+                  {getStatusText()}
+                </p>
+              </>
             )}
-            <p className="text-muted-foreground text-lg font-medium">
-              {getStatusText()}
-            </p>
           </div>
         </div>
 
