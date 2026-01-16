@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp } from "lucide-react";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -8,11 +8,14 @@ import { AudioWaves } from "@/components/AudioWaves";
 import { useKyle } from "@/contexts/KyleContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImageUploadDialog } from "@/components/ImageUploadDialog";
 
 export default function Shazam() {
   const navigate = useNavigate();
   const [localGenerating, setLocalGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   
   const { 
@@ -51,14 +54,17 @@ export default function Shazam() {
 
     try {
       const { data, error } = await supabase.functions.invoke('blink-design', {
-        body: { prompt: promptToUse }
+        body: { 
+          prompt: promptToUse,
+          referenceImage: referenceImage || undefined
+        }
       });
 
       if (error) throw error;
 
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
-        toast.success("Design created!");
+        toast.success("Design created with Flux 2 Pro!");
       }
     } catch (error) {
       console.error('Error:', error);
@@ -67,7 +73,7 @@ export default function Shazam() {
       setLocalGenerating(false);
       resetGenerating();
     }
-  }, [prompt, designSummary, resetGenerating]);
+  }, [prompt, designSummary, referenceImage, resetGenerating]);
 
   // Register generation callback
   useEffect(() => {
@@ -109,8 +115,46 @@ export default function Shazam() {
             <Home className="h-5 w-5" />
           </Button>
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full relative"
+            onClick={() => setShowUploadDialog(true)}
+          >
+            <ImagePlus className="h-5 w-5" />
+            {referenceImage && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full" />
+            )}
+          </Button>
+          <ThemeToggle />
+        </div>
       </header>
+
+      {/* Reference Image Preview */}
+      {referenceImage && (
+        <div className="absolute top-16 right-4 z-10">
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-primary shadow-lg">
+            <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
+            <button 
+              onClick={() => setReferenceImage(null)}
+              className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+            >
+              <X className="h-3 w-3 text-destructive-foreground" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Image Upload Dialog */}
+      <ImageUploadDialog
+        open={showUploadDialog}
+        onOpenChange={setShowUploadDialog}
+        onImageSelected={(imageData) => {
+          setReferenceImage(imageData);
+          toast.success("Reference image added!");
+        }}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-start px-4 pb-8">

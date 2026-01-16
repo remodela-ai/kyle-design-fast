@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,101 +12,42 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, roomType, styleIdentified, elements } = await req.json();
+    const { sessionId, roomType, styleIdentified, elements, referenceImage } = await req.json();
 
     console.log("Management Step 6: Installation Plan");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
 
-    const prompt = `Create a professional Installation Plan/Guide document image for an interior design project.
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
+    const prompt = `Professional Installation Plan Guide document for interior design project. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} style. Header "INSTALLATION PLAN". Sections: PRE-INSTALLATION CHECKLIST with checkboxes for site measurements verified, electrical points confirmed, plumbing connections checked, HVAC vents located, access routes cleared. ELECTRICAL LAYOUT with outlet positions, switch locations, lighting fixture points, data TV cable runs, circuit requirements. PLUMBING CONSIDERATIONS with water supply points, drainage locations, appliance connections. FURNITURE PLACEMENT GUIDE with entry sequence, assembly requirements, positioning coordinates, clearance requirements. INSTALLATION SEQUENCE Phase 1 Base preparation, Phase 2 Electrical Plumbing, Phase 3 Flooring, Phase 4 Wall treatments, Phase 5 Large furniture, Phase 6 Lighting, Phase 7 Accessories. SAFETY REQUIREMENTS with PPE requirements, tool checklist, emergency contacts. Visual floor plan with marked points, clear numbered sequence, checkboxes for completion tracking, professional technical drawing style, color-coded systems electrical yellow plumbing blue. Portrait aspect ratio, 8K ultra HD resolution, professional technical document, installation guide aesthetic.`;
 
-Document Sections:
+    console.log("Generating installation plan image with Flux 2 Pro...");
 
-1. PRE-INSTALLATION CHECKLIST
-   □ Site measurements verified
-   □ Electrical points confirmed
-   □ Plumbing connections checked
-   □ HVAC vents located
-   □ Access routes cleared
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-2. ELECTRICAL LAYOUT
-   - Outlet positions
-   - Switch locations
-   - Lighting fixture points
-   - Data/TV cable runs
-   - Circuit requirements
-
-3. PLUMBING CONSIDERATIONS
-   - Water supply points
-   - Drainage locations
-   - Appliance connections
-
-4. FURNITURE PLACEMENT GUIDE
-   - Entry sequence (which items first)
-   - Assembly requirements
-   - Positioning coordinates
-   - Clearance requirements
-
-5. INSTALLATION SEQUENCE
-   Phase 1: Base preparation
-   Phase 2: Electrical/Plumbing
-   Phase 3: Flooring
-   Phase 4: Wall treatments
-   Phase 5: Large furniture
-   Phase 6: Lighting
-   Phase 7: Accessories
-
-6. SAFETY REQUIREMENTS
-   - PPE requirements
-   - Tool checklist
-   - Emergency contacts
-
-Document Requirements:
-1. Header: "INSTALLATION PLAN"
-2. Visual floor plan with marked points
-3. Clear numbered sequence
-4. Checkboxes for completion tracking
-5. Professional technical drawing style
-6. Color-coded systems (electrical=yellow, plumbing=blue)
-
-Style: Ultra high resolution, professional technical document, installation guide aesthetic, premium layout`;
-
-    console.log("Generating installation plan image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.15;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Installation plan image generated successfully");
 
     return new Response(

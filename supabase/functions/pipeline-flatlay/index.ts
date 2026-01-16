@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, referenceImage } = await req.json();
 
     console.log("Starting Material Flatlay generation for session:", sessionId);
 
@@ -20,78 +21,51 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Update step status to processing
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
+    }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
+
     await supabase.from("pipeline_steps").update({
       status: "processing",
       started_at: new Date().toISOString(),
     }).eq("session_id", sessionId).eq("step_number", 5);
 
-    // Extract materials and colors from elements
     const materials = elements?.map((el: { material?: string }) => el.material).filter(Boolean) || [];
     const colors = elements?.map((el: { color?: string }) => el.color).filter(Boolean) || [];
     const uniqueMaterials = [...new Set(materials)].join(", ") || "wood, fabric, metal, glass";
     const uniqueColors = [...new Set(colors)].join(", ") || "neutral tones";
 
-    const prompt = `Create a professional interior design material flatlay photograph for a ${roomType || 'living space'} in ${styleIdentified || 'modern'} style.
+    const prompt = `Professional interior design material flatlay photograph, top-down view for a ${roomType || 'living space'} in ${styleIdentified || 'modern'} style. Fabric swatches and textile samples in ${uniqueMaterials}. Wood finish samples and veneer pieces. Metal hardware samples. Stone or tile samples. Paint color chips in ${uniqueColors}. Decorative trim samples. Leather or upholstery samples. Clean white background, professional overhead flat lay photography, materials arranged aesthetically with slight overlapping, natural shadows for depth, magazine-quality styling, high-end interior design presentation. Square 1:1 aspect ratio, 8K ultra HD resolution.`;
 
-The flatlay should be a top-down photograph showing:
-- Fabric swatches and textile samples (${uniqueMaterials})
-- Wood finish samples and veneer pieces
-- Metal hardware samples (handles, knobs, fixtures)
-- Stone or tile samples if applicable
-- Paint color chips in ${uniqueColors}
-- Decorative trim and molding samples
-- Leather or upholstery samples
-- Glass or acrylic samples if relevant
+    console.log("Calling Replicate for flatlay generation...");
 
-Arrangement requirements:
-- Clean white or light gray background
-- Professional overhead flat lay photography style
-- Materials arranged in an aesthetically pleasing composition
-- Samples slightly overlapping for visual interest
-- Natural shadows for depth
-- Magazine-quality styling
-- High-end interior design presentation
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "1:1",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-Create a single cohesive flatlay image showing all material samples that would be presented to a client. Ultra high resolution, square 1:1 aspect ratio.`;
-
-    console.log("Calling AI for flatlay generation...");
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.2;
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    console.log("Flatlay generation completed");
-
-    const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const description = aiData.choices?.[0]?.message?.content || "Material flatlay generated successfully";
-
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image was generated");
     }
 
-    // Update pipeline step with results
+    const imageUrl = typeof output === 'string' ? output : String(output);
+    const description = "Material flatlay generated with Flux 2 Pro";
+
+    console.log("Flatlay generation completed");
+
     await supabase.from("pipeline_steps").update({
       status: "completed",
       output_data: {

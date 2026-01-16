@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,102 +12,48 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, referenceImage } = await req.json();
 
     console.log("Management Step 4: Technical Specifications");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
     const elementsList = Array.isArray(elements) 
       ? elements.map((e: { name?: string; material?: string; color?: string }) => 
           `${e.name || 'Item'}: ${e.material || 'N/A'}, ${e.color || 'N/A'}`
-        ).join("\n")
+        ).join(", ")
       : "Various items with materials and finishes";
 
-    const prompt = `Create a professional Technical Specifications document image for an interior design project.
+    const prompt = `Professional Technical Specifications document for interior design project. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} style. Elements: ${elementsList}. Header "TECHNICAL SPECIFICATIONS". Sections: FLOORING SPECIFICATIONS with material type, color finish, installation method, maintenance. WALL FINISHES with paint colors and codes, wallpaper texture specs, accent treatments. CEILING TREATMENTS with type height, lighting provisions, crown molding. FURNITURE SPECIFICATIONS with dimensions, material upholstery, care instructions. LIGHTING SPECIFICATIONS with fixture types, wattage lumens, placement coordinates. WINDOW TREATMENTS with curtain blind type, fabric specs, hardware details. Organized sections with clear headers, specification codes and references, detailed metric measurements, material sample placeholders, professional grid layout, notes and special requirements section. Portrait aspect ratio, 8K ultra HD resolution, professional specification sheet, clean technical document.`;
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
+    console.log("Generating specs image with Flux 2 Pro...");
 
-Elements:
-${elementsList}
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-Document Sections:
-1. FLOORING SPECIFICATIONS
-   - Material type
-   - Color/finish
-   - Installation method
-   - Maintenance requirements
-
-2. WALL FINISHES
-   - Paint colors (with codes)
-   - Wallpaper/texture specifications
-   - Accent wall treatments
-
-3. CEILING TREATMENTS
-   - Type and height
-   - Lighting provisions
-   - Crown molding details
-
-4. FURNITURE SPECIFICATIONS
-   - Dimensions for each piece
-   - Material & upholstery
-   - Care instructions
-
-5. LIGHTING SPECIFICATIONS
-   - Fixture types
-   - Wattage/Lumens
-   - Placement coordinates
-
-6. WINDOW TREATMENTS
-   - Curtain/blind type
-   - Fabric specifications
-   - Hardware details
-
-Document Requirements:
-1. Header: "TECHNICAL SPECIFICATIONS"
-2. Organized sections with clear headers
-3. Specification codes and references
-4. Detailed measurements in metric
-5. Material sample placeholders
-6. Professional grid layout
-7. Notes and special requirements section
-
-Style: Ultra high resolution, professional specification sheet, clean technical document, premium aesthetic`;
-
-    console.log("Generating specs image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.15;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Specs image generated successfully");
 
     return new Response(

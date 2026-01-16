@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,86 +12,46 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, roomType, styleIdentified, totalBudget, conversationSummary } = await req.json();
+    const { sessionId, roomType, styleIdentified, totalBudget, conversationSummary, referenceImage } = await req.json();
 
     console.log("Management Step 8: Project Cover");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
     const budgetDisplay = totalBudget 
       ? `$${totalBudget.min?.toLocaleString()} - $${totalBudget.max?.toLocaleString()}`
       : "Custom Investment";
 
-    const prompt = `Create a stunning, premium Project Cover page image for an interior design portfolio/proposal.
+    const prompt = `Stunning premium Project Cover page for interior design portfolio proposal. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} design style. Investment: ${budgetDisplay}. ${conversationSummary ? `Vision: ${conversationSummary}.` : ''} Elegant magazine-quality cover page with sophisticated typography: "INTERIOR DESIGN PROJECT" main title, "${roomType || 'Living Space'}" subtitle, "${styleIdentified || 'Contemporary'} Design" style tag. Luxurious abstract geometric background, subtle gold metallic accents, professional design firm logo placeholder, project reference number, date ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. High-end real estate architecture magazine aesthetic, rich textures and depth, sophisticated ${styleIdentified || 'modern'} color palette, elegant borders and frames, premium paper texture effect. Bottom section: "Prepared exclusively for Client" and "NEXT INTERIORS" branding. Luxury exclusivity professionalism feel. Portrait aspect ratio, 8K ultra HD resolution.`;
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
-- Investment: ${budgetDisplay}
-${conversationSummary ? `- Vision: ${conversationSummary}` : ''}
+    console.log("Generating project cover image with Flux 2 Pro...");
 
-Design Requirements:
-1. Create an elegant, magazine-quality cover page
-2. Large, sophisticated typography with:
-   - "INTERIOR DESIGN PROJECT" as main title
-   - "${roomType || 'Living Space'}" as subtitle
-   - "${styleIdentified || 'Contemporary'} Design" as style tag
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-3. Include these elements:
-   - Luxurious abstract or geometric background
-   - Subtle gold/metallic accents
-   - Professional design firm logo placeholder
-   - Project reference number
-   - Date: ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-
-4. Visual style:
-   - High-end real estate/architecture magazine aesthetic
-   - Rich textures and depth
-   - Sophisticated color palette matching ${styleIdentified || 'modern'} style
-   - Elegant borders or frames
-   - Premium paper texture effect
-
-5. Bottom section:
-   - "Prepared exclusively for [Client Name]"
-   - "NEXT INTERIORS" branding
-   - Contact placeholder
-
-6. Overall feel: Luxury, exclusivity, professionalism
-
-Style: Ultra high resolution, magazine cover quality, luxury aesthetic, editorial design, premium presentation`;
-
-    console.log("Generating project cover image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.2;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Project cover image generated successfully");
 
     return new Response(

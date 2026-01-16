@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,95 +12,42 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, roomType, styleIdentified, totalBudget } = await req.json();
+    const { sessionId, roomType, styleIdentified, totalBudget, referenceImage } = await req.json();
 
     console.log("Management Step 3: Project Timeline");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
 
-    const prompt = `Create a professional project timeline/Gantt chart document image for an interior design project.
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
-- Estimated Duration: 8-12 weeks
+    const prompt = `Professional project timeline Gantt chart document for interior design project. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} style. Estimated Duration 8-12 weeks. Timeline Phases: Week 1-2 Design Finalization with final design approval, material selections confirmed, vendor contracts signed. Week 3-4 Procurement Phase with order furniture items, order materials finishes, custom items production. Week 5-6 Preparation with site preparation, demolition if needed, base installations. Week 7-8 Installation Phase with flooring wall treatments, lighting installation, major furniture delivery. Week 9-10 Finishing with accessories decor placement, custom items installation, final adjustments. Week 11-12 Final Review with client walkthrough, punch list items, project handover. Header "PROJECT TIMELINE" with dates. Professional Gantt chart visualization, color-coded phases, milestones marked clearly, dependencies shown, clean modern design, legend for phase colors, today date marker, professional typography. 16:9 aspect ratio, 8K ultra HD resolution, modern project management document, elegant visualization.`;
 
-Timeline Phases to Show:
-1. Week 1-2: Design Finalization
-   - Final design approval
-   - Material selections confirmed
-   - Vendor contracts signed
+    console.log("Generating timeline image with Flux 2 Pro...");
 
-2. Week 3-4: Procurement Phase
-   - Order furniture items
-   - Order materials & finishes
-   - Custom items production begins
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "16:9",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-3. Week 5-6: Preparation
-   - Site preparation
-   - Demolition if needed
-   - Base installations
-
-4. Week 7-8: Installation Phase
-   - Flooring & wall treatments
-   - Lighting installation
-   - Major furniture delivery
-
-5. Week 9-10: Finishing
-   - Accessories & decor placement
-   - Custom items installation
-   - Final adjustments
-
-6. Week 11-12: Final Review
-   - Client walkthrough
-   - Punch list items
-   - Project handover
-
-Document Requirements:
-1. Professional Gantt chart or timeline visualization
-2. Header: "PROJECT TIMELINE" with dates
-3. Color-coded phases for easy reading
-4. Milestones marked clearly
-5. Dependencies shown between tasks
-6. Clean, modern design aesthetic
-7. Include legend for phase colors
-8. Show today's date marker
-9. Professional typography
-
-Style: Ultra high resolution, modern project management document, elegant visualization, premium aesthetic`;
-
-    console.log("Generating timeline image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.15;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Timeline image generated successfully");
 
     return new Response(

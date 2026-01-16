@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified, conversationSummary } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, conversationSummary, referenceImage } = await req.json();
 
     console.log("Starting Story Book generation for session:", sessionId);
 
@@ -20,92 +21,50 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Update step status to processing
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
+    }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
+
     await supabase.from("pipeline_steps").update({
       status: "processing",
       started_at: new Date().toISOString(),
     }).eq("session_id", sessionId).eq("step_number", 7);
 
-    // Build context from elements
     const elementNames = elements?.map((el: { name: string }) => el.name).join(", ") || "furniture and decor";
     const materials = elements?.map((el: { material?: string }) => el.material).filter(Boolean);
     const uniqueMaterials = [...new Set(materials)].join(", ") || "natural materials";
 
-    const prompt = `Create a professional interior design storybook presentation page for a ${roomType || 'living space'} in ${styleIdentified || 'modern'} style.
+    const prompt = `Professional interior design storybook presentation page for a ${roomType || 'living space'} in ${styleIdentified || 'modern'} style. Design concept: ${conversationSummary || 'A sophisticated and welcoming interior space'}. Elegant title "Your Design Story" with room type and style subtitle. Decorative divider elements. Poetic description of space atmosphere, design inspiration and philosophy. Artistic vignette illustrations, decorative botanical borders, elegant serif typography, script accents for quotes. Featured elements: ${elementNames}. Material story: ${uniqueMaterials}. Magazine editorial quality, coffee table book aesthetic, warm inviting presentation, professional interior design portfolio style, cream or soft white background, gold or copper accent details. Portrait 3:4 aspect ratio, 8K ultra HD resolution.`;
 
-Design concept brief: ${conversationSummary || 'A sophisticated and welcoming interior space'}
+    console.log("Calling Replicate for storybook generation...");
 
-The storybook page should be a beautiful editorial layout featuring:
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-HEADER SECTION:
-- Elegant title: "Your Design Story"
-- Subtitle with the room type and style
-- Decorative divider or border element
-
-NARRATIVE SECTION:
-- A poetic description of the space's atmosphere
-- The design inspiration and philosophy
-- How the space will feel to live in
-- The story behind the material and color choices
-
-VISUAL ELEMENTS:
-- Artistic vignette illustrations of key design moments
-- Decorative botanical or geometric borders
-- Elegant typography with serif fonts for headings
-- Script or handwritten accents for quotes
-
-KEY FEATURES HIGHLIGHTED:
-- Featured elements: ${elementNames}
-- Material story: ${uniqueMaterials}
-- The emotional journey of the space
-
-DESIGN STYLE:
-- Magazine editorial quality
-- Coffee table book aesthetic
-- Warm, inviting presentation
-- Professional interior design portfolio style
-- Cream or soft white background
-- Gold or copper accent details
-
-Create a single beautiful storybook page that tells the narrative of this interior design project. Ultra high resolution, portrait 3:4 aspect ratio.`;
-
-    console.log("Calling AI for storybook generation...");
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.2;
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI API error:", aiResponse.status, errorText);
-      throw new Error(`AI API error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    console.log("Story Book generation completed");
-
-    const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const description = aiData.choices?.[0]?.message?.content || "Story Book generated successfully";
-
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image was generated");
     }
 
-    // Update pipeline step with results
+    const imageUrl = typeof output === 'string' ? output : String(output);
+    const description = "Story Book generated with Flux 2 Pro";
+
+    console.log("Story Book generation completed");
+
     await supabase.from("pipeline_steps").update({
       status: "completed",
       output_data: {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, spatialAnalysis, roomType, elements } = await req.json();
+    const { sessionId, spatialAnalysis, roomType, elements, referenceImage } = await req.json();
 
     if (!sessionId) {
       return new Response(
@@ -21,110 +22,78 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
     console.log("Generating Floor Plan for session:", sessionId);
 
-    // Build elements list for the prompt
     const elementsList = elements?.map((el: { name: string; dimensions?: { width: number; depth: number } }) => 
       `- ${el.name}: ${el.dimensions?.width || 1}m x ${el.dimensions?.depth || 1}m`
     ).join('\n') || '';
 
-    // Build prompt for floor plan generation
-    const floorPlanPrompt = `Generate a professional architectural floor plan (top-down view) for a ${roomType || 'room'}.
+    const floorPlanPrompt = `Professional architectural floor plan, top-down orthographic view for a ${roomType || 'room'}. ${spatialAnalysis?.estimatedDimensions ? `Room dimensions: ${spatialAnalysis.estimatedDimensions.length}m x ${spatialAnalysis.estimatedDimensions.width}m.` : 'Standard room size.'} ${spatialAnalysis?.styleIdentified ? `${spatialAnalysis.styleIdentified} style.` : ''} Elements: ${elementsList || 'Standard furniture layout'}. Clean architectural drawing, black lines on white background, furniture placement with proper scale, dimension lines, labeled elements, doors and windows, standard architectural symbols. Technical blueprint quality.`;
 
-Room specifications:
-${spatialAnalysis?.estimatedDimensions ? `- Room dimensions: ${spatialAnalysis.estimatedDimensions.length}m x ${spatialAnalysis.estimatedDimensions.width}m` : '- Standard room size'}
-${spatialAnalysis?.styleIdentified ? `- Style: ${spatialAnalysis.styleIdentified}` : ''}
+    console.log("Floor plan prompt:", floorPlanPrompt.substring(0, 200) + "...");
 
-Elements to include with their approximate sizes:
-${elementsList || '- Standard furniture layout'}
+    const input: Record<string, unknown> = {
+      prompt: floorPlanPrompt,
+      aspect_ratio: "1:1",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-Requirements:
-- Clean, professional architectural drawing style
-- Black lines on white background
-- Top-down orthographic view
-- Show furniture placement with proper scale
-- Include dimension lines
-- Label key elements
-- Show doors and windows if applicable
-- Use standard architectural symbols`;
-
-    console.log("Floor plan prompt:", floorPlanPrompt);
-
-    // Call Lovable AI with Nano Banana for image generation
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: floorPlanPrompt,
-          },
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required, please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error(`AI image generation failed: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.3;
     }
 
-    const data = await response.json();
-    console.log("Nano Banana response received");
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    // Extract the generated image
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content || "";
-
-    if (!imageUrl) {
-      console.error("No image generated, response:", JSON.stringify(data));
+    if (!output) {
       throw new Error("No floor plan image was generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Floor plan generated successfully");
 
     return new Response(
       JSON.stringify({
         success: true,
         imageUrl,
-        description: textResponse,
+        description: "Architectural floor plan generated with Flux 2 Pro",
         type: "floor_plan",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error in nano-planta:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+      return new Response(
+        JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (errorMessage.includes("payment") || errorMessage.includes("402")) {
+      return new Response(
+        JSON.stringify({ error: "Payment required, please add funds." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

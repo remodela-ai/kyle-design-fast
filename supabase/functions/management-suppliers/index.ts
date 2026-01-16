@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,103 +12,46 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, referenceImage } = await req.json();
 
     console.log("Management Step 5: Supplier Directory");
     console.log("Session ID:", sessionId);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
     const categories = Array.isArray(elements)
       ? [...new Set(elements.map((e: { category?: string }) => e.category || 'General'))].join(", ")
       : "Furniture, Lighting, Decor, Textiles";
 
-    const prompt = `Create a professional Supplier Directory document image for an interior design project.
+    const prompt = `Professional Supplier Directory document for interior design project. ${roomType || 'Interior Space'} in ${styleIdentified || 'Contemporary'} style. Categories needed: ${categories}. Header "SUPPLIER DIRECTORY". Supplier categories: FURNITURE SUPPLIERS with premium brands, custom furniture makers, contact placeholders, lead times. LIGHTING SPECIALISTS with fixture suppliers, custom lighting designers, smart lighting. FABRIC TEXTILES with upholstery suppliers, curtain drapery vendors, rug specialists. MATERIALS FINISHES with flooring suppliers, paint wallcovering vendors, stone tile suppliers. DECOR ACCESSORIES with art galleries, decorative object suppliers, plant greenery vendors. SPECIALTY CONTRACTORS with electricians, carpenters, installers. Clean table format with columns for Category, Supplier Name, Specialty, Contact Info placeholder, Rating Notes. Color-coded by category, space for custom suppliers, professional typography, QR code placeholders for websites. Portrait aspect ratio, 8K ultra HD resolution, professional directory layout, organized clean premium aesthetic.`;
 
-Project Details:
-- Room Type: ${roomType || 'Interior Space'}
-- Design Style: ${styleIdentified || 'Contemporary'}
-- Categories needed: ${categories}
+    console.log("Generating suppliers image with Flux 2 Pro...");
 
-Supplier Categories to Include:
+    const input: Record<string, unknown> = {
+      prompt,
+      aspect_ratio: "3:4",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
 
-1. FURNITURE SUPPLIERS
-   - Premium brands
-   - Custom furniture makers
-   - Contact placeholder
-   - Estimated lead times
-
-2. LIGHTING SPECIALISTS
-   - Fixture suppliers
-   - Custom lighting designers
-   - Smart lighting providers
-
-3. FABRIC & TEXTILES
-   - Upholstery suppliers
-   - Curtain/drapery vendors
-   - Rug specialists
-
-4. MATERIALS & FINISHES
-   - Flooring suppliers
-   - Paint/wallcovering vendors
-   - Stone/tile suppliers
-
-5. DECOR & ACCESSORIES
-   - Art galleries
-   - Decorative object suppliers
-   - Plant/greenery vendors
-
-6. SPECIALTY CONTRACTORS
-   - Electricians
-   - Carpenters
-   - Installers
-
-Document Requirements:
-1. Header: "SUPPLIER DIRECTORY"
-2. Clean table format with columns:
-   - Category
-   - Supplier Name
-   - Specialty
-   - Contact Info (placeholder)
-   - Rating/Notes
-3. Color-coded by category
-4. Space for adding custom suppliers
-5. Professional typography
-6. Include QR code placeholders for websites
-
-Style: Ultra high resolution, professional directory layout, organized and clean, premium aesthetic`;
-
-    console.log("Generating suppliers image...");
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.15;
     }
 
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    if (!imageUrl) {
+    if (!output) {
       throw new Error("No image generated");
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
     console.log("Suppliers image generated successfully");
 
     return new Response(

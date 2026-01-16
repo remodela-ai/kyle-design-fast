@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,12 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, referenceImage } = await req.json();
     
     if (!prompt) {
       return new Response(
@@ -21,77 +21,69 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
+    if (!REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
     }
 
-    console.log("Generating design for prompt:", prompt);
+    console.log("Generating design with Flux 2 Pro for prompt:", prompt.substring(0, 100));
 
-    // Use the Nano banana model for image generation
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: `Generate a beautiful, professional interior design image: ${prompt}. The image should be photorealistic, high quality, with excellent lighting and composition. Focus on modern, elegant interior design aesthetics.`,
-          },
-        ],
-        modalities: ["image", "text"],
-      }),
+    const replicate = new Replicate({
+      auth: REPLICATE_API_KEY,
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        console.error("Rate limit exceeded");
-        return new Response(
-          JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        console.error("Payment required");
-        return new Response(
-          JSON.stringify({ error: "Payment required, please add funds to your workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate image" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const imagePrompt = `Professional interior design visualization: ${prompt}. Photorealistic, high quality architectural photography, excellent lighting and composition. Modern, elegant interior design aesthetics. 8K ultra HD.`;
+
+    const input: Record<string, unknown> = {
+      prompt: imagePrompt,
+      aspect_ratio: "16:9",
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2,
+    };
+
+    if (referenceImage) {
+      input.image_prompt = referenceImage;
+      input.image_prompt_strength = 0.35;
     }
 
-    const data = await response.json();
-    console.log("Generation response received");
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
 
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textContent = data.choices?.[0]?.message?.content;
-
-    if (!imageUrl) {
-      console.error("No image in response:", JSON.stringify(data));
+    if (!output) {
+      console.error("No output from Replicate");
       return new Response(
         JSON.stringify({ error: "No image generated" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const imageUrl = typeof output === 'string' ? output : String(output);
+    console.log("Generation completed successfully");
+
     return new Response(
-      JSON.stringify({ imageUrl, description: textContent }),
+      JSON.stringify({ imageUrl, description: "Design generated with Flux 2 Pro" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error in generate-design:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+      return new Response(
+        JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (errorMessage.includes("payment") || errorMessage.includes("402")) {
+      return new Response(
+        JSON.stringify({ error: "Payment required, please add funds to your Replicate account." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
