@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText } from "lucide-react";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -23,7 +23,10 @@ export default function Shazam() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [uploadedConversation, setUploadedConversation] = useState<string | null>(null);
+  const [parsingPdf, setParsingPdf] = useState(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   
   const { 
     isConnected, 
@@ -36,25 +39,75 @@ export default function Shazam() {
     resetGenerating
   } = useKyle();
 
-  // Build prompt from FULL conversation transcript - Kyle's questions + user responses
+  // Handle PDF upload
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.includes('pdf')) {
+      toast.error("Please upload a PDF file");
+      return;
+    }
+
+    setParsingPdf(true);
+    toast.info("Parsing conversation from PDF...");
+
+    try {
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove data URL prefix
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Call edge function to parse PDF
+      const { data, error } = await supabase.functions.invoke('parse-pdf-conversation', {
+        body: { pdfBase64: base64 }
+      });
+
+      if (error) throw error;
+
+      if (data?.conversationText) {
+        setUploadedConversation(data.conversationText);
+        toast.success("Conversation loaded from PDF!");
+      }
+    } catch (error) {
+      console.error("PDF parsing error:", error);
+      toast.error("Failed to parse PDF");
+    } finally {
+      setParsingPdf(false);
+      // Reset input
+      if (pdfInputRef.current) {
+        pdfInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Build prompt from FULL conversation transcript OR uploaded conversation
   const prompt = useMemo(() => {
-    if (messages.length === 0) return null;
+    // Use uploaded conversation if available, otherwise use voice messages
+    const transcriptSource = uploadedConversation || (messages.length > 0 
+      ? messages.map(m => {
+          const role = m.role === "user" ? "Client" : "Kyle";
+          return `${role}: ${m.content}`;
+        }).join('\n\n')
+      : null);
     
-    // Log all messages for debugging
-    console.log("📝 Full transcript for prompt:", messages.map(m => `[${m.role}] ${m.content}`));
+    if (!transcriptSource) return null;
     
-    // Build full conversation transcript with both roles
-    const fullTranscript = messages.map(m => {
-      const role = m.role === "user" ? "Client" : "Kyle";
-      return `${role}: ${m.content}`;
-    }).join('\n\n');
-    
-    console.log("📝 Full transcript:", fullTranscript);
+    console.log("📝 Using transcript source:", uploadedConversation ? "PDF upload" : "voice messages");
+    console.log("📝 Transcript:", transcriptSource.substring(0, 300) + "...");
     
     return `Based on the following interior design consultation between Kyle (design assistant) and a client, create a photorealistic interior design visualization that captures ALL discussed requirements:
 
 ---CONVERSATION TRANSCRIPT---
-${fullTranscript}
+${transcriptSource}
 ---END TRANSCRIPT---
 
 INSTRUCTIONS: Analyze the full conversation to extract:
@@ -67,7 +120,7 @@ INSTRUCTIONS: Analyze the full conversation to extract:
 7. Any reference images or inspirations mentioned
 
 Create a design that accurately reflects everything discussed in the conversation. Do NOT add elements not discussed or ignore specific exclusions.`;
-  }, [messages]);
+  }, [messages, uploadedConversation]);
 
   // Generate design function
   const generateDesign = useCallback(async () => {
@@ -148,6 +201,31 @@ Create a design that accurately reflects everything discussed in the conversatio
           </Button>
         </Link>
         <div className="flex items-center gap-2">
+          {/* PDF Upload Button */}
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handlePdfUpload}
+            className="hidden"
+            id="pdf-upload"
+          />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full relative"
+            onClick={() => pdfInputRef.current?.click()}
+            disabled={parsingPdf}
+          >
+            {parsingPdf ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Upload className="h-5 w-5" />
+            )}
+            {uploadedConversation && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full" />
+            )}
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
