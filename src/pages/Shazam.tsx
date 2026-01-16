@@ -281,7 +281,7 @@ Create a design that accurately reflects everything discussed in the conversatio
               className="rounded-full gap-2"
             >
               <FileText className="h-4 w-4" />
-              Ver prompt
+              See prompt
             </Button>
           </div>
         )}
@@ -290,7 +290,7 @@ Create a design that accurately reflects everything discussed in the conversatio
         <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Prompt utilizado</DialogTitle>
+              <DialogTitle>Prompt used</DialogTitle>
             </DialogHeader>
             <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap font-mono">
               {prompt || "No prompt available"}
