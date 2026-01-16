@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, elements, roomType, styleIdentified, conversationSummary, referenceImage } = await req.json();
+    const { sessionId, elements, roomType, styleIdentified, conversationSummary, referenceImage, designImageUrl } = await req.json();
 
     console.log("Starting Video Presentation generation for session:", sessionId);
 
@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const elementNames = elements?.map((el: { name: string }) => el.name).slice(0, 5).join(", ") || "elegant furniture";
 
-    const prompt = `Cinematic video presentation poster for interior design project showcase. ${roomType || 'Living Space'} in ${styleIdentified || 'Modern Contemporary'} style. Concept: ${conversationSummary || 'A luxurious and inviting interior space'}. Key elements: ${elementNames}. Dramatic photorealistic rendering of completed interior space, cinematic lighting with volumetric rays and golden hour atmosphere, professional architectural photography, depth of field effect on key design elements, luxury real estate marketing quality. Elegant centered play button icon, "DESIGN PRESENTATION" text at bottom, project title "${roomType || 'Interior'} | ${styleIdentified || 'Modern'} Collection", stylish film grain, cinematic color grading, letterboxing for cinematic feel. Warm inviting lighting, magazine-cover and film-poster quality, high-end design studio presentation. 16:9 widescreen cinematic aspect ratio, 8K ultra HD resolution.`;
+    const prompt = `Video thumbnail overlay for interior design presentation. The EXACT SAME interior design image provided as reference with a semi-transparent dark overlay (20% opacity black gradient). Large centered PLAY BUTTON icon - white circle with triangle play symbol, elegant and minimal. Subtle text at bottom: "DESIGN PRESENTATION" in refined sans-serif typography. The background MUST be the original ${roomType || 'interior space'} design - do NOT generate a new room, use the reference image exactly as the base. Cinematic letterboxing effect (subtle black bars top and bottom). Professional video player thumbnail aesthetic, Netflix/YouTube premium video preview style. The play button should be the clear focal point. 16:9 widescreen aspect ratio, 8K ultra HD resolution.`;
 
     console.log("Calling Replicate for video presentation generation...");
 
@@ -47,9 +47,11 @@ serve(async (req) => {
       safety_tolerance: 2,
     };
 
-    if (referenceImage) {
-      input.image_prompt = referenceImage;
-      input.image_prompt_strength = 0.3;
+    // ALWAYS use the original design image with HIGH strength to preserve it
+    const originalImage = designImageUrl || referenceImage;
+    if (originalImage) {
+      input.image_prompt = originalImage;
+      input.image_prompt_strength = 0.85; // High strength to keep original image almost intact
     }
 
     const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
