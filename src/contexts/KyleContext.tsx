@@ -107,11 +107,29 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
           return updated;
         });
 
-        // Detect voice command from user
+        // Detect voice command from user - STRICT matching
         if (msg.source === "user") {
           const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
           
-          if (text.includes("kyle") && text.includes("generate")) {
+          // Must contain explicit command phrases, NOT just "generate" in normal conversation
+          const isExplicitCommand = 
+            text.includes("hey kyle generate") || 
+            text.includes("kyle generate the") ||
+            text.includes("kyle generate image") ||
+            text.includes("kyle generate my") ||
+            text.includes("kyle please generate") ||
+            text.includes("kyle can you generate") ||
+            // Only trigger if "kyle" and "generate" are close together and NOT part of casual phrases
+            (text.includes("kyle") && 
+             text.includes("generate") && 
+             !text.includes("let's generate") && 
+             !text.includes("lets generate") && 
+             !text.includes("want to generate") && 
+             !text.includes("going to generate") && 
+             !text.includes("we generate") &&
+             !text.includes("preliminary"));
+          
+          if (isExplicitCommand) {
             console.log("🎯 VOICE COMMAND DETECTED!");
             triggerGeneration();
           }
