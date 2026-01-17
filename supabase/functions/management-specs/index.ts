@@ -47,13 +47,16 @@ serve(async (req) => {
       input.image_prompt_strength = 0.15;
     }
 
-    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
+    const output = await replicate.run("black-forest-labs/flux-2-pro", { input });
 
     if (!output) {
       throw new Error("No image generated");
     }
 
-    const imageUrl = typeof output === 'string' ? output : String(output);
+    // Flux 2 Pro returns an object with .url() method or a string
+    const imageUrl = typeof output === 'object' && output !== null && 'url' in output && typeof (output as { url: () => string }).url === 'function' 
+      ? (output as { url: () => string }).url() 
+      : (typeof output === 'string' ? output : String(output));
     console.log("Specs image generated successfully");
 
     return new Response(

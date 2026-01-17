@@ -54,13 +54,16 @@ serve(async (req) => {
       input.image_prompt_strength = 0.85; // High strength to keep original image almost intact
     }
 
-    const output = await replicate.run("black-forest-labs/flux-1.1-pro", { input });
+    const output = await replicate.run("black-forest-labs/flux-2-pro", { input });
 
     if (!output) {
       throw new Error("No image was generated");
     }
 
-    const imageUrl = typeof output === 'string' ? output : String(output);
+    // Flux 2 Pro returns an object with .url() method or a string
+    const imageUrl = typeof output === 'object' && output !== null && 'url' in output && typeof (output as { url: () => string }).url === 'function' 
+      ? (output as { url: () => string }).url() 
+      : (typeof output === 'string' ? output : String(output));
     const description = "Video Presentation poster generated with Flux 2 Pro";
 
     console.log("Video Presentation generation completed");
