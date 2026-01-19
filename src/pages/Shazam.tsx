@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload, Check } from "lucide-react";
+import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -25,6 +25,8 @@ export default function Shazam() {
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [uploadedConversation, setUploadedConversation] = useState<string | null>(null);
   const [parsingPdf, setParsingPdf] = useState(false);
+  const [optimizedPrompt, setOptimizedPrompt] = useState<string | null>(null);
+  const [usedLLM, setUsedLLM] = useState(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   
@@ -131,6 +133,8 @@ Create a design that accurately reflects everything discussed in the conversatio
     }
 
     setLocalGenerating(true);
+    setOptimizedPrompt(null);
+    setUsedLLM(false);
     
     // Scroll to image area
     if (imageAreaRef.current) {
@@ -149,6 +153,13 @@ Create a design that accurately reflects everything discussed in the conversatio
 
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
+        
+        // Store the optimized prompt if LLM was used
+        if (data.optimizedPrompt) {
+          setOptimizedPrompt(data.optimizedPrompt);
+          setUsedLLM(true);
+        }
+        
         toast.success("Design created with Flux 2 Pro!");
       }
     } catch (error) {
@@ -179,6 +190,8 @@ Create a design that accurately reflects everything discussed in the conversatio
 
   const handleNewDesign = () => {
     setGeneratedImage(null);
+    setOptimizedPrompt(null);
+    setUsedLLM(false);
   };
 
   const clearUploadedConversation = () => {
@@ -196,6 +209,11 @@ Create a design that accurately reflects everything discussed in the conversatio
   };
 
   const showLoading = localGenerating || isGenerating;
+
+  // Get the original source text for the dialog
+  const originalSourceText = useMemo(() => {
+    return uploadedConversation || messages.map(m => `${m.role === "user" ? "Client" : "Kyle"}: ${m.content}`).join('\n\n') || "No source available";
+  }, [uploadedConversation, messages]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -409,8 +427,8 @@ Create a design that accurately reflects everything discussed in the conversatio
               <DialogTitle>Prompt Analysis</DialogTitle>
             </DialogHeader>
             
-            {/* Original Source */}
             <div className="space-y-4">
+              {/* Original Source */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -420,40 +438,81 @@ Create a design that accurately reflects everything discussed in the conversatio
                   </span>
                 </div>
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs font-mono max-h-40 overflow-y-auto whitespace-pre-wrap">
-                  {uploadedConversation || messages.map(m => `${m.role === "user" ? "Client" : "Kyle"}: ${m.content}`).join('\n\n') || "No source available"}
+                  {originalSourceText}
                 </div>
               </div>
 
-              {/* Similarity Indicator */}
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 h-px bg-border" />
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-xs font-medium text-green-600">
-                    100% transcript included
-                  </span>
-                </div>
-                <div className="flex-1 h-px bg-border" />
-              </div>
+              {/* LLM Extraction Indicator */}
+              {usedLLM && optimizedPrompt ? (
+                <>
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full">
+                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-medium text-purple-600">
+                        Insights extracted by Gemini AI
+                      </span>
+                    </div>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
 
-              {/* Final Prompt */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <h3 className="font-semibold text-sm">Prompt Sent to AI</h3>
-                </div>
-                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-xs font-mono max-h-60 overflow-y-auto whitespace-pre-wrap">
-                  {prompt || "No prompt available"}
-                </div>
-              </div>
+                  {/* Optimized Prompt from LLM */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-500" />
+                      <h3 className="font-semibold text-sm">Optimized Prompt</h3>
+                      <span className="text-xs text-muted-foreground">(sent to Flux 2 Pro)</span>
+                    </div>
+                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-xs font-mono max-h-60 overflow-y-auto whitespace-pre-wrap">
+                      {optimizedPrompt}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Similarity Indicator for direct prompts */}
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-full">
+                      <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-xs font-medium text-green-600">
+                        100% transcript included
+                      </span>
+                    </div>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  {/* Final Prompt */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-primary" />
+                      <h3 className="font-semibold text-sm">Prompt Sent to AI</h3>
+                    </div>
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-xs font-mono max-h-60 overflow-y-auto whitespace-pre-wrap">
+                      {prompt || "No prompt available"}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Explanation */}
               <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
                 <p className="font-medium mb-1">How the prompt is built:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Your full conversation is embedded in the prompt</li>
-                  <li>Instructions guide the AI to extract: room type, style, colors, materials, exclusions</li>
-                  <li>The AI generates a design that matches ALL discussed requirements</li>
+                  {usedLLM ? (
+                    <>
+                      <li>Your full conversation is analyzed by Gemini AI</li>
+                      <li>Design insights are extracted: room type, style, colors, materials, exclusions</li>
+                      <li>An optimized 200-300 word prompt is generated for Flux 2 Pro</li>
+                      <li>The image reflects ONLY what was discussed in the conversation</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Your full conversation is embedded in the prompt</li>
+                      <li>Instructions guide the AI to extract: room type, style, colors, materials, exclusions</li>
+                      <li>The AI generates a design that matches ALL discussed requirements</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
