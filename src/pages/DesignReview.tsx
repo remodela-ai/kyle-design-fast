@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { Home, CheckCircle, Loader2, Image as ImageIcon, Mic, MicOff } from "lucide-react";
+import { Home, CheckCircle, RefreshCw, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TranscriptViewer } from "@/components/TranscriptViewer";
 import { InsightsEditor } from "@/components/InsightsEditor";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ImageCarousel } from "@/components/ImageCarousel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { KyleAvatar } from "@/components/KyleAvatar";
@@ -23,20 +23,35 @@ interface LocationState {
   source?: "voice" | "pdf";
 }
 
+interface ImageItem {
+  url: string;
+  label: string;
+  iteration: number;
+}
+
 export default function DesignReview() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState | null;
 
   // State management
-  const [designImageUrl, setDesignImageUrl] = useState(state?.designImageUrl || "");
+  const [images, setImages] = useState<ImageItem[]>(() => {
+    if (state?.designImageUrl) {
+      return [{
+        url: state.designImageUrl,
+        label: "Original",
+        iteration: 0
+      }];
+    }
+    return [];
+  });
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [transcript, setTranscript] = useState(state?.transcript || "");
   const [currentInsights, setCurrentInsights] = useState(state?.extractedInsights || "");
   const [referenceImage] = useState(state?.referenceImage);
   const [source] = useState<"voice" | "pdf">(state?.source || "voice");
   
-  const [iterationCount, setIterationCount] = useState(1);
-  const [isIterating, setIsIterating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [iterationFeedback, setIterationFeedback] = useState<string[]>([]);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
@@ -58,7 +73,7 @@ export default function DesignReview() {
       // Only trigger iteration if we explicitly set the flag
       if (shouldIterateOnDisconnect.current && feedbackRef.current.length > 0) {
         console.log("🚀 Triggering iteration with feedback:", feedbackRef.current);
-        handleVoiceIteration();
+        handleVoiceIteration(feedbackRef.current.join(" "));
       }
       shouldIterateOnDisconnect.current = false;
     },
@@ -99,20 +114,23 @@ export default function DesignReview() {
     },
   });
 
-  // Handle voice-based iteration
-  const handleVoiceIteration = useCallback(async () => {
-    if (iterationFeedback.length === 0) return;
-    
-    setIsIterating(true);
-    const feedback = iterationFeedback.join(" ");
+  // Handle regeneration (manual button or voice)
+  const handleRegenerate = useCallback(async (additionalFeedback?: string) => {
+    setIsRegenerating(true);
     
     try {
-      // Combine current insights with voice feedback
-      const refinedPrompt = `${currentInsights}\n\nAdditional refinements requested: ${feedback}`;
+      // Build the refined prompt
+      let refinedPrompt = currentInsights;
+      if (additionalFeedback) {
+        refinedPrompt = `${currentInsights}\n\nRefinement request: ${additionalFeedback}`;
+      }
+      
+      // Add instruction to maintain consistency
+      const consistencyPrompt = `${refinedPrompt}\n\nIMPORTANT: Maintain the same camera angle, room layout, architectural elements, and overall composition as the original design. Only modify the specific elements mentioned in the refinement request.`;
       
       const { data, error } = await supabase.functions.invoke('blink-design', {
         body: { 
-          prompt: refinedPrompt,
+          prompt: consistencyPrompt,
           referenceImage: referenceImage || undefined
         }
       });
@@ -120,27 +138,42 @@ export default function DesignReview() {
       if (error) throw error;
 
       if (data?.imageUrl) {
-        setDesignImageUrl(data.imageUrl);
-        setIterationCount(prev => prev + 1);
+        const newIteration = images.length;
+        const newImage: ImageItem = {
+          url: data.imageUrl,
+          label: `Iteration ${newIteration}`,
+          iteration: newIteration
+        };
         
-        // Append feedback to transcript
-        setTranscript(prev => prev + `\n\n--- Iteration ${iterationCount + 1} Feedback ---\n${feedback}`);
+        setImages(prev => [...prev, newImage]);
+        setSelectedImageIndex(newIteration);
+        
+        // Append feedback to transcript if provided
+        if (additionalFeedback) {
+          setTranscript(prev => prev + `\n\n--- Iteration ${newIteration} Feedback ---\n${additionalFeedback}`);
+        }
         
         // Update insights if LLM refined them
         if (data.optimizedPrompt) {
           setCurrentInsights(data.optimizedPrompt);
         }
         
-        toast.success(`Iteration ${iterationCount + 1} complete!`);
+        toast.success(`Iteration ${newIteration} generated!`);
       }
     } catch (error) {
-      console.error('Voice iteration error:', error);
+      console.error('Regeneration error:', error);
       toast.error("Failed to regenerate design");
     } finally {
-      setIsIterating(false);
+      setIsRegenerating(false);
       setIterationFeedback([]);
+      feedbackRef.current = [];
     }
-  }, [iterationFeedback, currentInsights, referenceImage, iterationCount]);
+  }, [currentInsights, referenceImage, images.length]);
+
+  // Handle voice-based iteration
+  const handleVoiceIteration = useCallback((feedback: string) => {
+    handleRegenerate(feedback);
+  }, [handleRegenerate]);
 
   // Start voice iteration session
   const startVoiceIteration = useCallback(async () => {
@@ -162,7 +195,6 @@ export default function DesignReview() {
       
       console.log("🚀 Starting Kyle iteration session with agent:", KYLE_ITERATION_AGENT_ID);
       
-      // Start without overrides - use the agent's default configuration
       await conversation.startSession({
         agentId: KYLE_ITERATION_AGENT_ID,
         connectionType: "webrtc",
@@ -190,14 +222,15 @@ export default function DesignReview() {
     }
   }, [state, navigate]);
 
-  // Handle approval - navigate to pipeline
+  // Handle approval - navigate to pipeline with selected image
   const handleApprove = () => {
+    const selectedImage = images[selectedImageIndex];
     navigate("/360-free-project", {
       state: {
-        designImageUrl,
+        designImageUrl: selectedImage.url,
         conversationSummary: currentInsights,
         transcript,
-        iterationCount
+        iterationCount: images.length
       }
     });
   };
@@ -223,10 +256,10 @@ export default function DesignReview() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
+      <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* Left Column: Transcript + Insights */}
+          {/* Left Column: Transcript + Insights + Regenerate */}
           <div className="space-y-6">
             {/* Transcript Panel */}
             <TranscriptViewer 
@@ -234,51 +267,30 @@ export default function DesignReview() {
               source={source}
             />
             
-            {/* Insights Panel */}
+            {/* Insights Panel - Editable */}
             <InsightsEditor
               insights={currentInsights}
               onInsightsChange={setCurrentInsights}
-              isEditable={!isIterating && !isConnected}
+              isEditable={!isRegenerating && !isConnected}
             />
-          </div>
-
-          {/* Right Column: Image Preview + Voice Iteration + Actions */}
-          <div className="space-y-6">
-            {/* Design Preview */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <ImageIcon className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold text-sm">Design Preview</h3>
-                <span className="text-xs text-muted-foreground">
-                  Iteration {iterationCount}
-                </span>
-              </div>
-              
-              <div className="rounded-xl overflow-hidden border border-border shadow-lg">
-                <AspectRatio ratio={1}>
-                  {isIterating ? (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-sm text-muted-foreground">Regenerating design...</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <img 
-                      src={designImageUrl} 
-                      alt="Design preview" 
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </AspectRatio>
-              </div>
-            </div>
-
+            
+            {/* Regenerate Button */}
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => handleRegenerate()}
+              disabled={isRegenerating || isConnected}
+              className="w-full gap-2 h-12"
+            >
+              <RefreshCw className={`h-5 w-5 ${isRegenerating ? 'animate-spin' : ''}`} />
+              Regenerate from Edited Insights
+            </Button>
+            
             {/* Voice Iteration Section */}
             <div className="flex flex-col items-center gap-4 p-6 rounded-xl border border-border bg-card">
               <div className="text-center">
                 <h3 className="font-semibold text-sm mb-1">
-                  {isConnected ? "Tell Kyle what to change" : "Talk to Kyle to iterate"}
+                  {isConnected ? "Tell Kyle what to change" : "Or talk to Kyle to iterate"}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {isConnected 
@@ -310,7 +322,7 @@ export default function DesignReview() {
                 variant={isConnected ? "destructive" : "outline"}
                 size="sm"
                 onClick={isConnected ? stopVoiceAndIterate : startVoiceIteration}
-                disabled={isIterating}
+                disabled={isRegenerating}
                 className="gap-2"
               >
                 {isConnected ? (
@@ -334,6 +346,20 @@ export default function DesignReview() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Right Column: Image Carousel + Actions */}
+          <div className="space-y-6">
+            {/* Image Carousel */}
+            <div>
+              <h3 className="font-semibold text-sm mb-3">Design Versions</h3>
+              <ImageCarousel
+                images={images}
+                selectedIndex={selectedImageIndex}
+                onSelect={setSelectedImageIndex}
+                isLoading={isRegenerating}
+              />
+            </div>
 
             {/* Approve Button */}
             <div className="space-y-3">
@@ -341,7 +367,7 @@ export default function DesignReview() {
                 variant="kyle"
                 size="lg"
                 onClick={handleApprove}
-                disabled={isIterating || isConnected}
+                disabled={isRegenerating || isConnected}
                 className="w-full gap-2 h-12"
               >
                 <CheckCircle className="h-5 w-5" />
@@ -349,7 +375,7 @@ export default function DesignReview() {
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">
-                Talk to Kyle to iterate. When satisfied, approve to run the 16-step pipeline.
+                Edit insights and regenerate, or talk to Kyle. Select your preferred version, then approve to run the 16-step pipeline.
               </p>
             </div>
           </div>
