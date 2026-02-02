@@ -92,3 +92,9 @@ verify_jwt = false
 
 [functions.extract-onboarding-insights]
 verify_jwt = false
+
+[functions.create-kyle-iteration-agent]
+verify_jwt = false
+
+[functions.parse-pdf-conversation]
+verify_jwt = false
