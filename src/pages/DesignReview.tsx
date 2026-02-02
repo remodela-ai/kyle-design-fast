@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { Home, RefreshCw, CheckCircle, Loader2, Image as ImageIcon } from "lucide-react";
+import { Home, CheckCircle, Loader2, Image as ImageIcon, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TranscriptViewer } from "@/components/TranscriptViewer";
@@ -8,6 +8,12 @@ import { InsightsEditor } from "@/components/InsightsEditor";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { KyleAvatar } from "@/components/KyleAvatar";
+import { AudioWaves } from "@/components/AudioWaves";
+import { useConversation } from "@11labs/react";
+
+// Kyle Iteration Agent - specialized for design refinement
+const KYLE_ITERATION_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 
 interface LocationState {
   designImageUrl: string;
@@ -24,35 +30,77 @@ export default function DesignReview() {
 
   // State management
   const [designImageUrl, setDesignImageUrl] = useState(state?.designImageUrl || "");
-  const [transcript] = useState(state?.transcript || "");
+  const [transcript, setTranscript] = useState(state?.transcript || "");
   const [currentInsights, setCurrentInsights] = useState(state?.extractedInsights || "");
   const [referenceImage] = useState(state?.referenceImage);
   const [source] = useState<"voice" | "pdf">(state?.source || "voice");
   
   const [iterationCount, setIterationCount] = useState(1);
   const [isIterating, setIsIterating] = useState(false);
+  const [iterationFeedback, setIterationFeedback] = useState<string[]>([]);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
-  // Redirect if no data
-  useEffect(() => {
-    if (!state?.designImageUrl || !state?.extractedInsights) {
-      toast.error("No design data found. Please start from Shazam.");
-      navigate("/shazam");
-    }
-  }, [state, navigate]);
+  // Voice conversation for iteration
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log("Kyle Iteration connected");
+      setIsVoiceActive(true);
+    },
+    onDisconnect: () => {
+      console.log("Kyle Iteration disconnected");
+      setIsVoiceActive(false);
+      
+      // When Kyle disconnects, if we collected feedback, trigger iteration
+      if (iterationFeedback.length > 0) {
+        handleVoiceIteration();
+      }
+    },
+    onMessage: (message) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const msg = message as any;
+      
+      if (msg?.message && msg?.source === "user") {
+        // Collect user feedback
+        setIterationFeedback(prev => [...prev, msg.message]);
+        
+        // Detect iteration command
+        const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
+        const isIterateCommand = 
+          text.includes("iterate") ||
+          text.includes("generate") ||
+          text.includes("apply") ||
+          text.includes("update") ||
+          text.includes("refresh") ||
+          text.includes("cambiar") ||
+          text.includes("actualizar") ||
+          text.includes("aplicar");
+        
+        if (isIterateCommand) {
+          console.log("🎯 ITERATE COMMAND DETECTED!");
+          conversation.endSession();
+        }
+      }
+    },
+    onError: (err) => {
+      console.error("Kyle Iteration error:", err);
+      setIsVoiceActive(false);
+    },
+  });
 
-  // Handle iteration - regenerate image with current insights
-  const handleIterate = async () => {
-    if (!currentInsights.trim()) {
-      toast.error("Please add some design insights first");
-      return;
-    }
-
+  // Handle voice-based iteration
+  const handleVoiceIteration = useCallback(async () => {
+    if (iterationFeedback.length === 0) return;
+    
     setIsIterating(true);
+    const feedback = iterationFeedback.join(" ");
     
     try {
+      // Combine current insights with voice feedback
+      const refinedPrompt = `${currentInsights}\n\nAdditional refinements requested: ${feedback}`;
+      
       const { data, error } = await supabase.functions.invoke('blink-design', {
         body: { 
-          prompt: currentInsights,
+          prompt: refinedPrompt,
           referenceImage: referenceImage || undefined
         }
       });
@@ -63,6 +111,9 @@ export default function DesignReview() {
         setDesignImageUrl(data.imageUrl);
         setIterationCount(prev => prev + 1);
         
+        // Append feedback to transcript
+        setTranscript(prev => prev + `\n\n--- Iteration ${iterationCount + 1} Feedback ---\n${feedback}`);
+        
         // Update insights if LLM refined them
         if (data.optimizedPrompt) {
           setCurrentInsights(data.optimizedPrompt);
@@ -71,12 +122,61 @@ export default function DesignReview() {
         toast.success(`Iteration ${iterationCount + 1} complete!`);
       }
     } catch (error) {
-      console.error('Iteration error:', error);
+      console.error('Voice iteration error:', error);
       toast.error("Failed to regenerate design");
     } finally {
       setIsIterating(false);
+      setIterationFeedback([]);
     }
-  };
+  }, [iterationFeedback, currentInsights, referenceImage, iterationCount]);
+
+  // Start voice iteration session
+  const startVoiceIteration = useCallback(async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      
+      setIterationFeedback([]);
+      
+      await conversation.startSession({
+        agentId: KYLE_ITERATION_AGENT_ID,
+        connectionType: "webrtc",
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are Kyle, helping a designer refine their interior design. The current design is: "${currentInsights}". 
+
+Listen to their feedback about what to change or improve. When they say "iterate", "apply", "generate", "update" or similar commands, acknowledge and end the conversation so the system can regenerate the design.
+
+Keep responses brief (1-2 sentences). Speak the same language as the user.`
+            },
+            firstMessage: "What would you like to change about this design? When you're ready, just say 'iterate' to apply the changes.",
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Failed to start voice iteration:", err);
+      toast.error("Could not start voice. Please check microphone permissions.");
+    }
+  }, [conversation, currentInsights]);
+
+  // Stop voice and trigger iteration
+  const stopVoiceAndIterate = useCallback(async () => {
+    await conversation.endSession();
+  }, [conversation]);
+
+  // Redirect if no data
+  useEffect(() => {
+    if (!state?.designImageUrl || !state?.extractedInsights) {
+      toast.error("No design data found. Please start from Shazam.");
+      navigate("/shazam");
+    }
+  }, [state, navigate]);
 
   // Handle approval - navigate to pipeline
   const handleApprove = () => {
@@ -93,6 +193,9 @@ export default function DesignReview() {
   if (!state) {
     return null; // Will redirect via useEffect
   }
+
+  const isConnected = conversation.status === "connected";
+  const isSpeaking = conversation.isSpeaking;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -123,11 +226,11 @@ export default function DesignReview() {
             <InsightsEditor
               insights={currentInsights}
               onInsightsChange={setCurrentInsights}
-              isEditable={!isIterating}
+              isEditable={!isIterating && !isConnected}
             />
           </div>
 
-          {/* Right Column: Image Preview + Actions */}
+          {/* Right Column: Image Preview + Voice Iteration + Actions */}
           <div className="space-y-6">
             {/* Design Preview */}
             <div>
@@ -159,28 +262,74 @@ export default function DesignReview() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-3">
+            {/* Voice Iteration Section */}
+            <div className="flex flex-col items-center gap-4 p-6 rounded-xl border border-border bg-card">
+              <div className="text-center">
+                <h3 className="font-semibold text-sm mb-1">
+                  {isConnected ? "Tell Kyle what to change" : "Talk to Kyle to iterate"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {isConnected 
+                    ? "Say 'iterate' when ready to apply changes" 
+                    : "Describe what you'd like to change in the design"}
+                </p>
+              </div>
+              
+              {/* Kyle Avatar for voice */}
+              <KyleAvatar 
+                size="md"
+                onClickOverride={isConnected ? stopVoiceAndIterate : startVoiceIteration}
+                isConnectedOverride={isConnected}
+                isSpeakingOverride={isSpeaking}
+              />
+              
+              {/* Audio waves when active */}
+              {isConnected && (
+                <AudioWaves 
+                  isActive={isConnected} 
+                  isSpeaking={isSpeaking} 
+                  barCount={5}
+                  className="h-6"
+                />
+              )}
+              
+              {/* Voice toggle button */}
               <Button
-                variant="outline"
-                size="lg"
-                onClick={handleIterate}
+                variant={isConnected ? "destructive" : "outline"}
+                size="sm"
+                onClick={isConnected ? stopVoiceAndIterate : startVoiceIteration}
                 disabled={isIterating}
-                className="w-full gap-2 h-12"
+                className="gap-2"
               >
-                {isIterating ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                {isConnected ? (
+                  <>
+                    <MicOff className="h-4 w-4" />
+                    Stop & Iterate
+                  </>
                 ) : (
-                  <RefreshCw className="h-5 w-5" />
+                  <>
+                    <Mic className="h-4 w-4" />
+                    Start Voice Feedback
+                  </>
                 )}
-                {isIterating ? "Regenerating..." : "Iterate Design"}
               </Button>
               
+              {/* Collected feedback preview */}
+              {iterationFeedback.length > 0 && (
+                <div className="w-full p-3 rounded-lg bg-muted text-xs">
+                  <p className="font-medium mb-1">Feedback collected:</p>
+                  <p className="text-muted-foreground">{iterationFeedback.join(" ")}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Approve Button */}
+            <div className="space-y-3">
               <Button
                 variant="kyle"
                 size="lg"
                 onClick={handleApprove}
-                disabled={isIterating}
+                disabled={isIterating || isConnected}
                 className="w-full gap-2 h-12"
               >
                 <CheckCircle className="h-5 w-5" />
@@ -188,7 +337,7 @@ export default function DesignReview() {
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">
-                Iterate as many times as you need. When satisfied, approve to run the 16-step pipeline.
+                Talk to Kyle to iterate. When satisfied, approve to run the 16-step pipeline.
               </p>
             </div>
           </div>
