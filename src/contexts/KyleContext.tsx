@@ -107,30 +107,51 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
           return updated;
         });
 
-        // Detect voice command from user - STRICT matching
+        // Detect voice command from user - More robust matching
         if (msg.source === "user") {
-          const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
+          const text = msg.message.toLowerCase().replace(/[.,!?;:'"]/g, '').trim();
           
-          // Must contain explicit command phrases, NOT just "generate" in normal conversation
-          const isExplicitCommand = 
-            text.includes("hey kyle generate") || 
-            text.includes("kyle generate the") ||
-            text.includes("kyle generate image") ||
-            text.includes("kyle generate my") ||
-            text.includes("kyle please generate") ||
-            text.includes("kyle can you generate") ||
-            // Only trigger if "kyle" and "generate" are close together and NOT part of casual phrases
-            (text.includes("kyle") && 
-             text.includes("generate") && 
-             !text.includes("let's generate") && 
-             !text.includes("lets generate") && 
-             !text.includes("want to generate") && 
-             !text.includes("going to generate") && 
-             !text.includes("we generate") &&
-             !text.includes("preliminary"));
+          // Normalize common speech-to-text variations
+          const normalizedText = text
+            .replace(/hey\s+kyle/g, 'hey kyle')
+            .replace(/kyle\s+generate/g, 'kyle generate');
           
-          if (isExplicitCommand) {
-            console.log("🎯 VOICE COMMAND DETECTED!");
+          // Check for explicit generation commands - handle variations in speech
+          const hasKyle = normalizedText.includes("kyle");
+          const hasGenerate = normalizedText.includes("generate");
+          const hasHeyKyle = normalizedText.includes("hey kyle");
+          
+          // Primary trigger patterns (most reliable)
+          const isPrimaryCommand = 
+            normalizedText.includes("hey kyle generate") ||
+            normalizedText.includes("kyle generate image") ||
+            normalizedText.includes("kyle generate the") ||
+            normalizedText.includes("kyle generate my") ||
+            normalizedText.includes("kyle please generate") ||
+            normalizedText.includes("kyle can you generate") ||
+            normalizedText.includes("kyle genera") || // Spanish "genera"
+            normalizedText.includes("kyle generar"); // Spanish "generar"
+          
+          // Secondary: "hey kyle" + "generate" anywhere in same message
+          const isSecondaryCommand = hasHeyKyle && hasGenerate;
+          
+          // Tertiary: Both "kyle" and "generate" present (but not in exclusion phrases)
+          const exclusionPhrases = [
+            "let's generate", "lets generate", "want to generate", 
+            "going to generate", "we generate", "should generate",
+            "will generate", "can generate ideas", "preliminary"
+          ];
+          const hasExclusion = exclusionPhrases.some(phrase => normalizedText.includes(phrase));
+          const isTertiaryCommand = hasKyle && hasGenerate && !hasExclusion;
+          
+          // Trigger if ANY of the command patterns match
+          if (isPrimaryCommand || isSecondaryCommand || isTertiaryCommand) {
+            console.log("🎯 VOICE COMMAND DETECTED!", { 
+              isPrimaryCommand, 
+              isSecondaryCommand, 
+              isTertiaryCommand, 
+              text: normalizedText 
+            });
             triggerGeneration();
           }
         }
