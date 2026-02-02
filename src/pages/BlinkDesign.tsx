@@ -200,10 +200,12 @@ const BlinkDesign = () => {
                 <Button
                   variant="kyle"
                   size="sm"
-                  onClick={() => navigate("/360-free-project", {
+                  onClick={() => navigate("/design-review", {
                     state: {
                       designImageUrl: generatedImage,
-                      conversationSummary: designSummary || prompt
+                      transcript: messages.map(m => `${m.role === "user" ? "Client" : "Kyle"}: ${m.content}`).join('\n\n'),
+                      extractedInsights: designSummary || prompt || "Design based on conversation",
+                      source: "voice"
                     }
                   })}
                   className="flex items-center gap-2"

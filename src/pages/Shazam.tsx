@@ -379,10 +379,13 @@ Create a design that accurately reflects everything discussed in the conversatio
             <Button 
               variant="kyle" 
               size="sm" 
-              onClick={() => navigate("/360-free-project", { 
+              onClick={() => navigate("/design-review", { 
                 state: { 
                   designImageUrl: generatedImage,
-                  conversationSummary: designSummary || messages.map(m => `${m.role}: ${m.content}`).join('\n')
+                  transcript: originalSourceText,
+                  extractedInsights: optimizedPrompt || designSummary || "Design based on conversation",
+                  referenceImage: referenceImage || undefined,
+                  source: uploadedConversation ? "pdf" : "voice"
                 } 
               })}
               className="rounded-full gap-2"
