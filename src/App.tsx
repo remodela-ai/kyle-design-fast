@@ -10,6 +10,7 @@ import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
 import CreateAgent from "./pages/CreateAgent";
 import FreeProject360 from "./pages/FreeProject360";
+import DesignReview from "./pages/DesignReview";
 import Productivity from "./pages/Productivity";
 import DailyNextInteriors from "./pages/DailyNextInteriors";
 import DailyOrielCarlos from "./pages/DailyOrielCarlos";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/shazam" element={<Shazam />} />
             <Route path="/create-agent" element={<CreateAgent />} />
             <Route path="/360-free-project" element={<FreeProject360 />} />
+            <Route path="/design-review" element={<DesignReview />} />
             <Route path="/auth" element={<Auth />} />
             
             {/* Protected routes - Super Admin only */}
