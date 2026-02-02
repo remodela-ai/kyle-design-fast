@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Home, CheckCircle, Loader2, Image as ImageIcon, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,28 +40,38 @@ export default function DesignReview() {
   const [iterationFeedback, setIterationFeedback] = useState<string[]>([]);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
+  // Ref to track if we should iterate on disconnect
+  const shouldIterateOnDisconnect = useRef(false);
+  const feedbackRef = useRef<string[]>([]);
+
   // Voice conversation for iteration
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Kyle Iteration connected");
+      console.log("✅ Kyle Iteration connected successfully");
       setIsVoiceActive(true);
+      shouldIterateOnDisconnect.current = false;
     },
     onDisconnect: () => {
-      console.log("Kyle Iteration disconnected");
+      console.log("Kyle Iteration disconnected, shouldIterate:", shouldIterateOnDisconnect.current);
       setIsVoiceActive(false);
       
-      // When Kyle disconnects, if we collected feedback, trigger iteration
-      if (iterationFeedback.length > 0) {
+      // Only trigger iteration if we explicitly set the flag
+      if (shouldIterateOnDisconnect.current && feedbackRef.current.length > 0) {
+        console.log("🚀 Triggering iteration with feedback:", feedbackRef.current);
         handleVoiceIteration();
       }
+      shouldIterateOnDisconnect.current = false;
     },
     onMessage: (message) => {
+      console.log("Kyle Iteration message:", message);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const msg = message as any;
       
       if (msg?.message && msg?.source === "user") {
         // Collect user feedback
-        setIterationFeedback(prev => [...prev, msg.message]);
+        const newFeedback = [...feedbackRef.current, msg.message];
+        feedbackRef.current = newFeedback;
+        setIterationFeedback(newFeedback);
         
         // Detect iteration command
         const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
@@ -77,13 +87,15 @@ export default function DesignReview() {
         
         if (isIterateCommand) {
           console.log("🎯 ITERATE COMMAND DETECTED!");
+          shouldIterateOnDisconnect.current = true;
           conversation.endSession();
         }
       }
     },
     onError: (err) => {
-      console.error("Kyle Iteration error:", err);
+      console.error("❌ Kyle Iteration error:", err);
       setIsVoiceActive(false);
+      toast.error("Voice connection error. Please try again.");
     },
   });
 
@@ -133,6 +145,7 @@ export default function DesignReview() {
   // Start voice iteration session
   const startVoiceIteration = useCallback(async () => {
     try {
+      console.log("🎤 Requesting microphone access...");
       await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -140,33 +153,32 @@ export default function DesignReview() {
           autoGainControl: true
         }
       });
+      console.log("✅ Microphone access granted");
       
+      // Reset feedback
       setIterationFeedback([]);
+      feedbackRef.current = [];
+      shouldIterateOnDisconnect.current = false;
       
+      console.log("🚀 Starting Kyle iteration session with agent:", KYLE_ITERATION_AGENT_ID);
+      
+      // Start without overrides - use the agent's default configuration
       await conversation.startSession({
         agentId: KYLE_ITERATION_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are Kyle, helping a designer refine their interior design. The current design is: "${currentInsights}". 
-
-Listen to their feedback about what to change or improve. When they say "iterate", "apply", "generate", "update" or similar commands, acknowledge and end the conversation so the system can regenerate the design.
-
-Keep responses brief (1-2 sentences). Speak the same language as the user.`
-            },
-            firstMessage: "What would you like to change about this design? When you're ready, just say 'iterate' to apply the changes.",
-          }
-        }
       });
+      
+      console.log("✅ Session started successfully");
     } catch (err) {
-      console.error("Failed to start voice iteration:", err);
+      console.error("❌ Failed to start voice iteration:", err);
       toast.error("Could not start voice. Please check microphone permissions.");
     }
-  }, [conversation, currentInsights]);
+  }, [conversation]);
 
   // Stop voice and trigger iteration
   const stopVoiceAndIterate = useCallback(async () => {
+    console.log("🛑 Stop voice and iterate called");
+    shouldIterateOnDisconnect.current = true;
     await conversation.endSession();
   }, [conversation]);
 
