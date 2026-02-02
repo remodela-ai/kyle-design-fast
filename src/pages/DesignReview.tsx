@@ -13,7 +13,7 @@ import { AudioWaves } from "@/components/AudioWaves";
 import { useConversation } from "@11labs/react";
 
 // Kyle Iteration Agent - specialized for design refinement
-const KYLE_ITERATION_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
+const KYLE_ITERATION_AGENT_ID = "agent_8001kgg465sff939tkr973cqkesw";
 
 interface LocationState {
   designImageUrl: string;
