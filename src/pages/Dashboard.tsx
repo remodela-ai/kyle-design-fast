@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useDesignerProfile } from '@/hooks/useDesignerProfile';
 import { useDesignerCollections } from '@/hooks/useDesignerCollections';
+import { useDesignerSessions } from '@/hooks/useDesignerSessions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ const Dashboard = () => {
     loading: collectionsLoading,
     createCollection,
   } = useDesignerCollections();
+  const { sessions, loading: sessionsLoading } = useDesignerSessions();
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -87,7 +89,7 @@ const Dashboard = () => {
     }
   };
 
-  const loading = profileLoading || collectionsLoading;
+  const loading = profileLoading || collectionsLoading || sessionsLoading;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -165,7 +167,7 @@ const Dashboard = () => {
                       <Zap className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-2xl font-bold">{sessions.length}</p>
                       <p className="text-xs text-muted-foreground">Sessions</p>
                     </div>
                   </CardContent>
@@ -177,7 +179,11 @@ const Dashboard = () => {
                       <Clock className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">--</p>
+                      <p className="text-2xl font-bold">
+                        {sessions.length > 0 
+                          ? new Date(sessions[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          : '--'}
+                      </p>
                       <p className="text-xs text-muted-foreground">Last Active</p>
                     </div>
                   </CardContent>
@@ -336,6 +342,45 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
+
+              {/* Recent Sessions */}
+              {sessions.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">Recent Sessions</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sessions.slice(0, 6).map(session => (
+                      <Card key={session.id} className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
+                        <div className="aspect-video bg-muted">
+                          {session.design_image_url ? (
+                            <img 
+                              src={session.design_image_url} 
+                              alt="Design session"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Zap className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-3">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {session.conversation_summary || 'Design session'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(session.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Recent Designs */}
               {generations.length > 0 && (

@@ -649,7 +649,8 @@ export function usePipeline() {
 
   const startPipeline = useCallback(async (
     designImageUrl: string,
-    conversationSummary?: string
+    conversationSummary?: string,
+    designerId?: string
   ) => {
     const newSessionId = crypto.randomUUID();
     setSessionId(newSessionId);
@@ -659,14 +660,15 @@ export function usePipeline() {
     setArchitecturalPlans({});
     setItemsExtraction({ items: [] });
 
-    console.log("Starting pipeline with session:", newSessionId);
+    console.log("Starting pipeline with session:", newSessionId, "designer:", designerId);
 
     try {
-      // Create the project session
+      // Create the project session with designer_id if available
       await supabase.from("project_sessions").insert({
         session_id: newSessionId,
         design_image_url: designImageUrl,
         conversation_summary: conversationSummary || null,
+        designer_id: designerId || null,
       });
 
       // Initialize all pipeline steps as pending
