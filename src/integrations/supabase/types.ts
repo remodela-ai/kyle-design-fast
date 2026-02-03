@@ -83,6 +83,152 @@ export type Database = {
         }
         Relationships: []
       }
+      design_collections: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          designer_id: string
+          id: string
+          name: string
+          updated_at: string
+          visibility: Database["public"]["Enums"]["visibility_type"]
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          designer_id: string
+          id?: string
+          name: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          designer_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_collections_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "designer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_generations: {
+        Row: {
+          collection_id: string | null
+          created_at: string
+          designer_id: string
+          id: string
+          image_url: string
+          metadata: Json | null
+          prompt: string | null
+          session_id: string | null
+          style_notes: string | null
+          visibility: Database["public"]["Enums"]["visibility_type"]
+        }
+        Insert: {
+          collection_id?: string | null
+          created_at?: string
+          designer_id: string
+          id?: string
+          image_url: string
+          metadata?: Json | null
+          prompt?: string | null
+          session_id?: string | null
+          style_notes?: string | null
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Update: {
+          collection_id?: string | null
+          created_at?: string
+          designer_id?: string
+          id?: string
+          image_url?: string
+          metadata?: Json | null
+          prompt?: string | null
+          session_id?: string | null
+          style_notes?: string | null
+          visibility?: Database["public"]["Enums"]["visibility_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_generations_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "design_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "design_generations_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "designer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      designer_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string
+          display_name: string
+          id: string
+          portfolio_url: string | null
+          specializations:
+            | Database["public"]["Enums"]["design_specialization"][]
+            | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          portfolio_url?: string | null
+          specializations?:
+            | Database["public"]["Enums"]["design_specialization"][]
+            | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          portfolio_url?: string | null
+          specializations?:
+            | Database["public"]["Enums"]["design_specialization"][]
+            | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       onboarding_sessions: {
         Row: {
           conversation_transcript: string | null
@@ -228,6 +374,7 @@ export type Database = {
           conversation_summary: string | null
           created_at: string | null
           design_image_url: string | null
+          designer_id: string | null
           id: string
           session_id: string
           updated_at: string | null
@@ -236,6 +383,7 @@ export type Database = {
           conversation_summary?: string | null
           created_at?: string | null
           design_image_url?: string | null
+          designer_id?: string | null
           id?: string
           session_id: string
           updated_at?: string | null
@@ -244,11 +392,20 @@ export type Database = {
           conversation_summary?: string | null
           created_at?: string | null
           design_image_url?: string | null
+          designer_id?: string | null
           id?: string
           session_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_sessions_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "designer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sync_messages: {
         Row: {
@@ -332,7 +489,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      design_specialization:
+        | "residential"
+        | "commercial"
+        | "hospitality"
+        | "retail"
+        | "healthcare"
+        | "office"
+        | "sustainable"
+        | "luxury"
+        | "minimalist"
+        | "traditional"
+      visibility_type: "private" | "shared" | "public"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -459,6 +627,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      design_specialization: [
+        "residential",
+        "commercial",
+        "hospitality",
+        "retail",
+        "healthcare",
+        "office",
+        "sustainable",
+        "luxury",
+        "minimalist",
+        "traditional",
+      ],
+      visibility_type: ["private", "shared", "public"],
+    },
   },
 } as const
