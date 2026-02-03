@@ -2,3 +2,6 @@ project_id = "smbhkmahxxwichswvgep"
 
 [functions.recover-elevenlabs-conversation]
 verify_jwt = false
+
+[functions.extract-carlos-insights]
+verify_jwt = false
