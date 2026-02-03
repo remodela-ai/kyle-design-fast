@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { usePipeline, ShoppingItem } from "@/hooks/usePipeline";
 import { ImageUploadDialog } from "@/components/ImageUploadDialog";
 import { CompletionCelebration } from "@/components/CompletionCelebration";
+import { useDesignerProfile } from "@/hooks/useDesignerProfile";
 import { toast } from "sonner";
 
 interface ElementData {
@@ -62,6 +63,9 @@ export default function FreeProject360() {
   // Celebration state
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Get designer profile
+  const { profile } = useDesignerProfile();
+
   // Get the design image URL from navigation state
   const designImageUrl = location.state?.designImageUrl || userUploadedImage;
   const conversationSummary = location.state?.conversationSummary;
@@ -73,7 +77,7 @@ export default function FreeProject360() {
     setPipelineStarted(true);
     setFinalTime(null);
     resetPipeline();
-    startPipeline(imageDataUrl, "User uploaded design image");
+    startPipeline(imageDataUrl, "User uploaded design image", profile?.id);
     toast.success("Pipeline started with your image!");
   };
 
@@ -135,12 +139,12 @@ export default function FreeProject360() {
   // Auto-start pipeline when page loads with design image
   useEffect(() => {
     if (designImageUrl && !pipelineStarted && !isRunning) {
-      console.log("Auto-starting pipeline with image:", designImageUrl);
+      console.log("Auto-starting pipeline with image:", designImageUrl, "designer:", profile?.id);
       setPipelineStarted(true);
       setFinalTime(null);
-      startPipeline(designImageUrl, conversationSummary);
+      startPipeline(designImageUrl, conversationSummary, profile?.id);
     }
-  }, [designImageUrl, conversationSummary, pipelineStarted, isRunning, startPipeline]);
+  }, [designImageUrl, conversationSummary, pipelineStarted, isRunning, startPipeline, profile?.id]);
 
   // Extract elements from pipeline memory when spatial analysis completes
   useEffect(() => {
