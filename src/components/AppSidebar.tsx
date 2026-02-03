@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoImage from "@/assets/logo.png";
+import kLogoImage from "@/assets/k-logo.png";
 import { Button } from "@/components/ui/button";
 import {
   Home,
@@ -114,20 +114,29 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
         {/* Logo */}
         <div className="p-6 flex flex-col items-center">
           {(!collapsed || mobileOpen) ? (
-            <div className="animate-fade-in flex flex-col items-center">
-              <img 
-                src={logoImage} 
-                alt="James Kuester Logo" 
-                className="h-20 object-contain glow-red-subtle"
-              />
-              <span className="text-xs text-muted-foreground mt-2">Full Stack AI Interior Design</span>
+            <div className="animate-fade-in flex items-center gap-3">
+              {/* K logo in white container with red circle border */}
+              <div className="w-14 h-14 rounded-full bg-white border-2 border-primary flex items-center justify-center shadow-md">
+                <img 
+                  src={kLogoImage} 
+                  alt="Kuester Design Logo" 
+                  className="h-8 object-contain"
+                />
+              </div>
+              {/* Brand text */}
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-foreground tracking-tight">Kuester</span>
+                <span className="text-sm text-primary font-medium -mt-1">Design</span>
+              </div>
             </div>
           ) : (
-            <img 
-              src={logoImage} 
-              alt="James Kuester Logo" 
-              className="w-12 h-12 object-contain rounded-lg glow-red-subtle"
-            />
+            <div className="w-10 h-10 rounded-full bg-white border-2 border-primary flex items-center justify-center shadow-md">
+              <img 
+                src={kLogoImage} 
+                alt="Kuester Design Logo" 
+                className="h-5 object-contain"
+              />
+            </div>
           )}
         </div>
 
