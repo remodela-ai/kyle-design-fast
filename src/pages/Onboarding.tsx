@@ -214,35 +214,28 @@ export default function Onboarding() {
     }
   };
 
-  // Person selection screen
+// Person selection screen - temporarily disabled, showing redirect to Kustr
   if (!selectedPerson) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-primary/20">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Kyle Onboarding</CardTitle>
+            <CardTitle className="text-2xl">Internal Onboarding</CardTitle>
             <p className="text-muted-foreground mt-2">
-              Select who is doing the onboarding session with Kyle
+              This onboarding flow is temporarily unavailable.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              For interior design office onboarding, please visit the Kustr Design platform.
+            </p>
             <Button
-              variant="outline"
-              className="w-full h-16 text-lg justify-start gap-4 hover:bg-primary/10 hover:border-primary"
-              onClick={() => setSelectedPerson('oriel')}
+              variant="default"
+              className="w-full h-12"
+              onClick={() => window.location.href = '/kustr'}
             >
-              <User className="h-6 w-6 text-primary" />
-              <span>I am Oriel</span>
-              <ChevronRight className="h-5 w-5 ml-auto text-muted-foreground" />
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-16 text-lg justify-start gap-4 hover:bg-primary/10 hover:border-primary"
-              onClick={() => setSelectedPerson('carlos')}
-            >
-              <User className="h-6 w-6 text-primary" />
-              <span>I am Carlos</span>
-              <ChevronRight className="h-5 w-5 ml-auto text-muted-foreground" />
+              Go to Kustr Design
+              <ChevronRight className="h-5 w-5 ml-2" />
             </Button>
           </CardContent>
         </Card>
