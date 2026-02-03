@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDesignerProfile, DesignSpecialization, CreateProfileData } from '@/hooks/useDesignerProfile';
+import { useDesignerProfileContext, DesignSpecialization, CreateProfileData } from '@/contexts/DesignerProfileContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,7 @@ const SPECIALIZATIONS: { value: DesignSpecialization; label: string }[] = [
 
 const DesignerOnboarding = () => {
   const navigate = useNavigate();
-  const { createProfile } = useDesignerProfile();
+  const { createProfile } = useDesignerProfileContext();
   const { toast } = useToast();
   
   const [step, setStep] = useState(1);
