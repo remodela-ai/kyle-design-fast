@@ -1,1 +1,4 @@
 project_id = "smbhkmahxxwichswvgep"
+
+[functions.recover-elevenlabs-conversation]
+verify_jwt = false
