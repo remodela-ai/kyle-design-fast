@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDesignerProfile } from '@/hooks/useDesignerProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { z } from 'zod';
+import kLogoImage from '@/assets/k-logo.png';
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, isAuthenticated, isSuperAdmin, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth();
+  const { hasProfile, loading: profileLoading, needsOnboarding } = useDesignerProfile();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,12 +28,17 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSignUp, setIsSignUp] = useState(false);
 
+  // Redirect after authentication
   useEffect(() => {
-    if (isAuthenticated) {
-      // All authenticated users go to home, super admin can then navigate to admin routes
-      navigate('/');
+    if (isAuthenticated && !profileLoading) {
+      if (needsOnboarding) {
+        navigate('/designer-onboarding');
+      } else if (hasProfile) {
+        const from = (location.state as { from?: string })?.from || '/dashboard';
+        navigate(from);
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, profileLoading, needsOnboarding, hasProfile, navigate, location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +64,9 @@ const Auth = () => {
 
       if (error) {
         toast({
-          title: 'Error de registro',
+          title: 'Registration Error',
           description: error.message === 'User already registered' 
-            ? 'Este email ya está registrado' 
+            ? 'This email is already registered' 
             : error.message,
           variant: 'destructive',
         });
@@ -65,19 +74,18 @@ const Auth = () => {
       }
 
       toast({
-        title: 'Registro exitoso',
-        description: 'Bienvenido a James Kuester',
+        title: 'Account Created!',
+        description: 'Welcome to Kyle - your AI design colleague',
       });
-      navigate('/');
     } else {
       const { error } = await signIn(email, password);
       setLoading(false);
 
       if (error) {
         toast({
-          title: 'Error de autenticación',
+          title: 'Authentication Error',
           description: error.message === 'Invalid login credentials' 
-            ? 'Credenciales inválidas' 
+            ? 'Invalid credentials' 
             : error.message,
           variant: 'destructive',
         });
@@ -85,8 +93,8 @@ const Auth = () => {
       }
 
       toast({
-        title: 'Bienvenido',
-        description: 'Acceso autorizado',
+        title: 'Welcome back!',
+        description: 'Ready to co-create',
       });
     }
   };
@@ -101,18 +109,21 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-primary/20">
+      <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none opacity-50" />
+      
+      <Card className="w-full max-w-md border-primary/20 relative z-10">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Lock className="h-6 w-6 text-primary" />
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-white border-2 border-primary flex items-center justify-center shadow-lg">
+            <img src={kLogoImage} alt="Kyle" className="h-8 object-contain" />
           </div>
-          <CardTitle className="text-2xl">
-            {isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
+          <CardTitle className="text-2xl flex items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            {isSignUp ? 'Join Kyle' : 'Welcome Back'}
           </CardTitle>
           <CardDescription>
             {isSignUp 
-              ? 'Regístrate para acceder a James Kuester' 
-              : 'Ingresa tus credenciales para continuar'}
+              ? 'Create your account to start co-creating' 
+              : 'Sign in to continue designing'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -122,7 +133,7 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="you@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -132,7 +143,7 @@ const Auth = () => {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -149,10 +160,13 @@ const Auth = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isSignUp ? 'Registrando...' : 'Verificando...'}
+                  {isSignUp ? 'Creating account...' : 'Signing in...'}
                 </>
               ) : (
-                isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {isSignUp ? 'Create Account' : 'Sign In'}
+                </>
               )}
             </Button>
           </form>
@@ -163,8 +177,8 @@ const Auth = () => {
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {isSignUp 
-                ? '¿Ya tienes cuenta? Inicia sesión' 
-                : '¿No tienes cuenta? Regístrate'}
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"}
             </button>
           </div>
         </CardContent>

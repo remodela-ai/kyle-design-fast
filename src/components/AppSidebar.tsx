@@ -16,20 +16,24 @@ import {
   Target,
   UserCheck,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
+import { useDesignerProfile } from "@/hooks/useDesignerProfile";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 // Public nav items visible to everyone
 const publicNavItems = [
   { icon: Home, label: "Home", path: "/" },
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: FolderKanban, label: "Projects", path: "/" },
-  { icon: Heart, label: "Collections", path: "/" },
-  { icon: CreditCard, label: "Billing", path: "/" },
-  { icon: HelpCircle, label: "Help", path: "/" },
+];
+
+// Designer nav items (authenticated users with profile)
+const designerNavItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Sparkles, label: "Co-create", path: "/shazam" },
+  { icon: FolderKanban, label: "Collections", path: "/dashboard" },
 ];
 
 // Admin-only nav items
@@ -49,12 +53,13 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) {
   const { isSuperAdmin, isAuthenticated, signOut } = useAuth();
+  const { hasProfile, profile } = useDesignerProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
     await signOut();
-    toast({ title: "Sesión cerrada" });
+    toast({ title: "Signed out" });
     navigate("/");
   };
 
@@ -62,10 +67,12 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
     navigate("/auth");
   };
 
-  // Combine nav items based on auth status
-  const visibleNavItems = isSuperAdmin 
-    ? [...adminNavItems, ...publicNavItems]
-    : publicNavItems;
+  // Build nav items based on auth/profile status
+  const visibleNavItems = [
+    ...publicNavItems,
+    ...(isAuthenticated && hasProfile ? designerNavItems : []),
+    ...(isSuperAdmin ? adminNavItems : []),
+  ];
 
   return (
     <>

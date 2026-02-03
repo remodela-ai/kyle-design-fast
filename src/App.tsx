@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { KyleProvider } from "@/contexts/KyleContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import DesignerRoute from "@/components/DesignerRoute";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
@@ -17,6 +18,8 @@ import DailyOrielCarlos from "./pages/DailyOrielCarlos";
 import GTMAnalytics from "./pages/GTMAnalytics";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import DesignerOnboarding from "./pages/DesignerOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,10 @@ const App = () => (
             <Route path="/360-free-project" element={<FreeProject360 />} />
             <Route path="/design-review" element={<DesignReview />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/designer-onboarding" element={<DesignerOnboarding />} />
+            
+            {/* Designer routes - require auth + profile */}
+            <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
             
             {/* Protected routes - Super Admin only */}
             <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
