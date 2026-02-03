@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { User, CheckCircle, Loader2, Volume2, Mic, ChevronRight } from "lucide-react";
+import { User, CheckCircle, Loader2, Volume2, Mic, ChevronRight, RotateCcw } from "lucide-react";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 
@@ -35,6 +35,7 @@ export default function Onboarding() {
   const [isSaving, setIsSaving] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [language, setLanguage] = useState<'es' | 'en'>('es');
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const personName = selectedPerson === 'oriel' ? 'Oriel' : selectedPerson === 'carlos' ? 'Carlos' : '';
   
@@ -184,6 +185,32 @@ export default function Onboarding() {
   const handleKyleClick = () => {
     if (isConnected) {
       handleEndSession();
+    }
+  };
+
+  const handleRecoverConversations = async () => {
+    setIsRecovering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('recover-elevenlabs-conversation', {
+        body: { 
+          personName: personName || undefined,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.recovered > 0) {
+        toast.success(`${data.recovered} conversaciones recuperadas de ${data.totalFound} encontradas`);
+      } else if (data.totalFound > 0) {
+        toast.info(`${data.totalFound} conversaciones encontradas, pero ya estaban guardadas`);
+      } else {
+        toast.info('No se encontraron conversaciones recientes para recuperar');
+      }
+    } catch (err) {
+      console.error('Error recovering conversations:', err);
+      toast.error('Error al recuperar conversaciones');
+    } finally {
+      setIsRecovering(false);
     }
   };
 
@@ -435,14 +462,34 @@ export default function Onboarding() {
         )}
       </div>
 
-      {/* Back button */}
-      <div className="p-4 border-t border-border/50">
+      {/* Footer with back button and recover */}
+      <div className="p-4 border-t border-border/50 flex items-center justify-between">
         <Button
           variant="ghost"
           onClick={() => setSelectedPerson(null)}
           disabled={isConnected}
         >
           ← Back to Selection
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRecoverConversations}
+          disabled={isRecovering || isConnected}
+          className="gap-2"
+        >
+          {isRecovering ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Recuperando...
+            </>
+          ) : (
+            <>
+              <RotateCcw className="h-4 w-4" />
+              Recuperar sesiones
+            </>
+          )}
         </Button>
       </div>
     </div>
