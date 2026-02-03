@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 // Eric voice ID from ElevenLabs
 const ERIC_VOICE_ID = "cjVigY5qzO86Huf0OWal";
 
-// Using the same public agent but with overrides for James Kuster
+// Using the same public agent but with overrides for James Kuester
 const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
 
 export function useNextInteriorsAgent() {
@@ -14,11 +14,11 @@ export function useNextInteriorsAgent() {
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("James Kuster Agent connected");
+      console.log("James Kuester Agent connected");
       setError(null);
     },
     onDisconnect: () => {
-      console.log("James Kuster Agent disconnected");
+      console.log("James Kuester Agent disconnected");
     },
     onMessage: (message) => {
       console.log("Agent message:", message);
@@ -46,7 +46,7 @@ export function useNextInteriorsAgent() {
       // Request microphone access first
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Start the conversation with overrides for James Kuster
+      // Start the conversation with overrides for James Kuester
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
@@ -54,14 +54,14 @@ export function useNextInteriorsAgent() {
           agent: {
             language: "en",
             prompt: {
-              prompt: `You are an AI assistant for James Kuster, a modern interior design company. 
+              prompt: `You are Kyle, the AI voice assistant for James Kuester, a modern interior design company. 
               You help users explore design inspiration and navigate the platform.
               You have access to tools to navigate between pages:
               - Use navigateToBlinkDesign when users want to explore design inspiration or generate ideas
               - Use navigateToHome when users want to go back to the main page
               Be helpful, creative, and guide users through the design experience.`,
             },
-            firstMessage: "Hello! I'm your James Kuster assistant. How can I help you with your design journey today?",
+            firstMessage: "Hello! I'm Kyle, your design assistant. How can I help you with your design journey today?",
           },
           tts: {
             voiceId: ERIC_VOICE_ID,
