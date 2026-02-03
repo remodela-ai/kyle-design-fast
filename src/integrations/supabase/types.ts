@@ -47,6 +47,56 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          address: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          office_id: string
+          phone: string | null
+          status: Database["public"]["Enums"]["client_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          office_id: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          office_id?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_syncs: {
         Row: {
           created_at: string
@@ -229,6 +279,299 @@ export type Database = {
         }
         Relationships: []
       }
+      kustr_project_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          id: string
+          project_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          project_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          project_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kustr_project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "kustr_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kustr_projects: {
+        Row: {
+          assigned_members: string[] | null
+          budget: number | null
+          client_id: string | null
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          office_id: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_members?: string[] | null
+          budget?: number | null
+          client_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          office_id: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_members?: string[] | null
+          budget?: number | null
+          client_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          office_id?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kustr_projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kustr_projects_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_budgets: {
+        Row: {
+          created_at: string
+          facebook_budget: number | null
+          id: string
+          instagram_budget: number | null
+          linkedin_budget: number | null
+          month: string
+          notes: string | null
+          office_id: string
+          tiktok_budget: number | null
+          total_budget: number | null
+          updated_at: string
+          x_budget: number | null
+        }
+        Insert: {
+          created_at?: string
+          facebook_budget?: number | null
+          id?: string
+          instagram_budget?: number | null
+          linkedin_budget?: number | null
+          month: string
+          notes?: string | null
+          office_id: string
+          tiktok_budget?: number | null
+          total_budget?: number | null
+          updated_at?: string
+          x_budget?: number | null
+        }
+        Update: {
+          created_at?: string
+          facebook_budget?: number | null
+          id?: string
+          instagram_budget?: number | null
+          linkedin_budget?: number | null
+          month?: string
+          notes?: string | null
+          office_id?: string
+          tiktok_budget?: number | null
+          total_budget?: number | null
+          updated_at?: string
+          x_budget?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_budgets_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_posts: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_urls: string[] | null
+          office_id: string
+          platform: Database["public"]["Enums"]["marketing_platform"]
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["post_status"] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_urls?: string[] | null
+          office_id: string
+          platform: Database["public"]["Enums"]["marketing_platform"]
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["post_status"] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_urls?: string[] | null
+          office_id?: string
+          platform?: Database["public"]["Enums"]["marketing_platform"]
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["post_status"] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_posts_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_vendors: {
+        Row: {
+          category: string | null
+          contact_name: string | null
+          created_at: string
+          discount_terms: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          office_id: string
+          phone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          category?: string | null
+          contact_name?: string | null
+          created_at?: string
+          discount_terms?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          office_id: string
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          category?: string | null
+          contact_name?: string | null
+          created_at?: string
+          discount_terms?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          office_id?: string
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_vendors_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offices: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          location: string
+          name: string
+          phone: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          location: string
+          name: string
+          phone?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          location?: string
+          name?: string
+          phone?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_sessions: {
         Row: {
           conversation_transcript: string | null
@@ -407,6 +750,112 @@ export type Database = {
           },
         ]
       }
+      service_providers: {
+        Row: {
+          category: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          office_id: string
+          phone: string | null
+          rating: number | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          category?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          office_id: string
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          category?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          office_id?: string
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_providers_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_alliances: {
+        Row: {
+          agreement_details: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          end_date: string | null
+          id: string
+          office_id: string
+          partner_name: string
+          partnership_type: string | null
+          phone: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          agreement_details?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          end_date?: string | null
+          id?: string
+          office_id: string
+          partner_name: string
+          partnership_type?: string | null
+          phone?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agreement_details?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          end_date?: string | null
+          id?: string
+          office_id?: string
+          partner_name?: string
+          partnership_type?: string | null
+          phone?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_alliances_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_messages: {
         Row: {
           content: string
@@ -481,14 +930,111 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean | null
+          office_id: string
+          onboarding_completed: boolean | null
+          phone: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          office_id: string
+          onboarding_completed?: boolean | null
+          phone?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          office_id?: string
+          onboarding_completed?: boolean | null
+          phone?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          office_id: string | null
+          role: Database["public"]["Enums"]["kustr_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          office_id?: string | null
+          role: Database["public"]["Enums"]["kustr_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          office_id?: string | null
+          role?: Database["public"]["Enums"]["kustr_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_office_id: { Args: { _user_id: string }; Returns: string }
+      has_kustr_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["kustr_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      user_belongs_to_office: {
+        Args: { _office_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      client_status: "lead" | "active" | "completed" | "inactive"
       design_specialization:
         | "residential"
         | "commercial"
@@ -500,6 +1046,10 @@ export type Database = {
         | "luxury"
         | "minimalist"
         | "traditional"
+      kustr_role: "managing_partner" | "collaborator" | "admin"
+      marketing_platform: "linkedin" | "facebook" | "instagram" | "tiktok" | "x"
+      post_status: "draft" | "scheduled" | "published"
+      project_status: "planning" | "in_progress" | "review" | "completed"
       visibility_type: "private" | "shared" | "public"
     }
     CompositeTypes: {
@@ -628,6 +1178,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      client_status: ["lead", "active", "completed", "inactive"],
       design_specialization: [
         "residential",
         "commercial",
@@ -640,6 +1191,10 @@ export const Constants = {
         "minimalist",
         "traditional",
       ],
+      kustr_role: ["managing_partner", "collaborator", "admin"],
+      marketing_platform: ["linkedin", "facebook", "instagram", "tiktok", "x"],
+      post_status: ["draft", "scheduled", "published"],
+      project_status: ["planning", "in_progress", "review", "completed"],
       visibility_type: ["private", "shared", "public"],
     },
   },
