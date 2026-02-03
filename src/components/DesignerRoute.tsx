@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useDesignerProfile } from '@/hooks/useDesignerProfile';
+import { useDesignerProfileContext } from '@/contexts/DesignerProfileContext';
 import { Loader2 } from 'lucide-react';
 
 interface DesignerRouteProps {
@@ -8,10 +7,7 @@ interface DesignerRouteProps {
 }
 
 const DesignerRoute = ({ children }: DesignerRouteProps) => {
-  const { loading: authLoading, isAuthenticated } = useAuth();
-  const { loading: profileLoading, hasProfile, needsOnboarding } = useDesignerProfile();
-
-  const loading = authLoading || profileLoading;
+  const { loading, hasProfile, needsOnboarding } = useDesignerProfileContext();
 
   if (loading) {
     return (
@@ -21,15 +17,7 @@ const DesignerRoute = ({ children }: DesignerRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (needsOnboarding) {
-    return <Navigate to="/designer-onboarding" replace />;
-  }
-
-  if (!hasProfile) {
+  if (needsOnboarding || !hasProfile) {
     return <Navigate to="/designer-onboarding" replace />;
   }
 

@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useDesignerProfile } from '@/hooks/useDesignerProfile';
+import { useDesignerProfileContext } from '@/contexts/DesignerProfileContext';
 import { Loader2 } from 'lucide-react';
 
 interface OnboardingRouteProps {
@@ -14,8 +14,8 @@ interface OnboardingRouteProps {
  * - Otherwise: show onboarding
  */
 const OnboardingRoute = ({ children }: OnboardingRouteProps) => {
-  const { loading: authLoading, isAuthenticated } = useAuth();
-  const { loading: profileLoading, hasProfile } = useDesignerProfile();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { loading: profileLoading, hasProfile } = useDesignerProfileContext();
 
   const loading = authLoading || profileLoading;
 
