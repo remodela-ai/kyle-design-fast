@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { KyleProvider } from "@/contexts/KyleContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DesignerRoute from "@/components/DesignerRoute";
+import OnboardingRoute from "@/components/OnboardingRoute";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
@@ -40,7 +41,7 @@ const App = () => (
             <Route path="/360-free-project" element={<FreeProject360 />} />
             <Route path="/design-review" element={<DesignReview />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/designer-onboarding" element={<DesignerOnboarding />} />
+            <Route path="/designer-onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
             
             {/* Designer routes - require auth + profile */}
             <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
