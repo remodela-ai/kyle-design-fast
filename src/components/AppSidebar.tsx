@@ -38,10 +38,7 @@ const designerNavItems = [
 
 // Admin-only nav items
 const adminNavItems = [
-  { icon: Clock, label: "Productivity", path: "/productivity" },
-  { icon: Target, label: "Daily GTM", path: "/daily-next-interiors" },
-  { icon: Target, label: "Daily O-C", path: "/daily-oriel-carlos" },
-  { icon: UserCheck, label: "Onboarding", path: "/onboarding" },
+  { icon: UserCheck, label: "Internal Onboarding", path: "/onboarding2" },
 ];
 
 interface AppSidebarProps {
