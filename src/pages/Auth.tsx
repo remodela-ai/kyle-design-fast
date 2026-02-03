@@ -66,7 +66,7 @@ const Auth = () => {
 
       toast({
         title: 'Registro exitoso',
-        description: 'Bienvenido a Next Interiors',
+        description: 'Bienvenido a James Kuster',
       });
       navigate('/');
     } else {
@@ -111,7 +111,7 @@ const Auth = () => {
           </CardTitle>
           <CardDescription>
             {isSignUp 
-              ? 'Regístrate para acceder a Next Interiors' 
+              ? 'Regístrate para acceder a James Kuster' 
               : 'Ingresa tus credenciales para continuar'}
           </CardDescription>
         </CardHeader>

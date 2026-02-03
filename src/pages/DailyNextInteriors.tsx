@@ -835,7 +835,7 @@ const DailyNextInteriors = () => {
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center gap-3">
               <Target className="w-8 h-8 text-primary" />
-              Daily Next Interiors
+              Daily James Kuster
             </h1>
             <p className="text-muted-foreground mt-2">
               GTM Triangulation: Kyle ↔ Oriel ↔ James
