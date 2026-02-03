@@ -17,6 +17,7 @@ import {
   UserCheck,
   LogOut,
   Sparkles,
+  Building2,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,8 +39,11 @@ const designerNavItems = [
 
 // Admin-only nav items
 const adminNavItems = [
-  { icon: UserCheck, label: "Internal Onboarding", path: "/onboarding2" },
+  { icon: UserCheck, label: "Legacy Onboarding", path: "/onboarding2" },
 ];
+
+// Design studio onboarding - visible to all authenticated users
+const studioOnboardingItem = { icon: Building2, label: "Design Studio", path: "/kustr" };
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -67,6 +71,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
   // Build nav items based on auth/profile status
   const visibleNavItems = [
     ...publicNavItems,
+    studioOnboardingItem, // Always show Design Studio option
     ...(isAuthenticated && hasProfile ? designerNavItems : []),
     ...(isSuperAdmin ? adminNavItems : []),
   ];
