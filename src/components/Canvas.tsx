@@ -36,21 +36,21 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         </div>
 
         {/* Title */}
-        <div className="text-center space-y-1 px-4">
+        <div className="text-center space-y-2 px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            James Kuester
+            Kyle
           </h1>
-          <p className="text-xs md:text-lg text-muted-foreground max-w-md">
-            The First Full Stack AI Interior Design Company.
+          <p className="text-sm md:text-lg text-muted-foreground max-w-lg">
+            Your AI Design Colleague for the Modern Creative
           </p>
         </div>
 
         {/* Description */}
-        <p className="text-center text-muted-foreground max-w-2xl text-xs md:text-sm leading-relaxed px-4">
-          Meet <span className="text-primary font-semibold">Kyle</span>, your super voice agent. 
-          In just <span className="text-primary font-semibold">5 minutes</span> instead of 5 weeks, 
-          get complete interior design proposals with floor plans, moodboards, measurements, 
-          and professional documents delivered to your email.
+        <p className="text-center text-muted-foreground max-w-2xl text-sm md:text-base leading-relaxed px-4">
+          The virtual design partner built for <span className="text-primary font-semibold">2026 and beyond</span>. 
+          Brainstorm concepts, co-create stunning interiors, and transform ideas into 
+          <span className="text-primary font-semibold"> complete design proposals</span> — all through 
+          natural conversation in just <span className="text-primary font-semibold">minutes</span>, not weeks.
         </p>
 
         {/* CTA Button with prominent animation */}
