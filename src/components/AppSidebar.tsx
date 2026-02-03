@@ -117,7 +117,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             <div className="animate-fade-in flex flex-col items-center">
               <img 
                 src={logoImage} 
-                alt="James Kuster Logo" 
+                alt="James Kuester Logo" 
                 className="h-20 object-contain glow-red-subtle"
               />
               <span className="text-xs text-muted-foreground mt-2">Full Stack AI Interior Design</span>
@@ -125,7 +125,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
           ) : (
             <img 
               src={logoImage} 
-              alt="James Kuster Logo" 
+              alt="James Kuester Logo" 
               className="w-12 h-12 object-contain rounded-lg glow-red-subtle"
             />
           )}

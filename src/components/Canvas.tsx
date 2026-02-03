@@ -38,7 +38,7 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         {/* Title */}
         <div className="text-center space-y-1 px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            James Kuster
+            James Kuester
           </h1>
           <p className="text-xs md:text-lg text-muted-foreground max-w-md">
             The First Full Stack AI Interior Design Company.

@@ -27,7 +27,7 @@ const designPipeline = [
   { icon: Layers, label: "Material Flatlay", description: "Textures & materials", step: 5 },
   { icon: Palette, label: "Colors & Textures", description: "HEX color palette", step: 6 },
   { icon: BookOpen, label: "Your Story Book", description: "Design narrative & concept", step: 7 },
-  { icon: Video, label: "Video Presentation", description: "James Kuster (24s)", step: 8 },
+  { icon: Video, label: "Video Presentation", description: "Kyle presents (24s)", step: 8 },
 ];
 
 const managementPipeline = [
