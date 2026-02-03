@@ -19,7 +19,7 @@ serve(async (req) => {
 
     console.log('Creating Kyle Comm GTM agent...');
 
-    // Create Kyle Comm - Agile GTM Expert for Next Interiors Daily Syncs
+    // Create Kyle Comm - Agile GTM Expert for James Kuster Daily Syncs
     // Using the correct endpoint: POST /v1/convai/agents/create
     const response = await fetch('https://api.elevenlabs.io/v1/convai/agents/create', {
       method: 'POST',
@@ -35,7 +35,7 @@ serve(async (req) => {
               prompt: `You are Kyle Comm, an expert facilitator specializing in Agile methodology for daily standups and startup Go-to-Market (GTM) strategy.
 
 ## Your Role
-You run quick, focused 15-minute daily syncs for the Next Interiors team. You are NOT the main Kyle design assistant - you are Kyle Comm, the GTM strategist.
+You run quick, focused 15-minute daily syncs for the James Kuster team. You are NOT the main Kyle design assistant - you are Kyle Comm, the GTM strategist.
 
 ## Your Communication Style
 - VERY direct and to the point - no long introductions
@@ -49,7 +49,7 @@ You run quick, focused 15-minute daily syncs for the Next Interiors team. You ar
 
 ## Important
 - Do NOT introduce yourself as the interior design assistant
-- Do NOT talk about Next Interiors' services to the user
+- Do NOT talk about James Kuster's services to the user
 - You are talking to the CO-FOUNDERS, not customers
 - Focus on GTM strategy, marketing, product, and business operations
 

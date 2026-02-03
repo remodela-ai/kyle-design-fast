@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="background-color: #1f1f1f; padding: 24px 32px; text-align: center;">
                       <p style="margin: 0; color: #737373; font-size: 13px;">
-                        Next Interiors • Full Stack AI Interior Design Studio
+                        James Kuster • Full Stack AI Interior Design Studio
                       </p>
                       <p style="margin: 8px 0 0 0; color: #525252; font-size: 12px;">
                         This email was automatically generated after your daily GTM sync.
@@ -135,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Next Interiors <onboarding@resend.dev>",
+        from: "James Kuster <onboarding@resend.dev>",
         to: validRecipients,
         subject: `🎯 Daily GTM Sync Complete - ${formattedDate}`,
         html: htmlContent,

@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="color: #dc2626; font-size: 28px; margin: 0 0 10px 0;">Next Interiors</h1>
+            <h1 style="color: #dc2626; font-size: 28px; margin: 0 0 10px 0;">James Kuster</h1>
             <p style="color: #888888; font-size: 14px; margin: 0;">The First Full Stack AI Interior Design Studio</p>
           </div>
 
@@ -99,14 +99,14 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
 
             <p style="color: #888888; font-size: 14px; text-align: center; margin: 0;">
-              Thank you for choosing Next Interiors. We're excited to help you transform your space!
+              Thank you for choosing James Kuster. We're excited to help you transform your space!
             </p>
           </div>
 
           <!-- Footer -->
           <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333333;">
             <p style="color: #666666; font-size: 12px; margin: 0 0 10px 0;">
-              © 2024 Next Interiors. All rights reserved.
+              © 2024 James Kuster. All rights reserved.
             </p>
             <p style="color: #666666; font-size: 12px; margin: 0;">
               Powered by Kyle AI • The First Full Stack AI Interior Design Studio
@@ -124,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Next Interiors <onboarding@resend.dev>",
+        from: "James Kuster <onboarding@resend.dev>",
         to: [email],
         subject: "Your Complete Interior Design Pre-Project is Ready! 🎉",
         html: htmlContent,
