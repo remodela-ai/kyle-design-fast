@@ -49,7 +49,7 @@ export function Canvas({ onMenuClick }: CanvasProps) {
         <p className="text-center text-muted-foreground max-w-2xl text-sm md:text-base leading-relaxed px-4">
           The virtual design partner built for <span className="text-primary font-semibold">2026 and beyond</span>. 
           Brainstorm concepts, co-create stunning interiors, and transform ideas into 
-          <span className="text-primary font-semibold"> complete design proposals</span> — all through 
+          <span className="text-primary font-semibold"> preliminary projects</span> — all through 
           natural conversation in just <span className="text-primary font-semibold">minutes</span>, not weeks.
         </p>
 
@@ -72,8 +72,8 @@ export function Canvas({ onMenuClick }: CanvasProps) {
             </div>
             
             <div className="text-left">
-              <span className="font-bold text-lg text-foreground">Lets do It!</span>
-              <p className="text-sm text-muted-foreground">I want my design FREE!</p>
+              <span className="font-bold text-lg text-foreground">Co-create with Kyle</span>
+              <p className="text-sm text-muted-foreground">Start your design journey</p>
             </div>
           </Button>
         </div>
