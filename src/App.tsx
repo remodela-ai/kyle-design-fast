@@ -48,12 +48,15 @@ const App = () => (
               {/* Designer routes - require auth + profile */}
               <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
               
+              {/* Designer onboarding - main route */}
+              <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
+              
               {/* Protected routes - Super Admin only */}
               <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
               <Route path="/daily-next-interiors" element={<ProtectedRoute><DailyNextInteriors /></ProtectedRoute>} />
               <Route path="/daily-oriel-carlos" element={<ProtectedRoute><DailyOrielCarlos /></ProtectedRoute>} />
               <Route path="/gtm-analytics" element={<ProtectedRoute><GTMAnalytics /></ProtectedRoute>} />
-              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              <Route path="/onboarding2" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
