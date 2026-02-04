@@ -21,6 +21,11 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
+    if (!REPLICATE_API_KEY) {
+      throw new Error('REPLICATE_API_KEY is not configured');
+    }
+
     const { 
       office_id,
       conversation_id,
@@ -126,7 +131,7 @@ Return only valid JSON, no markdown.`;
       }
     }
 
-    // Create the lead record
+    // Create the lead record first
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert({
@@ -157,10 +162,162 @@ Return only valid JSON, no markdown.`;
 
     console.log("Lead created successfully:", lead.id);
 
+    // Generate Flux 2 Pro design rendering if we have enough insights
+    let preliminaryDesignUrl: string | null = null;
+
+    if (extractedInsights.summary || projectType) {
+      try {
+        // Build a rich design prompt from extracted insights
+        const designPromptParts: string[] = [];
+        
+        // Project type
+        const roomType = projectType || 'interior space';
+        designPromptParts.push(`Professional interior design rendering of a ${roomType}`);
+        
+        // Style preferences
+        if (stylePreferences.length > 0) {
+          designPromptParts.push(`in ${stylePreferences.join(' and ')} style`);
+        }
+        
+        // Brand mentions for context
+        const allBrands = [...applianceBrands, ...plumbingBrands, ...furnitureBrands];
+        if (allBrands.length > 0) {
+          designPromptParts.push(`featuring high-end fixtures and ${allBrands.slice(0, 3).join(', ')} inspired elements`);
+        }
+        
+        // Key requirements
+        if (extractedInsights.key_requirements && extractedInsights.key_requirements.length > 0) {
+          designPromptParts.push(`with ${extractedInsights.key_requirements.slice(0, 3).join(', ')}`);
+        }
+        
+        // Summary context
+        if (extractedInsights.summary) {
+          designPromptParts.push(`- ${extractedInsights.summary}`);
+        }
+        
+        // Quality modifiers
+        designPromptParts.push('Photorealistic, architectural visualization, natural lighting, 8K quality, professional photography');
+        
+        const fluxPrompt = designPromptParts.join('. ');
+        console.log("Generated Flux prompt:", fluxPrompt);
+
+        // Call Replicate Flux 2 Pro API
+        const replicateResponse = await fetch("https://api.replicate.com/v1/predictions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${REPLICATE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            version: "8beff3369e81422112d93b89ca01426147de542cd4684c244b673b105188fe5f",
+            input: {
+              prompt: fluxPrompt,
+              num_outputs: 1,
+              aspect_ratio: "16:9",
+              output_format: "webp",
+              output_quality: 90,
+              num_inference_steps: 28,
+              guidance: 3,
+            },
+          }),
+        });
+
+        if (!replicateResponse.ok) {
+          const errorText = await replicateResponse.text();
+          console.error("Replicate API error:", replicateResponse.status, errorText);
+          throw new Error(`Replicate API error: ${replicateResponse.status}`);
+        }
+
+        const prediction = await replicateResponse.json();
+        console.log("Replicate prediction created:", prediction.id);
+
+        // Poll for completion
+        let imageUrl: string | null = null;
+        let attempts = 0;
+        const maxAttempts = 60; // 60 seconds max
+
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+            headers: {
+              "Authorization": `Bearer ${REPLICATE_API_KEY}`,
+            },
+          });
+
+          if (!statusResponse.ok) {
+            console.error("Error checking prediction status");
+            break;
+          }
+
+          const statusData = await statusResponse.json();
+          console.log("Prediction status:", statusData.status);
+
+          if (statusData.status === "succeeded" && statusData.output) {
+            imageUrl = Array.isArray(statusData.output) ? statusData.output[0] : statusData.output;
+            break;
+          } else if (statusData.status === "failed") {
+            console.error("Prediction failed:", statusData.error);
+            break;
+          }
+
+          attempts++;
+        }
+
+        if (imageUrl) {
+          console.log("Flux image generated:", imageUrl);
+
+          // Download the image
+          const imageResponse = await fetch(imageUrl);
+          if (imageResponse.ok) {
+            const imageBlob = await imageResponse.blob();
+            const imageBuffer = await imageBlob.arrayBuffer();
+            
+            // Upload to Supabase storage
+            const fileName = `lead-${lead.id}-${Date.now()}.webp`;
+            const { data: uploadData, error: uploadError } = await supabase
+              .storage
+              .from('lead-assets')
+              .upload(fileName, imageBuffer, {
+                contentType: 'image/webp',
+                upsert: true,
+              });
+
+            if (uploadError) {
+              console.error("Error uploading to storage:", uploadError);
+            } else {
+              // Get public URL
+              const { data: publicUrlData } = supabase
+                .storage
+                .from('lead-assets')
+                .getPublicUrl(fileName);
+
+              preliminaryDesignUrl = publicUrlData.publicUrl;
+              console.log("Image uploaded to storage:", preliminaryDesignUrl);
+
+              // Update lead with the design URL
+              const { error: updateError } = await supabase
+                .from('leads')
+                .update({ preliminary_design_url: preliminaryDesignUrl })
+                .eq('id', lead.id);
+
+              if (updateError) {
+                console.error("Error updating lead with design URL:", updateError);
+              }
+            }
+          }
+        }
+      } catch (fluxError) {
+        console.error("Error generating Flux design:", fluxError);
+        // Continue without the design - it's not critical
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       lead_id: lead.id,
       extracted_insights: extractedInsights,
+      preliminary_design_url: preliminaryDesignUrl,
       message: "Lead captured successfully"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
