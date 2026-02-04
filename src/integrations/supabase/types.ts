@@ -926,6 +926,78 @@ export type Database = {
           },
         ]
       }
+      proposals: {
+        Row: {
+          agreement_html: string
+          agreement_text: string
+          created_at: string
+          custom_terms: string | null
+          expires_at: string | null
+          fee_breakdown: Json
+          generated_at: string
+          id: string
+          lead_id: string
+          office_id: string
+          sent_at: string | null
+          signed_at: string | null
+          status: string
+          total_fee: number
+          updated_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          agreement_html: string
+          agreement_text: string
+          created_at?: string
+          custom_terms?: string | null
+          expires_at?: string | null
+          fee_breakdown: Json
+          generated_at?: string
+          id?: string
+          lead_id: string
+          office_id: string
+          sent_at?: string | null
+          signed_at?: string | null
+          status?: string
+          total_fee: number
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          agreement_html?: string
+          agreement_text?: string
+          created_at?: string
+          custom_terms?: string | null
+          expires_at?: string | null
+          fee_breakdown?: Json
+          generated_at?: string
+          id?: string
+          lead_id?: string
+          office_id?: string
+          sent_at?: string | null
+          signed_at?: string | null
+          status?: string
+          total_fee?: number
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_providers: {
         Row: {
           category: string | null
