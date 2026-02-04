@@ -10,19 +10,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, Building2, User, CheckCircle, ArrowRight, ArrowLeft, MapPin, Globe, Mail } from 'lucide-react';
+
+const timezones = [
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Phoenix', label: 'Arizona Time' },
+  { value: 'America/Anchorage', label: 'Alaska Time' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
+  { value: 'Europe/London', label: 'London (GMT)' },
+  { value: 'Europe/Paris', label: 'Central Europe (CET)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+];
 
 const KustrOnboarding = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const { offices, userRole, hasCompletedOnboarding, refetchProfile, loading: officeLoading } = useKustrOffice();
+  const { userRole, hasCompletedOnboarding, refetchProfile, loading: officeLoading } = useKustrOffice();
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Form state
-  const [selectedOfficeId, setSelectedOfficeId] = useState('');
+  // Office/Studio form state
+  const [officeName, setOfficeName] = useState('');
+  const [officeLocation, setOfficeLocation] = useState('');
+  const [officeAddress, setOfficeAddress] = useState('');
+  const [officePhone, setOfficePhone] = useState('');
+  const [officeEmail, setOfficeEmail] = useState('');
+  const [officeTimezone, setOfficeTimezone] = useState('America/New_York');
+
+  // Profile form state
   const [displayName, setDisplayName] = useState('');
   const [title, setTitle] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,17 +77,27 @@ const KustrOnboarding = () => {
   }, [user?.email, displayName]);
 
   const handleNextStep = () => {
-    if (step === 1 && !selectedOfficeId) {
-      toast({
-        title: 'Please select an office',
-        description: 'You must select an office to continue.',
-        variant: 'destructive',
-      });
-      return;
+    if (step === 1) {
+      if (!officeName.trim()) {
+        toast({
+          title: 'Studio Name Required',
+          description: 'Please enter your design studio name.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!officeLocation.trim()) {
+        toast({
+          title: 'Location Required',
+          description: 'Please enter your studio location.',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
     if (step === 2 && !displayName.trim()) {
       toast({
-        title: 'Please enter your name',
+        title: 'Name Required',
         description: 'Your display name is required.',
         variant: 'destructive',
       });
@@ -80,9 +111,9 @@ const KustrOnboarding = () => {
   };
 
   const handleComplete = async () => {
-    if (!user || !selectedOfficeId || !displayName.trim()) {
+    if (!user || !officeName.trim() || !officeLocation.trim() || !displayName.trim()) {
       toast({
-        title: 'Missing information',
+        title: 'Missing Information',
         description: 'Please complete all required fields.',
         variant: 'destructive',
       });
@@ -92,13 +123,29 @@ const KustrOnboarding = () => {
     setLoading(true);
 
     try {
+      // Create the office/studio
+      const { data: officeData, error: officeError } = await supabase
+        .from('offices')
+        .insert({
+          name: officeName.trim(),
+          location: officeLocation.trim(),
+          address: officeAddress.trim() || null,
+          phone: officePhone.trim() || null,
+          email: officeEmail.trim() || null,
+          timezone: officeTimezone,
+        })
+        .select()
+        .single();
+
+      if (officeError) throw officeError;
+
       // Create user role (managing_partner for new registrations)
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: user.id,
           role: 'managing_partner',
-          office_id: selectedOfficeId,
+          office_id: officeData.id,
         });
 
       if (roleError) {
@@ -113,7 +160,7 @@ const KustrOnboarding = () => {
         .from('team_members')
         .insert({
           user_id: user.id,
-          office_id: selectedOfficeId,
+          office_id: officeData.id,
           display_name: displayName.trim(),
           title: title.trim() || 'Managing Partner',
           phone: phone.trim() || null,
@@ -128,6 +175,7 @@ const KustrOnboarding = () => {
           const { error: updateError } = await supabase
             .from('team_members')
             .update({
+              office_id: officeData.id,
               display_name: displayName.trim(),
               title: title.trim() || 'Managing Partner',
               phone: phone.trim() || null,
@@ -145,8 +193,8 @@ const KustrOnboarding = () => {
       await refetchProfile();
 
       toast({
-        title: 'Welcome to Kustr Design!',
-        description: 'Your account has been set up successfully.',
+        title: 'Welcome!',
+        description: 'Your design studio has been created successfully.',
       });
 
       navigate('/kustr/dashboard');
@@ -164,32 +212,30 @@ const KustrOnboarding = () => {
 
   if (authLoading || officeLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const selectedOffice = offices.find(o => o.id === selectedOfficeId);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMDIwMjAiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
 
-      <Card className="w-full max-w-lg border-slate-700 bg-slate-800/90 backdrop-blur-sm relative z-10">
+      <Card className="w-full max-w-lg border-border bg-card relative z-10">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
-            {step === 1 && <Building2 className="h-8 w-8 text-white" />}
-            {step === 2 && <User className="h-8 w-8 text-white" />}
-            {step === 3 && <CheckCircle className="h-8 w-8 text-white" />}
+          <div className="mx-auto mb-4 w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+            {step === 1 && <Building2 className="h-8 w-8 text-primary-foreground" />}
+            {step === 2 && <User className="h-8 w-8 text-primary-foreground" />}
+            {step === 3 && <CheckCircle className="h-8 w-8 text-primary-foreground" />}
           </div>
-          <CardTitle className="text-2xl text-white">
-            {step === 1 && 'Select Your Office'}
+          <CardTitle className="text-2xl text-card-foreground">
+            {step === 1 && 'Create Your Studio'}
             {step === 2 && 'Your Profile'}
             {step === 3 && 'Confirm Setup'}
           </CardTitle>
-          <CardDescription className="text-slate-400">
-            {step === 1 && 'Choose the office you will be managing'}
+          <CardDescription className="text-muted-foreground">
+            {step === 1 && 'Set up your design studio information'}
             {step === 2 && 'Tell us about yourself'}
             {step === 3 && 'Review and complete your setup'}
           </CardDescription>
@@ -200,7 +246,7 @@ const KustrOnboarding = () => {
               <div
                 key={s}
                 className={`h-2 w-12 rounded-full transition-colors ${
-                  s <= step ? 'bg-amber-500' : 'bg-slate-600'
+                  s <= step ? 'bg-primary' : 'bg-muted'
                 }`}
               />
             ))}
@@ -210,67 +256,118 @@ const KustrOnboarding = () => {
         <CardContent className="space-y-6">
           {step === 1 && (
             <div className="space-y-4">
-              <Label className="text-slate-200">Office Location</Label>
-              <Select value={selectedOfficeId} onValueChange={setSelectedOfficeId}>
-                <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
-                  <SelectValue placeholder="Select your office" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  {offices.map((office) => (
-                    <SelectItem 
-                      key={office.id} 
-                      value={office.id}
-                      className="text-white hover:bg-slate-700"
-                    >
-                      {office.name} - {office.location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label htmlFor="officeName">Studio Name *</Label>
+                <Input
+                  id="officeName"
+                  value={officeName}
+                  onChange={(e) => setOfficeName(e.target.value)}
+                  placeholder="My Design Studio"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="officeLocation">Location *</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="officeLocation"
+                    value={officeLocation}
+                    onChange={(e) => setOfficeLocation(e.target.value)}
+                    placeholder="New York, NY"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="officeAddress">Address</Label>
+                <Input
+                  id="officeAddress"
+                  value={officeAddress}
+                  onChange={(e) => setOfficeAddress(e.target.value)}
+                  placeholder="123 Design Street, Suite 100"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="officePhone">Phone</Label>
+                  <Input
+                    id="officePhone"
+                    value={officePhone}
+                    onChange={(e) => setOfficePhone(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="officeEmail">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="officeEmail"
+                      value={officeEmail}
+                      onChange={(e) => setOfficeEmail(e.target.value)}
+                      placeholder="hello@studio.com"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="officeTimezone">Timezone</Label>
+                <Select value={officeTimezone} onValueChange={setOfficeTimezone}>
+                  <SelectTrigger>
+                    <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
           {step === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName" className="text-slate-200">Full Name *</Label>
+                <Label htmlFor="displayName">Full Name *</Label>
                 <Input
                   id="displayName"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="John Smith"
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-slate-200">Job Title</Label>
+                <Label htmlFor="title">Job Title</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Managing Partner"
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-slate-200">Phone</Label>
+                <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 (555) 123-4567"
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bio" className="text-slate-200">Bio</Label>
+                <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Tell us about your experience and expertise..."
                   rows={3}
-                  className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500 resize-none"
+                  className="resize-none"
                 />
               </div>
             </div>
@@ -278,32 +375,48 @@ const KustrOnboarding = () => {
 
           {step === 3 && (
             <div className="space-y-4">
-              <div className="bg-slate-900/50 rounded-lg p-4 space-y-3">
+              <div className="bg-muted rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Studio Details
+                </h4>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Office</span>
-                  <span className="text-white font-medium">{selectedOffice?.name}</span>
+                  <span className="text-muted-foreground">Name</span>
+                  <span className="text-foreground font-medium">{officeName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Location</span>
-                  <span className="text-white">{selectedOffice?.location}</span>
+                  <span className="text-muted-foreground">Location</span>
+                  <span className="text-foreground">{officeLocation}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Name</span>
-                  <span className="text-white font-medium">{displayName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Title</span>
-                  <span className="text-white">{title || 'Managing Partner'}</span>
-                </div>
-                {phone && (
+                {officeEmail && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Phone</span>
-                    <span className="text-white">{phone}</span>
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="text-foreground">{officeEmail}</span>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-slate-400 text-center">
-                As a Managing Partner, you'll have full access to manage your office,
+              <div className="bg-muted rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Your Profile
+                </h4>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Name</span>
+                  <span className="text-foreground font-medium">{displayName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Title</span>
+                  <span className="text-foreground">{title || 'Managing Partner'}</span>
+                </div>
+                {phone && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="text-foreground">{phone}</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                As a Managing Partner, you'll have full access to manage your studio,
                 team members, clients, projects, and marketing.
               </p>
             </div>
@@ -316,7 +429,7 @@ const KustrOnboarding = () => {
                 type="button"
                 variant="outline"
                 onClick={handlePreviousStep}
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="flex-1"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
@@ -326,7 +439,7 @@ const KustrOnboarding = () => {
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                className="flex-1"
               >
                 Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -336,7 +449,7 @@ const KustrOnboarding = () => {
                 type="button"
                 onClick={handleComplete}
                 disabled={loading}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                className="flex-1"
               >
                 {loading ? (
                   <>

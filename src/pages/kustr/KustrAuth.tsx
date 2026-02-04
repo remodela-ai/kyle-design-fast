@@ -109,42 +109,41 @@ const KustrAuth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMDIwMjAiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
 
-      <Card className="w-full max-w-md border-slate-700 bg-slate-800/90 backdrop-blur-sm relative z-10">
+      <Card className="w-full max-w-md border-border bg-card relative z-10">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg">
-            <Building2 className="h-8 w-8 text-white" />
+          <div className="mx-auto mb-4 w-16 h-16 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+            <Building2 className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl text-white">
-            {isSignUp ? 'Join Kustr Design' : 'Welcome Back'}
+          <CardTitle className="text-2xl text-card-foreground">
+            {isSignUp ? 'Create Your Studio' : 'Welcome Back'}
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             {isSignUp
-              ? 'Create your account to manage your office'
-              : 'Sign in to access your office dashboard'}
+              ? 'Create your account to set up your design studio'
+              : 'Sign in to access your studio dashboard'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-200">Email</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@kustrdesign.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
               />
               {errors.email && (
-                <p className="text-sm text-red-400">{errors.email}</p>
+                <p className="text-sm text-destructive">{errors.email}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-200">Password</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -152,15 +151,14 @@ const KustrAuth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
               />
               {errors.password && (
-                <p className="text-sm text-red-400">{errors.password}</p>
+                <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white" 
+              className="w-full" 
               disabled={loading}
             >
               {loading ? (
@@ -180,7 +178,7 @@ const KustrAuth = () => {
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-slate-400 hover:text-amber-500 transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'
