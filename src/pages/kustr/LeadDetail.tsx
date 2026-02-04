@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,29 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useLead, useLeadMessages, LeadStatus } from "@/hooks/useLeads";
+import { useLead, useLeadMessages, useLeadStatusHistory, LeadStatus } from "@/hooks/useLeads";
 import { useLeads } from "@/hooks/useLeads";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { StatusWorkflow } from "@/components/kustr/StatusWorkflow";
+import { StatusTimeline } from "@/components/kustr/StatusTimeline";
+import { StatusBadge } from "@/components/kustr/StatusBadge";
 
-const statusColors: Record<LeadStatus, string> = {
-  new: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  qualified: 'bg-green-500/10 text-green-500 border-green-500/20',
-  contacted: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  proposal_sent: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  converted: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  lost: 'bg-red-500/10 text-red-500 border-red-500/20',
-};
-
-const statusLabels: Record<LeadStatus, string> = {
-  new: 'New',
-  qualified: 'Qualified',
-  contacted: 'Contacted',
-  proposal_sent: 'Proposal Sent',
-  converted: 'Converted',
-  lost: 'Lost',
-};
 
 export default function LeadDetail() {
   const navigate = useNavigate();
@@ -39,8 +25,10 @@ export default function LeadDetail() {
   const officeId = office?.id || null;
   const { data: lead, isLoading } = useLead(leadId || null);
   const { messages, sendMessage } = useLeadMessages(leadId || null);
+  const { data: statusHistory = [] } = useLeadStatusHistory(leadId || null);
   const { updateLeadStatus, assignLead } = useLeads(officeId);
   const { data: teamMembers = [] } = useTeamMembers(officeId);
+  const [currentTeamMemberId, setCurrentTeamMemberId] = useState<string | null>(null);
   
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -78,7 +66,12 @@ export default function LeadDetail() {
   }
 
   const handleStatusChange = (newStatus: LeadStatus) => {
-    updateLeadStatus.mutate({ leadId: lead.id, status: newStatus });
+    updateLeadStatus.mutate({ 
+      leadId: lead.id, 
+      status: newStatus, 
+      currentStatus: lead.status,
+      teamMemberId: lead.assigned_to 
+    });
   };
 
   const handleAssignmentChange = (memberId: string) => {
@@ -370,20 +363,38 @@ export default function LeadDetail() {
               </CardContent>
             </Card>
 
-            {/* Status Card */}
+            {/* Status Workflow Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Status</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Status Workflow
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge className={`${statusColors[lead.status]} text-base px-4 py-2`}>
-                  {statusLabels[lead.status]}
-                </Badge>
+                <div className="flex items-center gap-2 mb-4">
+                  <StatusBadge status={lead.status} size="lg" />
+                </div>
+                <StatusWorkflow 
+                  currentStatus={lead.status}
+                  onStatusChange={handleStatusChange}
+                  isUpdating={updateLeadStatus.isPending}
+                />
                 {lead.qualified_at && (
-                  <p className="text-sm text-muted-foreground mt-3">
+                  <p className="text-sm text-muted-foreground mt-4">
                     Qualified on {new Date(lead.qualified_at).toLocaleDateString()}
                   </p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Status Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Status History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StatusTimeline history={statusHistory} createdAt={lead.created_at} />
               </CardContent>
             </Card>
 

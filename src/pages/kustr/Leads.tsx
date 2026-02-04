@@ -11,24 +11,7 @@ import { useLeads, LeadStatus } from "@/hooks/useLeads";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 import { supabase } from "@/integrations/supabase/client";
-
-const statusColors: Record<LeadStatus, string> = {
-  new: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  qualified: 'bg-green-500/10 text-green-500 border-green-500/20',
-  contacted: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  proposal_sent: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  converted: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  lost: 'bg-red-500/10 text-red-500 border-red-500/20',
-};
-
-const statusLabels: Record<LeadStatus, string> = {
-  new: 'New',
-  qualified: 'Qualified',
-  contacted: 'Contacted',
-  proposal_sent: 'Proposal Sent',
-  converted: 'Converted',
-  lost: 'Lost',
-};
+import { StatusBadge } from "@/components/kustr/StatusBadge";
 
 export default function Leads() {
   const navigate = useNavigate();
@@ -271,9 +254,7 @@ export default function Leads() {
                           <h3 className="font-semibold text-foreground truncate">
                             {lead.name || 'Unknown Visitor'}
                           </h3>
-                          <Badge variant="outline" className={statusColors[lead.status]}>
-                            {statusLabels[lead.status]}
-                          </Badge>
+                          <StatusBadge status={lead.status} size="sm" />
                           {assignedMember && (
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-full">
                               <Avatar className="w-4 h-4">
