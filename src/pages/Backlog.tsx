@@ -72,7 +72,7 @@ The assignment should be immediate (no save button needed) and show a success to
 5. Prevent invalid transitions (e.g., can't go from "new" to "converted" directly)
 
 Use the existing lead_status enum: new, qualified, contacted, proposal_sent, converted, lost`,
-    completed: false,
+    completed: true,
   },
   // Sprint 3
   {

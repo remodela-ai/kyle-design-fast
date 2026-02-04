@@ -3,6 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Json } from "@/integrations/supabase/types";
 
+// Valid status transitions
+const validTransitions: Record<LeadStatus, LeadStatus[]> = {
+  new: ['qualified', 'lost'],
+  qualified: ['contacted', 'lost'],
+  contacted: ['proposal_sent', 'lost'],
+  proposal_sent: ['converted', 'lost'],
+  converted: [],
+  lost: ['new'],
+};
+
+export function isValidTransition(from: LeadStatus, to: LeadStatus): boolean {
+  return validTransitions[from]?.includes(to) ?? false;
+}
+
 export type LeadStatus = 'new' | 'qualified' | 'contacted' | 'proposal_sent' | 'converted' | 'lost';
 
 export interface Lead {
@@ -41,6 +55,16 @@ export interface LeadMessage {
   created_at: string;
 }
 
+export interface LeadStatusHistory {
+  id: string;
+  lead_id: string;
+  from_status: LeadStatus | null;
+  to_status: LeadStatus;
+  changed_by: string | null;
+  changed_at: string;
+  notes: string | null;
+}
+
 export function useLeads(officeId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,30 +87,62 @@ export function useLeads(officeId: string | null) {
   });
 
   const updateLeadStatus = useMutation({
-    mutationFn: async ({ leadId, status }: { leadId: string; status: LeadStatus }) => {
+    mutationFn: async ({ 
+      leadId, 
+      status, 
+      currentStatus,
+      teamMemberId 
+    }: { 
+      leadId: string; 
+      status: LeadStatus; 
+      currentStatus: LeadStatus;
+      teamMemberId?: string | null;
+    }) => {
+      // Validate transition
+      if (!isValidTransition(currentStatus, status)) {
+        throw new Error(`Invalid transition from ${currentStatus} to ${status}`);
+      }
+
       const updateData: { status: LeadStatus; qualified_at?: string } = { status };
       if (status === 'qualified') {
         updateData.qualified_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
+      // Update lead status
+      const { error: updateError } = await supabase
         .from('leads')
         .update(updateData)
         .eq('id', leadId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Record status history
+      const { error: historyError } = await supabase
+        .from('lead_status_history')
+        .insert({
+          lead_id: leadId,
+          from_status: currentStatus,
+          to_status: status,
+          changed_by: teamMemberId || null,
+        });
+
+      if (historyError) {
+        console.error('Failed to record status history:', historyError);
+        // Don't throw - history is secondary
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', officeId] });
       queryClient.invalidateQueries({ queryKey: ['lead'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-status-history'] });
       toast({
-        title: "Lead updated",
+        title: "Status updated",
         description: "Lead status has been updated successfully.",
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: "Invalid transition",
         description: error.message,
         variant: "destructive",
       });
@@ -143,6 +199,25 @@ export function useLead(leadId: string | null) {
 
       if (error) throw error;
       return data as Lead;
+    },
+    enabled: !!leadId,
+  });
+}
+
+export function useLeadStatusHistory(leadId: string | null) {
+  return useQuery({
+    queryKey: ['lead-status-history', leadId],
+    queryFn: async () => {
+      if (!leadId) return [];
+      
+      const { data, error } = await supabase
+        .from('lead_status_history')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('changed_at', { ascending: true });
+
+      if (error) throw error;
+      return data as LeadStatusHistory[];
     },
     enabled: !!leadId,
   });
