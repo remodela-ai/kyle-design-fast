@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import Backlog from "./pages/Backlog";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -74,6 +75,9 @@ const App = () => (
                 
                 {/* Public Kyle widget */}
                 <Route path="/kyle" element={<KylePublic />} />
+                
+                {/* Backlog */}
+                <Route path="/backlog" element={<Backlog />} />
                 
                 {/* Protected routes - Super Admin only */}
                 <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
