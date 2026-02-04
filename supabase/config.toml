@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.calculate-design-fee]
 verify_jwt = false
+
+[functions.generate-design-agreement]
+verify_jwt = false
