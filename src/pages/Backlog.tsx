@@ -36,7 +36,7 @@ Requirements:
 5. Include project_type, style_preferences, and any brand mentions in the Flux prompt
 
 The flow should be: Conversation ends → Extract insights → Generate Flux render → Save to storage → Update lead record`,
-    completed: false,
+    completed: true,
   },
   {
     id: "s2-2",
