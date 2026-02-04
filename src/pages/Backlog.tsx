@@ -54,7 +54,7 @@ The flow should be: Conversation ends → Extract insights → Generate Flux ren
 5. Use the existing useLeads hook and add an updateLead mutation
 
 The assignment should be immediate (no save button needed) and show a success toast.`,
-    completed: false,
+    completed: true,
   },
   {
     id: "s2-3",
