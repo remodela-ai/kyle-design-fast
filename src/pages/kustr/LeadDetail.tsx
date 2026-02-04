@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus, Clock } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,14 @@ export default function LeadDetail() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/kustr/leads/${lead.id}/proposal`)}
+                className="gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Create Proposal
+              </Button>
               <Select 
                 value={lead.assigned_to || 'unassigned'} 
                 onValueChange={handleAssignmentChange}

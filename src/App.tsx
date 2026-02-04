@@ -33,6 +33,7 @@ import KustrOnboarding from "./pages/kustr/KustrOnboarding";
 import KustrDashboard from "./pages/kustr/KustrDashboard";
 import Leads from "./pages/kustr/Leads";
 import LeadDetail from "./pages/kustr/LeadDetail";
+import Proposal from "./pages/kustr/Proposal";
 
 // Public Kyle page
 import KylePublic from "./pages/KylePublic";
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/kustr/dashboard" element={<KustrDashboard />} />
                 <Route path="/kustr/leads" element={<Leads />} />
                 <Route path="/kustr/leads/:leadId" element={<LeadDetail />} />
+                <Route path="/kustr/leads/:leadId/proposal" element={<Proposal />} />
                 
                 {/* Public Kyle widget */}
                 <Route path="/kyle" element={<KylePublic />} />
