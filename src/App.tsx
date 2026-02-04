@@ -30,6 +30,11 @@ import KustrLanding from "./pages/kustr/KustrLanding";
 import KustrAuth from "./pages/kustr/KustrAuth";
 import KustrOnboarding from "./pages/kustr/KustrOnboarding";
 import KustrDashboard from "./pages/kustr/KustrDashboard";
+import Leads from "./pages/kustr/Leads";
+import LeadDetail from "./pages/kustr/LeadDetail";
+
+// Public Kyle page
+import KylePublic from "./pages/KylePublic";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +69,11 @@ const App = () => (
                 <Route path="/kustr/auth" element={<KustrAuth />} />
                 <Route path="/kustr/onboarding" element={<KustrOnboarding />} />
                 <Route path="/kustr/dashboard" element={<KustrDashboard />} />
+                <Route path="/kustr/leads" element={<Leads />} />
+                <Route path="/kustr/leads/:leadId" element={<LeadDetail />} />
+                
+                {/* Public Kyle widget */}
+                <Route path="/kyle" element={<KylePublic />} />
                 
                 {/* Protected routes - Super Admin only */}
                 <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />

@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.extract-carlos-insights]
 verify_jwt = false
+
+[functions.create-kyle-lead-agent]
+verify_jwt = false
+
+[functions.kyle-lead-capture]
+verify_jwt = false
