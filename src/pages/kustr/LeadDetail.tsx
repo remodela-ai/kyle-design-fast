@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLead, useLeadMessages, LeadStatus } from "@/hooks/useLeads";
 import { useLeads } from "@/hooks/useLeads";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -37,7 +39,8 @@ export default function LeadDetail() {
   const officeId = office?.id || null;
   const { data: lead, isLoading } = useLead(leadId || null);
   const { messages, sendMessage } = useLeadMessages(leadId || null);
-  const { updateLeadStatus } = useLeads(officeId);
+  const { updateLeadStatus, assignLead } = useLeads(officeId);
+  const { data: teamMembers = [] } = useTeamMembers(officeId);
   
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -78,6 +81,11 @@ export default function LeadDetail() {
     updateLeadStatus.mutate({ leadId: lead.id, status: newStatus });
   };
 
+  const handleAssignmentChange = (memberId: string) => {
+    const teamMemberId = memberId === 'unassigned' ? null : memberId;
+    assignLead.mutate({ leadId: lead.id, teamMemberId });
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     setIsSending(true);
@@ -97,6 +105,7 @@ export default function LeadDetail() {
   };
 
   const insights = lead.extracted_insights as Record<string, unknown> || {};
+  const assignedMember = teamMembers.find(m => m.id === lead.assigned_to);
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,26 +117,70 @@ export default function LeadDetail() {
               <Button variant="ghost" size="icon" onClick={() => navigate('/kustr/leads')}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">
-                  {lead.name || 'Unknown Visitor'}
-                </h1>
-                <p className="text-sm text-muted-foreground">Lead Details</p>
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground">
+                    {lead.name || 'Unknown Visitor'}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">Lead Details</p>
+                </div>
+                {assignedMember && (
+                  <div className="flex items-center gap-2 ml-4 px-3 py-1.5 bg-primary/10 rounded-full">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage src={assignedMember.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {assignedMember.display_name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-primary">
+                      {assignedMember.display_name}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-            <Select value={lead.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              <Select 
+                value={lead.assigned_to || 'unassigned'} 
+                onValueChange={handleAssignmentChange}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    <SelectValue placeholder="Assign to..." />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-5 h-5">
+                          <AvatarImage src={member.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {member.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {member.display_name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={lead.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                  <SelectItem value="converted">Converted</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </header>
@@ -287,6 +340,36 @@ export default function LeadDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Assignment Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  Assignment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {assignedMember ? (
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={assignedMember.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {assignedMember.display_name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{assignedMember.display_name}</p>
+                      {assignedMember.title && (
+                        <p className="text-sm text-muted-foreground">{assignedMember.title}</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Not assigned to anyone yet</p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Status Card */}
             <Card>
               <CardHeader>

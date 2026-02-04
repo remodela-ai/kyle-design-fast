@@ -78,6 +78,7 @@ export function useLeads(officeId: string | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', officeId] });
+      queryClient.invalidateQueries({ queryKey: ['lead'] });
       toast({
         title: "Lead updated",
         description: "Lead status has been updated successfully.",
@@ -103,6 +104,7 @@ export function useLeads(officeId: string | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', officeId] });
+      queryClient.invalidateQueries({ queryKey: ['lead'] });
       toast({
         title: "Lead assigned",
         description: "Lead has been assigned successfully.",

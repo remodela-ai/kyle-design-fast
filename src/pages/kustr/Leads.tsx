@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Filter, Search, Phone, Mail, Calendar, ChevronRight, TrendingUp, DollarSign } from "lucide-react";
+import { ArrowLeft, Users, Filter, Search, Phone, Mail, Calendar, ChevronRight, TrendingUp, DollarSign, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLeads, LeadStatus } from "@/hooks/useLeads";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,9 +35,11 @@ export default function Leads() {
   const { office } = useKustrOffice();
   const officeId = office?.id || null;
   const { leads, isLoading, updateLeadStatus } = useLeads(officeId);
+  const { data: teamMembers = [] } = useTeamMembers(officeId);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -62,7 +66,12 @@ export default function Leads() {
     
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesAssignee = 
+      assigneeFilter === 'all' || 
+      (assigneeFilter === 'unassigned' && !lead.assigned_to) ||
+      lead.assigned_to === assigneeFilter;
+    
+    return matchesSearch && matchesStatus && matchesAssignee;
   });
 
   const stats = {
@@ -86,6 +95,11 @@ export default function Leads() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const getAssignedMember = (assignedTo: string | null) => {
+    if (!assignedTo) return null;
+    return teamMembers.find(m => m.id === assignedTo);
   };
 
   return (
@@ -191,6 +205,31 @@ export default function Leads() {
                   <SelectItem value="lost">Lost</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    <SelectValue placeholder="Filter by assignee" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Assignees</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {teamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-5 h-5">
+                          <AvatarImage src={member.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {member.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {member.display_name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -216,63 +255,80 @@ export default function Leads() {
               </CardContent>
             </Card>
           ) : (
-            filteredLeads.map((lead) => (
-              <Card 
-                key={lead.id} 
-                className="hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/kustr/leads/${lead.id}`)}
-              >
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold text-foreground truncate">
-                          {lead.name || 'Unknown Visitor'}
-                        </h3>
-                        <Badge variant="outline" className={statusColors[lead.status]}>
-                          {statusLabels[lead.status]}
-                        </Badge>
+            filteredLeads.map((lead) => {
+              const assignedMember = getAssignedMember(lead.assigned_to);
+              
+              return (
+                <Card 
+                  key={lead.id} 
+                  className="hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/kustr/leads/${lead.id}`)}
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-foreground truncate">
+                            {lead.name || 'Unknown Visitor'}
+                          </h3>
+                          <Badge variant="outline" className={statusColors[lead.status]}>
+                            {statusLabels[lead.status]}
+                          </Badge>
+                          {assignedMember && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-full">
+                              <Avatar className="w-4 h-4">
+                                <AvatarImage src={assignedMember.avatar_url || undefined} />
+                                <AvatarFallback className="text-[10px]">
+                                  {assignedMember.display_name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground">
+                                {assignedMember.display_name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          {lead.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-4 h-4" />
+                              {lead.email}
+                            </span>
+                          )}
+                          {lead.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-4 h-4" />
+                              {lead.phone}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatDate(lead.created_at)}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {lead.project_type && (
+                            <Badge variant="secondary">{lead.project_type}</Badge>
+                          )}
+                          {lead.style_preferences?.slice(0, 2).map((style, i) => (
+                            <Badge key={i} variant="outline">{style}</Badge>
+                          ))}
+                          {(lead.budget_min || lead.budget_max) && (
+                            <Badge variant="outline" className="bg-green-500/5">
+                              {formatBudget(lead.budget_min, lead.budget_max)}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        {lead.email && (
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-4 h-4" />
-                            {lead.email}
-                          </span>
-                        )}
-                        {lead.phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="w-4 h-4" />
-                            {lead.phone}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {formatDate(lead.created_at)}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {lead.project_type && (
-                          <Badge variant="secondary">{lead.project_type}</Badge>
-                        )}
-                        {lead.style_preferences?.slice(0, 2).map((style, i) => (
-                          <Badge key={i} variant="outline">{style}</Badge>
-                        ))}
-                        {(lead.budget_min || lead.budget_max) && (
-                          <Badge variant="outline" className="bg-green-500/5">
-                            {formatBudget(lead.budget_min, lead.budget_max)}
-                          </Badge>
-                        )}
-                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                     </div>
-                    
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </main>
