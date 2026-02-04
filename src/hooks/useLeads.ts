@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -225,6 +226,7 @@ export function useLeadStatusHistory(leadId: string | null) {
 
 export function useLeadMessages(leadId: string | null) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const messagesQuery = useQuery({
     queryKey: ['lead-messages', leadId],
@@ -242,6 +244,32 @@ export function useLeadMessages(leadId: string | null) {
     },
     enabled: !!leadId,
   });
+
+  // Set up realtime subscription
+  useEffect(() => {
+    if (!leadId) return;
+
+    const channel = supabase
+      .channel(`lead-messages-${leadId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lead_messages',
+          filter: `lead_id=eq.${leadId}`,
+        },
+        (payload) => {
+          console.log('Message update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['lead-messages', leadId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [leadId, queryClient]);
 
   const sendMessage = useMutation({
     mutationFn: async ({ content, sender }: { content: string; sender: string }) => {
@@ -262,9 +290,37 @@ export function useLeadMessages(leadId: string | null) {
     },
   });
 
+  const markAsRead = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase
+        .from('lead_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-messages', leadId] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to mark message as read",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unreadCount = messagesQuery.data?.filter(
+    m => m.sender === 'client' && !m.read_at
+  ).length || 0;
+
   return {
     messages: messagesQuery.data || [],
     isLoading: messagesQuery.isLoading,
     sendMessage,
+    markAsRead,
+    unreadCount,
+    refetch: messagesQuery.refetch,
   };
 }

@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.kyle-product-search]
 verify_jwt = false
+
+[functions.kyle-send-message]
+verify_jwt = false
