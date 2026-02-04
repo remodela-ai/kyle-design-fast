@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, Send, ExternalLink, UserPlus, Clock, FileText } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, Palette, Wrench, DollarSign, MessageSquare, ExternalLink, UserPlus, Clock, FileText, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { StatusWorkflow } from "@/components/kustr/StatusWorkflow";
 import { StatusTimeline } from "@/components/kustr/StatusTimeline";
 import { StatusBadge } from "@/components/kustr/StatusBadge";
+import { MessageComposer } from "@/components/kustr/MessageComposer";
+import { MessageThread } from "@/components/kustr/MessageThread";
 
 
 export default function LeadDetail() {
@@ -24,14 +25,10 @@ export default function LeadDetail() {
   const { office } = useKustrOffice();
   const officeId = office?.id || null;
   const { data: lead, isLoading } = useLead(leadId || null);
-  const { messages, sendMessage } = useLeadMessages(leadId || null);
+  const { messages, sendMessage, markAsRead, unreadCount, refetch: refetchMessages } = useLeadMessages(leadId || null);
   const { data: statusHistory = [] } = useLeadStatusHistory(leadId || null);
   const { updateLeadStatus, assignLead } = useLeads(officeId);
   const { data: teamMembers = [] } = useTeamMembers(officeId);
-  const [currentTeamMemberId, setCurrentTeamMemberId] = useState<string | null>(null);
-  
-  const [newMessage, setNewMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -79,16 +76,10 @@ export default function LeadDetail() {
     assignLead.mutate({ leadId: lead.id, teamMemberId });
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-    setIsSending(true);
-    try {
-      await sendMessage.mutateAsync({ content: newMessage, sender: 'designer' });
-      setNewMessage('');
-    } finally {
-      setIsSending(false);
-    }
+  const handleMarkAsRead = (messageId: string) => {
+    markAsRead.mutate(messageId);
   };
+
 
   const formatBudget = (min: number | null, max: number | null) => {
     if (!min && !max) return 'Not specified';
@@ -445,56 +436,35 @@ export default function LeadDetail() {
               </Card>
             )}
 
-            {/* Quick Messages */}
+            {/* Message Composer */}
             <Card>
               <CardHeader>
-                <CardTitle>Send Message</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    Messages
+                  </span>
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="gap-1">
+                      <Bell className="w-3 h-3" />
+                      {unreadCount} unread
+                    </Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Textarea
-                  placeholder="Type a message to the client..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  rows={3}
+              <CardContent className="space-y-4">
+                <MessageThread 
+                  messages={messages} 
+                  onMarkAsRead={handleMarkAsRead} 
                 />
-                <Button 
-                  className="w-full gap-2" 
-                  onClick={handleSendMessage}
-                  disabled={isSending || !newMessage.trim()}
-                >
-                  <Send className="w-4 h-4" />
-                  {isSending ? 'Sending...' : 'Send Message'}
-                </Button>
+                <Separator />
+                <MessageComposer
+                  leadId={lead.id}
+                  leadEmail={lead.email}
+                  onMessageSent={refetchMessages}
+                />
               </CardContent>
             </Card>
-
-            {/* Message History */}
-            {messages.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Message History</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-64 overflow-y-auto">
-                  {messages.map((msg) => (
-                    <div 
-                      key={msg.id} 
-                      className={`p-3 rounded-lg text-sm ${
-                        msg.sender === 'designer' 
-                          ? 'bg-primary/10 ml-4' 
-                          : msg.sender === 'kyle'
-                          ? 'bg-blue-500/10 mr-4'
-                          : 'bg-muted mr-4'
-                      }`}
-                    >
-                      <p className="font-medium text-xs text-muted-foreground mb-1 capitalize">
-                        {msg.sender}
-                      </p>
-                      <p>{msg.content}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </main>
