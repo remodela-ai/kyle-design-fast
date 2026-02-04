@@ -380,6 +380,137 @@ export type Database = {
           },
         ]
       }
+      lead_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          read_at: string | null
+          sender: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          read_at?: string | null
+          sender: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          read_at?: string | null
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          appliance_brands: string[] | null
+          assigned_to: string | null
+          budget_flexibility: string | null
+          budget_max: number | null
+          budget_min: number | null
+          conversation_id: string | null
+          conversation_transcript: string | null
+          created_at: string
+          email: string | null
+          extracted_insights: Json | null
+          furniture_brands: string[] | null
+          id: string
+          moodboard_url: string | null
+          name: string | null
+          office_id: string
+          phone: string | null
+          plumbing_brands: string[] | null
+          preliminary_design_url: string | null
+          project_type: string | null
+          qualified_at: string | null
+          room_dimensions: Json | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          style_preferences: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          appliance_brands?: string[] | null
+          assigned_to?: string | null
+          budget_flexibility?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          conversation_id?: string | null
+          conversation_transcript?: string | null
+          created_at?: string
+          email?: string | null
+          extracted_insights?: Json | null
+          furniture_brands?: string[] | null
+          id?: string
+          moodboard_url?: string | null
+          name?: string | null
+          office_id: string
+          phone?: string | null
+          plumbing_brands?: string[] | null
+          preliminary_design_url?: string | null
+          project_type?: string | null
+          qualified_at?: string | null
+          room_dimensions?: Json | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          style_preferences?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          appliance_brands?: string[] | null
+          assigned_to?: string | null
+          budget_flexibility?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          conversation_id?: string | null
+          conversation_transcript?: string | null
+          created_at?: string
+          email?: string | null
+          extracted_insights?: Json | null
+          furniture_brands?: string[] | null
+          id?: string
+          moodboard_url?: string | null
+          name?: string | null
+          office_id?: string
+          phone?: string | null
+          plumbing_brands?: string[] | null
+          preliminary_design_url?: string | null
+          project_type?: string | null
+          qualified_at?: string | null
+          room_dimensions?: Json | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          style_preferences?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_budgets: {
         Row: {
           created_at: string
@@ -1047,6 +1178,13 @@ export type Database = {
         | "minimalist"
         | "traditional"
       kustr_role: "managing_partner" | "collaborator" | "admin"
+      lead_status:
+        | "new"
+        | "qualified"
+        | "contacted"
+        | "proposal_sent"
+        | "converted"
+        | "lost"
       marketing_platform: "linkedin" | "facebook" | "instagram" | "tiktok" | "x"
       post_status: "draft" | "scheduled" | "published"
       project_status: "planning" | "in_progress" | "review" | "completed"
@@ -1192,6 +1330,14 @@ export const Constants = {
         "traditional",
       ],
       kustr_role: ["managing_partner", "collaborator", "admin"],
+      lead_status: [
+        "new",
+        "qualified",
+        "contacted",
+        "proposal_sent",
+        "converted",
+        "lost",
+      ],
       marketing_platform: ["linkedin", "facebook", "instagram", "tiktok", "x"],
       post_status: ["draft", "scheduled", "published"],
       project_status: ["planning", "in_progress", "review", "completed"],

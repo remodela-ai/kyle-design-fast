@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Loader2, Building2, Users, Briefcase, DollarSign, 
-  FolderOpen, LogOut,
-  UserPlus, Building, Truck, Handshake, Megaphone
+  FolderOpen, LogOut, UserPlus, Building, Truck, 
+  Handshake, Megaphone, MessageSquare
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -17,6 +17,7 @@ interface DashboardStats {
   totalClients: number;
   teamMembers: number;
   monthlyBudget: number;
+  newLeads: number;
 }
 
 const KustrDashboard = () => {
@@ -35,6 +36,7 @@ const KustrDashboard = () => {
     totalClients: 0,
     teamMembers: 0,
     monthlyBudget: 0,
+    newLeads: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -57,7 +59,7 @@ const KustrDashboard = () => {
       if (!office?.id) return;
 
       try {
-        const [projectsRes, clientsRes, teamRes, budgetRes] = await Promise.all([
+        const [projectsRes, clientsRes, teamRes, budgetRes, leadsRes] = await Promise.all([
           supabase
             .from('kustr_projects')
             .select('id', { count: 'exact', head: true })
@@ -80,6 +82,11 @@ const KustrDashboard = () => {
             .gte('month', new Date().toISOString().slice(0, 7) + '-01')
             .lte('month', new Date().toISOString().slice(0, 7) + '-31')
             .maybeSingle(),
+          supabase
+            .from('leads')
+            .select('id', { count: 'exact', head: true })
+            .eq('office_id', office.id)
+            .eq('status', 'new'),
         ]);
 
         setStats({
@@ -87,6 +94,7 @@ const KustrDashboard = () => {
           totalClients: clientsRes.count || 0,
           teamMembers: teamRes.count || 0,
           monthlyBudget: budgetRes.data?.total_budget || 0,
+          newLeads: leadsRes.count || 0,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -112,13 +120,14 @@ const KustrDashboard = () => {
   }
 
   const quickActions = [
+    { icon: MessageSquare, label: 'View Leads', href: '/kustr/leads', color: 'bg-primary' },
     { icon: UserPlus, label: 'Add Team Member', href: '/kustr/team', color: 'bg-blue-500' },
     { icon: Building, label: 'Add Client', href: '/kustr/clients', color: 'bg-green-500' },
     { icon: FolderOpen, label: 'New Project', href: '/kustr/projects', color: 'bg-purple-500' },
-    { icon: Megaphone, label: 'Create Post', href: '/kustr/marketing', color: 'bg-pink-500' },
   ];
 
   const navItems = [
+    { icon: MessageSquare, label: 'Leads', href: '/kustr/leads' },
     { icon: Users, label: 'Team', href: '/kustr/team' },
     { icon: Building, label: 'Clients', href: '/kustr/clients' },
     { icon: Truck, label: 'Providers', href: '/kustr/providers' },
@@ -181,7 +190,23 @@ const KustrDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate('/kustr/leads')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">New Leads</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    {loadingStats ? '-' : stats.newLeads}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <MessageSquare className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -191,8 +216,8 @@ const KustrDashboard = () => {
                     {loadingStats ? '-' : stats.activeProjects}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <FolderOpen className="h-6 w-6 text-purple-500" />
+                <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center">
+                  <FolderOpen className="h-6 w-6 text-accent-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -207,8 +232,8 @@ const KustrDashboard = () => {
                     {loadingStats ? '-' : stats.totalClients}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
-                  <Building className="h-6 w-6 text-green-500" />
+                <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                  <Building className="h-6 w-6 text-secondary-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -223,8 +248,8 @@ const KustrDashboard = () => {
                     {loadingStats ? '-' : stats.teamMembers}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-500" />
+                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                  <Users className="h-6 w-6 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
