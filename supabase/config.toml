@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.kyle-lead-capture]
 verify_jwt = false
+
+[functions.calculate-design-fee]
+verify_jwt = false
