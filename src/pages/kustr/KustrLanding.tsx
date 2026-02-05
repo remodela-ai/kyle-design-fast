@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, ArrowRight, Users, Briefcase, TrendingUp, Palette, MapPin, Sparkles } from 'lucide-react';
+import { Building2, ArrowRight, Users, Briefcase, TrendingUp, Palette, FileText, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const KustrLanding = () => {
@@ -23,8 +23,8 @@ const KustrLanding = () => {
   const features = [
     {
       icon: Users,
-      title: 'Team Management',
-      description: 'Manage your team members and roles.',
+      title: 'Team & Locations',
+      description: 'Manage team members across offices.',
     },
     {
       icon: Briefcase,
@@ -37,9 +37,9 @@ const KustrLanding = () => {
       description: 'Schedule posts across platforms.',
     },
     {
-      icon: MapPin,
-      title: 'Multi-Location',
-      description: 'Manage multiple office locations.',
+      icon: FileText,
+      title: 'Proposals & Contracts',
+      description: 'Generate and track agreements.',
     },
     {
       icon: Palette,
@@ -66,7 +66,7 @@ const KustrLanding = () => {
             </div>
             
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Design Studio Platform
+              Next Kuester Design Platform
             </h1>
             <p className="text-base text-muted-foreground max-w-xl mx-auto mb-5">
               The all-in-one management platform for interior design studios.
@@ -122,7 +122,7 @@ const KustrLanding = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Building2 className="h-4 w-4" />
-            <span>Design Studio Platform</span>
+            <span>Next Kuester Design Platform</span>
           </div>
         </div>
       </footer>
