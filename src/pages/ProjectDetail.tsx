@@ -49,17 +49,21 @@
  export default function ProjectDetail() {
    const { sessionId } = useParams<{ sessionId: string }>();
    const navigate = useNavigate();
-   const { folder, loading, error } = useProjectFolder(sessionId || null);
+   const { folder, loading, error, refresh } = useProjectFolder(sessionId || null);
    const [selectedIteration, setSelectedIteration] = useState<number>(0);
  const [selectedStep, setSelectedStep] = useState<{
    step: PipelineStepData | null;
    name: string;
+   stepNumber: number;
+   isVisualPipeline: boolean;
  } | null>(null);
  
- const handleStepClick = useCallback((stepName: string, step: PipelineStepData | undefined) => {
+ const handleStepClick = useCallback((stepName: string, step: PipelineStepData | undefined, stepNumber: number, isVisualPipeline: boolean) => {
    setSelectedStep({
      step: step || null,
      name: stepName,
+     stepNumber,
+     isVisualPipeline,
    });
  }, []);
  
@@ -205,7 +209,7 @@
                      <div
                        key={stepName}
                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-                       onClick={() => handleStepClick(stepName, step)}
+                       onClick={() => handleStepClick(stepName, step, idx + 1, true)}
                      >
                        <StepStatusIcon status={step?.status || "pending"} />
                        <span className="text-sm flex-1 group-hover:text-primary transition-colors">{stepName}</span>
@@ -236,7 +240,7 @@
                      <div
                        key={stepName}
                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-                       onClick={() => handleStepClick(stepName, step)}
+                       onClick={() => handleStepClick(stepName, step, idx + 9, false)}
                      >
                        <StepStatusIcon status={step?.status || "pending"} />
                        <span className="text-sm flex-1 group-hover:text-primary transition-colors">{stepName}</span>
@@ -275,8 +279,16 @@
        <PipelineStepDialog
          step={selectedStep?.step || null}
          stepName={selectedStep?.name || ""}
+         stepNumber={selectedStep?.stepNumber || 0}
+         isVisualPipeline={selectedStep?.isVisualPipeline ?? true}
+         sessionId={sessionId || ""}
+         designImageUrl={session?.design_image_url || null}
          open={!!selectedStep}
          onOpenChange={(open) => !open && setSelectedStep(null)}
+         onStepExecuted={() => {
+           // Refresh the folder data when a step is executed
+           refresh();
+         }}
        />
      </div>
    );
