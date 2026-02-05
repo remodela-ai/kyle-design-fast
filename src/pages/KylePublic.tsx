@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic, MicOff, Phone, Sparkles } from "lucide-react";
+import { Mic, MicOff, Phone, Sparkles, Loader2 } from "lucide-react";
 import { useKyleLeadAgent } from "@/hooks/useKyleLeadAgent";
 import { useToast } from "@/hooks/use-toast";
 import { AudioWaves } from "@/components/AudioWaves";
@@ -17,6 +17,7 @@ export default function KylePublic() {
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
   const [leadCaptured, setLeadCaptured] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleLeadCaptured = useCallback((leadId: string) => {
     console.log("Lead captured with ID:", leadId);
@@ -27,16 +28,36 @@ export default function KylePublic() {
     });
   }, [toast]);
 
+  const handleVoiceCommand = useCallback(() => {
+    console.log("🚀 Voice command triggered - generating design!");
+    setIsGenerating(true);
+    toast({
+      title: "🎨 Generating Design",
+      description: "Kyle is creating a preliminary design based on your conversation...",
+    });
+    
+    // Simulate generation (replace with actual generation logic)
+    setTimeout(() => {
+      setIsGenerating(false);
+      toast({
+        title: "✨ Design Ready!",
+        description: "Your preliminary design has been generated.",
+      });
+    }, 5000);
+  }, [toast]);
+
   const {
     status,
     isSpeaking,
     isConnected,
     error,
+    voiceCommandDetected,
     toggleConversation,
     captureLead,
   } = useKyleLeadAgent({
     officeId,
     onLeadCaptured: handleLeadCaptured,
+    onVoiceCommand: handleVoiceCommand,
   });
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -96,13 +117,37 @@ export default function KylePublic() {
         <div className="max-w-2xl w-full text-center space-y-8">
           {/* Status Message */}
           <div className="space-y-4">
-            {!isConnected ? (
+            {isGenerating ? (
+              <>
+                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                  <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                </div>
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Generating your design...
+                </h2>
+                <p className="text-muted-foreground">
+                  Kyle is creating a preliminary visualization based on your conversation
+                </p>
+              </>
+            ) : voiceCommandDetected ? (
+              <>
+                <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto animate-pulse">
+                  <Sparkles className="w-10 h-10 text-primary-foreground animate-bounce" />
+                </div>
+                <h2 className="text-2xl font-bold text-primary uppercase tracking-wider">
+                  Voice Command Detected!
+                </h2>
+              </>
+            ) : !isConnected ? (
               <>
                 <h2 className="text-3xl font-bold text-foreground">
                   Welcome! I'm Kyle
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-md mx-auto">
                   Your AI design consultant. Click the button below to start a voice conversation about your project.
+                </p>
+                <p className="text-sm text-muted-foreground/70">
+                  Tip: Say "Hey Kyle Generate" to create a preliminary design
                 </p>
               </>
             ) : (
@@ -111,7 +156,7 @@ export default function KylePublic() {
                   {isSpeaking ? "Kyle is speaking..." : "Listening..."}
                 </h2>
                 <p className="text-muted-foreground">
-                  Tell me about your design vision
+                  Tell me about your design vision. Say "Hey Kyle Generate" when ready!
                 </p>
               </>
             )}
