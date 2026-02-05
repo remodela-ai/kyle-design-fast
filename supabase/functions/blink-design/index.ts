@@ -186,20 +186,27 @@ Photorealistic interior design photograph. High-end architectural photography, p
     // Build the final prompt - differentiate between generation and editing
     let finalPrompt = finalImagePrompt;
     if (referenceImage) {
-      // When editing, prepend instructions to maintain consistency
-      finalPrompt = `Edit this interior design image while maintaining the same room layout, camera angle, and architectural structure.
+      // When editing, prepend STRICT instructions to maintain consistency
+      finalPrompt = `STRICT IMAGE EDITING - MAINTAIN EXACT VISUAL CONSISTENCY:
 
-SPATIAL TRANSFORMATIONS GUIDE:
-- ROTATE furniture: When asked to rotate an object (e.g., "rotate the sofa 90 degrees"), imagine viewing the object from above and rotating it around its vertical axis. A sofa facing north should face east after a 90° clockwise rotation.
-- REPOSITION furniture: Move objects to new locations while maintaining their proper scale and perspective relative to the room.
-- MIRROR/FLIP: Create the mirror image of an object's orientation in the horizontal plane.
+You are editing an existing interior design photograph. Your task is to make ONLY the specific changes requested below while preserving EVERYTHING else exactly as it appears in the reference image.
 
-Apply these changes: ${optimizedPrompt}
+CRITICAL PRESERVATION RULES (DO NOT CHANGE):
+- Camera angle and perspective: EXACT same viewpoint
+- Room layout and architecture: EXACT same walls, windows, doors, ceiling
+- Lighting direction and quality: EXACT same light sources and shadows
+- Overall spatial composition: EXACT same arrangement of major elements
+- Floor plan and proportions: EXACT same room dimensions
+- Background elements: EXACT same unless specifically mentioned
 
-IMPORTANT: 
-- Preserve the overall composition, lighting direction, and spatial arrangement for elements NOT being modified.
-- For rotation requests, ensure the object's new orientation is clearly visible and correctly rendered in 3D perspective.
-- Maintain realistic shadows and reflections after repositioning objects.`;
+SPATIAL TRANSFORMATIONS (if requested):
+- ROTATE: Turn object around its vertical axis while keeping position
+- REPOSITION: Move to new location maintaining scale and perspective  
+- REPLACE: Swap one element for another in the same position
+
+REQUESTED CHANGES ONLY: ${optimizedPrompt}
+
+FINAL REMINDER: Change ONLY what is explicitly requested above. Every other element, material, color, texture, furniture piece, and architectural detail must remain IDENTICAL to the reference image. If in doubt, preserve the original.`;
     }
 
     console.log("[blink-design] Final prompt for Flux 2 Pro:", finalPrompt.substring(0, 300) + "...");
@@ -224,9 +231,9 @@ IMPORTANT:
       input.aspect_ratio = "match_input_image";
       // image_prompt_strength controls how much the reference image influences the output
       // 0.0 = ignore reference completely, 1.0 = maximum adherence to reference
-      // Using 0.75 for strong consistency while allowing requested changes
-      input.image_prompt_strength = 0.75;
-      console.log("[blink-design] ✅ Added reference image with image_prompt_strength=0.75 for strong consistency");
+      // Using 0.70 for strong consistency while allowing requested changes
+      input.image_prompt_strength = 0.70;
+      console.log("[blink-design] ✅ Added reference image with image_prompt_strength=0.70 for strong consistency");
     }
 
     // Enhanced logging for debugging
