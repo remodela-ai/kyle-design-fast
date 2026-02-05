@@ -398,20 +398,6 @@ const BathroomSocialLanding = () => {
                         </div>
                       )}
 
-                      {/* Delete button for ALL images */}
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
-                        disabled={isDeletingId === image.id}
-                      >
-                        {isDeletingId === image.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -452,6 +438,20 @@ const BathroomSocialLanding = () => {
                       <Sparkles className="h-4 w-4" />
                       Iterate with Kyle
                     </button>
+                    {/* Delete button in popup */}
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-3 right-3 h-8 w-8"
+                      onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
+                      disabled={isDeletingId === image.id}
+                    >
+                      {isDeletingId === image.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                   <div className="p-4 space-y-2 bg-background">
                     <h4 className="font-semibold text-base">{image.title}</h4>
