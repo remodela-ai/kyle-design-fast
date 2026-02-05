@@ -47,7 +47,7 @@ const journeyNavItems = [
 
 // Public Landings
 const landingNavItems = [
-  { icon: ExternalLink, label: "Kitchen Landing", path: "/start" },
+  { icon: ExternalLink, label: "Kitchen Landing", path: "/kitchen" },
   { icon: ExternalLink, label: "Bathroom Landing", path: "/bathroom" },
 ];
 
