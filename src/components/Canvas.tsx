@@ -45,12 +45,12 @@ export function Canvas() {
         {/* CTA Button with prominent animation */}
         <div className="relative group">
           {/* Animated glow ring behind button */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-primary via-primary/80 to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse-glow transition-opacity duration-500" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/30 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           <Button
             variant="outline"
             onClick={() => navigate("/shazam")}
-            className="relative flex items-center gap-3 px-8 py-4 h-auto bg-background border-2 border-primary/50 hover:border-primary hover:bg-primary/10 shadow-2xl hover:shadow-primary/50 hover:scale-105 transition-all duration-300"
+            className="relative flex items-center gap-3 px-8 py-4 h-auto bg-background border-2 border-primary/30 hover:border-primary/60 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
           >
             {/* Animated icon container */}
             <div className="relative">
