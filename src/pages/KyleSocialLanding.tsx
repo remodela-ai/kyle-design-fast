@@ -445,8 +445,8 @@ const KyleSocialLanding = () => {
                       className="w-full aspect-[4/3] object-cover"
                     />
                     <button
-                      onClick={() => navigate("/shazam", { 
-                        state: { referenceImage: image.url, initialPrompt: image.prompt } 
+                      onClick={() => navigate("/design-review", { 
+                        state: { designImageUrl: image.url, extractedInsights: image.prompt, transcript: "" } 
                       })}
                       className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
                     >
