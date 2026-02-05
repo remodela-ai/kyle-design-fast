@@ -1,19 +1,21 @@
- import { useNavigate } from 'react-router-dom';
- import { useDesignerProfile } from '@/hooks/useDesignerProfile';
- import { useDesignerSessions } from '@/hooks/useDesignerSessions';
- import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
- import { Badge } from '@/components/ui/badge';
- import { Button } from '@/components/ui/button';
- import { 
-   Plus, 
-   FolderOpen, 
-   Image, 
-   Zap, 
-   Clock,
-   Loader2,
-   CheckCircle,
-   Play,
- } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useDesignerProfile } from '@/hooks/useDesignerProfile';
+import { useDesignerSessions } from '@/hooks/useDesignerSessions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Plus, 
+  FolderOpen, 
+  Image, 
+  Zap, 
+  Clock,
+  Loader2,
+  CheckCircle,
+  Play,
+  Trash2,
+} from 'lucide-react';
  
  interface ExtendedSession {
    id: string;
@@ -30,17 +32,41 @@
    updated_at: string;
  }
  
- const Dashboard = () => {
-   const navigate = useNavigate();
-   const { profile, loading: profileLoading } = useDesignerProfile();
-   const { sessions, loading: sessionsLoading } = useDesignerSessions();
- 
-   const loading = profileLoading || sessionsLoading;
-   const extendedSessions = sessions as ExtendedSession[];
- 
-   // Count stats
-   const completedPipelines = extendedSessions.filter(s => s.pipeline_completed).length;
-   const activeProjects = extendedSessions.filter(s => s.status === 'active' || !s.status).length;
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { profile, loading: profileLoading } = useDesignerProfile();
+  const { sessions, loading: sessionsLoading, deleteSession } = useDesignerSessions();
+
+  const loading = profileLoading || sessionsLoading;
+  const extendedSessions = sessions as ExtendedSession[];
+
+  // Count stats
+  const completedPipelines = extendedSessions.filter(s => s.pipeline_completed).length;
+  const activeProjects = extendedSessions.filter(s => s.status === 'active' || !s.status).length;
+
+  const handleDeleteProject = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation(); // Prevent card click navigation
+    
+    if (!confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    const { success, error } = await deleteSession(sessionId);
+    
+    if (success) {
+      toast({
+        title: "Proyecto eliminado",
+        description: "El proyecto ha sido eliminado correctamente.",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error?.message || "No se pudo eliminar el proyecto.",
+      });
+    }
+  };
  
    return (
      <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6">
@@ -167,39 +193,50 @@
                              <Zap className="h-8 w-8 text-muted-foreground" />
                            </div>
                          )}
-                         {/* Status badges */}
-                         <div className="absolute top-2 right-2 flex gap-1">
-                           {session.pipeline_completed && (
-                             <Badge variant="secondary" className="text-xs bg-background/80 backdrop-blur-sm">
-                               <CheckCircle className="h-3 w-3 mr-1" />
-                               Pipeline
-                             </Badge>
-                           )}
-                           {session.iteration_count && session.iteration_count > 0 && (
-                             <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-                               {session.iteration_count} versions
-                             </Badge>
-                           )}
-                         </div>
-                       </div>
-                       <CardHeader className="p-3">
-                         <CardTitle className="text-sm line-clamp-1">
-                           {session.project_name || 
-                             (session.conversation_summary 
-                               ? session.conversation_summary.substring(0, 50) + (session.conversation_summary.length > 50 ? '...' : '')
-                               : `Project ${session.session_id.substring(0, 8)}`)}
-                         </CardTitle>
-                         <CardDescription className="text-xs flex items-center gap-2">
-                           <Clock className="h-3 w-3" />
-                           {new Date(session.updated_at || session.created_at).toLocaleDateString('en-US', { 
-                             month: 'short', 
-                             day: 'numeric',
-                             hour: '2-digit',
-                             minute: '2-digit'
-                           })}
-                         </CardDescription>
-                       </CardHeader>
-                     </Card>
+                        {/* Delete button */}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 left-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleDeleteProject(e, session.session_id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                        {/* Status badges */}
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          {session.pipeline_completed && (
+                            <Badge variant="secondary" className="text-xs bg-background/80 backdrop-blur-sm">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Pipeline
+                            </Badge>
+                          )}
+                          {session.iteration_count && session.iteration_count > 0 && (
+                            <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
+                              {session.iteration_count} versions
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <CardHeader className="p-3">
+                        <CardTitle className="text-sm line-clamp-1">
+                          {session.project_name || 
+                            (session.conversation_summary 
+                              ? session.conversation_summary.substring(0, 50) + (session.conversation_summary.length > 50 ? '...' : '')
+                              : `Project ${session.session_id.substring(0, 8)}`)}
+                        </CardTitle>
+                        <CardDescription className="text-xs flex items-center gap-2 justify-between">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(session.updated_at || session.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
                    ))}
                  </div>
                )}
