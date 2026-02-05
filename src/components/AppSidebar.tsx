@@ -37,7 +37,7 @@ const kyleNavItems = [
 
 // CAPA 2 - Journeys (6 macro-flujos de negocio)
 const journeyNavItems = [
-  { icon: Megaphone, label: "Marketing", path: "/kustr-next", status: "active" },
+  { icon: Megaphone, label: "Marketing", path: "/marketing", status: "active" },
   { icon: ShoppingCart, label: "Sales", path: "/kustr-next/leads", status: "active" },
   { icon: Palette, label: "Design", path: "/dashboard", status: "active" },
   { icon: ClipboardList, label: "Project Mgmt", path: "/project", status: "coming" },
