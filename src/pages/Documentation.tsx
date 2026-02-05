@@ -1,7 +1,7 @@
  import { useState } from "react";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { Download, FileText, ArrowLeft } from "lucide-react";
+import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from "lucide-react";
  import { useNavigate } from "react-router-dom";
  
  const Documentation = () => {
@@ -46,6 +46,234 @@
  
  const SpanishDocumentation = () => (
    <article className="prose prose-slate dark:prose-invert max-w-none print:prose-sm">
+    {/* Storytelling / Pitch Section */}
+    <section className="py-8 print:page-break-after-always">
+      <div className="not-prose bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-2xl p-8 mb-8 print:bg-white print:border print:border-gray-300">
+        <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <Lightbulb className="h-8 w-8 text-primary" />
+          La Historia de Kyle
+        </h2>
+        
+        {/* Problem */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-destructive mb-4 flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            El Problema
+          </h3>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+            <p className="text-foreground leading-relaxed mb-4">
+              <strong>Los estudios de diseño de interiores enfrentan un desafío crítico:</strong> el 73% de los prospectos 
+              que visitan su sitio web abandonan sin dejar información de contacto. ¿Por qué? Porque esperan respuestas 
+              inmediatas, visualizaciones personalizadas y cotizaciones al instante.
+            </p>
+            <ul className="space-y-2 text-muted-foreground list-none pl-0">
+              <li>• Los clientes potenciales contactan a las 11 PM y no reciben respuesta hasta las 9 AM del día siguiente</li>
+              <li>• Los diseñadores pasan 40% de su tiempo en tareas administrativas en lugar de crear</li>
+              <li>• Las cotizaciones manuales toman 2-3 días, perdiendo oportunidades frente a competidores más ágiles</li>
+              <li>• La comunicación fragmentada entre email, WhatsApp y llamadas genera confusión y proyectos perdidos</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Solution */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-primary mb-4 flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            La Solución: Kyle AI
+          </h3>
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
+            <p className="text-foreground leading-relaxed mb-4">
+              <strong>Kyle es un asistente de inteligencia artificial</strong> diseñado específicamente para estudios de 
+              diseño de interiores. Opera 24/7, capturando prospectos, generando visualizaciones preliminares en segundos, 
+              y creando propuestas profesionales automáticamente.
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">24/7</div>
+                <div className="text-sm text-muted-foreground">Disponibilidad</div>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">&lt;30s</div>
+                <div className="text-sm text-muted-foreground">Tiempo de respuesta</div>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">+45%</div>
+                <div className="text-sm text-muted-foreground">Conversión de leads</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* How it Works */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-foreground mb-4">¿Cómo Funciona?</h3>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">1</div>
+              <h4 className="font-semibold mb-2">Captura</h4>
+              <p className="text-sm text-muted-foreground">Kyle conversa con visitantes del sitio web, recopilando preferencias y presupuesto</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">2</div>
+              <h4 className="font-semibold mb-2">Visualiza</h4>
+              <p className="text-sm text-muted-foreground">Genera renders preliminares con IA basados en las preferencias del cliente</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">3</div>
+              <h4 className="font-semibold mb-2">Propone</h4>
+              <p className="text-sm text-muted-foreground">Calcula honorarios y genera contratos de diseño profesionales automáticamente</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">4</div>
+              <h4 className="font-semibold mb-2">Gestiona</h4>
+              <p className="text-sm text-muted-foreground">Asiste al equipo de diseño con búsqueda de productos y comunicación con clientes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Use Cases */}
+      <h2 className="text-2xl font-bold border-b pb-2 mt-8">Casos de Uso Reales</h2>
+      
+      {/* Client Use Cases */}
+      <div className="not-prose mt-6 mb-8">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Users className="h-5 w-5 text-blue-500" />
+          Para Clientes
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🏠 María: La Ejecutiva Nocturna</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Contexto:</strong> María es CFO de una empresa tecnológica. Trabaja hasta las 10 PM y solo tiene 
+              tiempo para buscar diseñadores de noche.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>11:30 PM:</strong> María visita el sitio web del estudio. Kyle la saluda inmediatamente.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>11:35 PM:</strong> Describe su cocina ideal: "Algo moderno con isla, electrodomésticos Sub-Zero, cuarzo blanco".</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>11:36 PM:</strong> Kyle genera un render preliminar de su cocina soñada en 30 segundos.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>11:40 PM:</strong> María recibe una propuesta con honorarios estimados en $8,500.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Resultado:</strong> María agenda una consulta para el día siguiente. 
+              Sin Kyle, hubiera abandonado el sitio y contactado a un competidor.
+            </div>
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🏢 Roberto: El Desarrollador Inmobiliario</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Contexto:</strong> Roberto necesita diseñar 12 departamentos modelo para un nuevo desarrollo. 
+              Requiere respuestas rápidas y documentación profesional.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Día 1:</strong> Contacta al estudio explicando el proyecto. Kyle captura todos los requisitos.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Día 1:</strong> Kyle genera visualizaciones preliminares de 3 estilos diferentes.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Día 2:</strong> Recibe propuesta formal con desglose de honorarios por unidad.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Día 3:</strong> Firma el contrato de diseño digitalmente desde su teléfono.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Resultado:</strong> Proyecto de $120,000 cerrado en 3 días. 
+              El proceso tradicional hubiera tomado 2-3 semanas.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Designer Use Cases */}
+      <div className="not-prose mb-8">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Palette className="h-5 w-5 text-purple-500" />
+          Para Diseñadores
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🎨 Ana: La Diseñadora Multitarea</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Contexto:</strong> Ana maneja 5 proyectos simultáneamente y necesita encontrar productos 
+              específicos sin perder horas navegando catálogos.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Comando:</strong> "Kyle, busca lámparas colgantes de latón para comedor, máximo $800"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Respuesta:</strong> Kyle presenta 5 opciones de proveedores verificados con precios y disponibilidad.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Comando:</strong> "Kyle, envía un mensaje a la Sra. González diciendo que su pedido llegará el viernes"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Resultado:</strong> Kyle envía el mensaje profesionalmente formateado al cliente.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Impacto:</strong> Ana ahorra 2 horas diarias en búsqueda de productos 
+              y comunicación con clientes.
+            </div>
+          </div>
+
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">📊 Carlos: El Socio Fundador</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Contexto:</strong> Carlos dirige un estudio con 4 diseñadores. Necesita visibilidad 
+              del pipeline de ventas y métricas de conversión.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Comando:</strong> "Kyle, muéstrame los leads de hoy"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Respuesta:</strong> "Hoy tienes 3 leads nuevos: cocina de María ($8.5K), baño de Pedro ($3.2K), y sala de Lucía ($5.1K)"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Dashboard:</strong> Visualiza tasas de conversión, tiempo promedio de cierre, y revenue proyectado.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Comando:</strong> "Kyle, genera propuesta para María"</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Impacto:</strong> Carlos tiene visibilidad completa del negocio 
+              y toma decisiones basadas en datos en tiempo real.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
      {/* Cover Page */}
      <div className="text-center py-16 print:py-24 border-b print:border-0 print:page-break-after-always">
        <div className="flex justify-center mb-8">
@@ -668,6 +896,234 @@
  
  const EnglishDocumentation = () => (
    <article className="prose prose-slate dark:prose-invert max-w-none print:prose-sm">
+    {/* Storytelling / Pitch Section */}
+    <section className="py-8 print:page-break-after-always">
+      <div className="not-prose bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-2xl p-8 mb-8 print:bg-white print:border print:border-gray-300">
+        <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+          <Lightbulb className="h-8 w-8 text-primary" />
+          The Kyle Story
+        </h2>
+        
+        {/* Problem */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-destructive mb-4 flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            The Problem
+          </h3>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+            <p className="text-foreground leading-relaxed mb-4">
+              <strong>Interior design studios face a critical challenge:</strong> 73% of prospects visiting their 
+              website leave without providing contact information. Why? Because they expect immediate responses, 
+              personalized visualizations, and instant quotes.
+            </p>
+            <ul className="space-y-2 text-muted-foreground list-none pl-0">
+              <li>• Potential clients reach out at 11 PM and don't get a response until 9 AM the next day</li>
+              <li>• Designers spend 40% of their time on administrative tasks instead of creating</li>
+              <li>• Manual quotes take 2-3 days, losing opportunities to faster competitors</li>
+              <li>• Fragmented communication across email, WhatsApp, and calls creates confusion and lost projects</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Solution */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-primary mb-4 flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            The Solution: Kyle AI
+          </h3>
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
+            <p className="text-foreground leading-relaxed mb-4">
+              <strong>Kyle is an artificial intelligence assistant</strong> designed specifically for interior 
+              design studios. It operates 24/7, capturing leads, generating preliminary visualizations in seconds, 
+              and creating professional proposals automatically.
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">24/7</div>
+                <div className="text-sm text-muted-foreground">Availability</div>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">&lt;30s</div>
+                <div className="text-sm text-muted-foreground">Response Time</div>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-primary">+45%</div>
+                <div className="text-sm text-muted-foreground">Lead Conversion</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* How it Works */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-foreground mb-4">How Does It Work?</h3>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">1</div>
+              <h4 className="font-semibold mb-2">Capture</h4>
+              <p className="text-sm text-muted-foreground">Kyle chats with website visitors, collecting preferences and budget</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">2</div>
+              <h4 className="font-semibold mb-2">Visualize</h4>
+              <p className="text-sm text-muted-foreground">Generates AI preliminary renders based on client preferences</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">3</div>
+              <h4 className="font-semibold mb-2">Propose</h4>
+              <p className="text-sm text-muted-foreground">Calculates fees and generates professional design contracts automatically</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-3 font-bold">4</div>
+              <h4 className="font-semibold mb-2">Manage</h4>
+              <p className="text-sm text-muted-foreground">Assists the design team with product sourcing and client communication</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Use Cases */}
+      <h2 className="text-2xl font-bold border-b pb-2 mt-8">Real Use Cases</h2>
+      
+      {/* Client Use Cases */}
+      <div className="not-prose mt-6 mb-8">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Users className="h-5 w-5 text-blue-500" />
+          For Clients
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🏠 Maria: The Night-Owl Executive</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Context:</strong> Maria is CFO of a tech company. She works until 10 PM and only has 
+              time to search for designers at night.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>11:30 PM:</strong> Maria visits the studio website. Kyle greets her immediately.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>11:35 PM:</strong> She describes her ideal kitchen: "Something modern with an island, Sub-Zero appliances, white quartz".</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>11:36 PM:</strong> Kyle generates a preliminary render of her dream kitchen in 30 seconds.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>11:40 PM:</strong> Maria receives a proposal with estimated fees of $8,500.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Result:</strong> Maria schedules a consultation for the next day. 
+              Without Kyle, she would have left the site and contacted a competitor.
+            </div>
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🏢 Robert: The Real Estate Developer</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Context:</strong> Robert needs to design 12 model apartments for a new development. 
+              He requires fast responses and professional documentation.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Day 1:</strong> Contacts the studio explaining the project. Kyle captures all requirements.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Day 1:</strong> Kyle generates preliminary visualizations of 3 different styles.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Day 2:</strong> Receives formal proposal with fee breakdown per unit.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Day 3:</strong> Signs the design contract digitally from his phone.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Result:</strong> $120,000 project closed in 3 days. 
+              The traditional process would have taken 2-3 weeks.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Designer Use Cases */}
+      <div className="not-prose mb-8">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Palette className="h-5 w-5 text-purple-500" />
+          For Designers
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">🎨 Ana: The Multitasking Designer</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Context:</strong> Ana manages 5 projects simultaneously and needs to find specific 
+              products without spending hours browsing catalogs.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Command:</strong> "Kyle, search for brass pendant lights for dining room, max $800"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Response:</strong> Kyle presents 5 options from verified suppliers with prices and availability.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Command:</strong> "Kyle, send a message to Mrs. González saying her order will arrive Friday"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Result:</strong> Kyle sends the professionally formatted message to the client.</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Impact:</strong> Ana saves 2 hours daily on product sourcing 
+              and client communication.
+            </div>
+          </div>
+
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-6">
+            <h4 className="font-bold text-foreground mb-3">📊 Carlos: The Founding Partner</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>Context:</strong> Carlos runs a studio with 4 designers. He needs visibility 
+              into the sales pipeline and conversion metrics.
+            </p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">1</span>
+                <span><strong>Command:</strong> "Kyle, show me today's leads"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">2</span>
+                <span><strong>Response:</strong> "Today you have 3 new leads: Maria's kitchen ($8.5K), Pedro's bathroom ($3.2K), and Lucia's living room ($5.1K)"</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">3</span>
+                <span><strong>Dashboard:</strong> Visualizes conversion rates, average closing time, and projected revenue.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0">4</span>
+                <span><strong>Command:</strong> "Kyle, generate proposal for Maria"</span>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-500/20 rounded-lg">
+              <strong className="text-green-600">Impact:</strong> Carlos has complete visibility into the business 
+              and makes data-driven decisions in real time.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
      {/* Cover Page */}
      <div className="text-center py-16 print:py-24 border-b print:border-0 print:page-break-after-always">
        <div className="flex justify-center mb-8">
