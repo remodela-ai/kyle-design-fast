@@ -242,7 +242,7 @@
    const isMobile = useIsMobile();
    const [isExecuting, setIsExecuting] = useState(false);
  
-   const handleExecuteStep = useCallback(async () => {
+    const handleExecuteStep = useCallback(async () => {
      if (!sessionId || !designImageUrl) return;
      
      setIsExecuting(true);
@@ -282,13 +282,47 @@
          throw new Error(`No function found for step ${stepNumber}`);
        }
        
-       // Get spatial analysis data for context (needed by most steps)
-       const { data: spatialStep } = await supabase
+        // Check if step exists, if not create it
+        const { data: existingStep } = await supabase
+          .from("pipeline_steps")
+          .select("id")
+          .eq("session_id", sessionId)
+          .eq("step_number", stepNumber)
+          .maybeSingle();
+        
+        if (!existingStep) {
+          // Create the step first
+          console.log(`Creating pipeline step ${stepNumber} for session ${sessionId}`);
+          const { error: createError } = await supabase
+            .from("pipeline_steps")
+            .insert({
+              session_id: sessionId,
+              step_number: stepNumber,
+              step_name: stepName,
+              status: "processing",
+              started_at: new Date().toISOString(),
+            });
+          
+          if (createError) {
+            console.error("Error creating step:", createError);
+            throw createError;
+          }
+        } else {
+          // Update existing step to processing
+          await supabase.from("pipeline_steps").update({
+            status: "processing",
+            started_at: new Date().toISOString(),
+            error_message: null,
+          }).eq("session_id", sessionId).eq("step_number", stepNumber);
+        }
+        
+        // Get spatial analysis data for context (needed by most steps) - use maybeSingle to avoid error
+        const { data: spatialStep } = await supabase
          .from("pipeline_steps")
          .select("output_data")
          .eq("session_id", sessionId)
          .eq("step_number", 1)
-         .single();
+          .maybeSingle();
        
        const spatialOutput = spatialStep?.output_data as { 
          parsedAnalysis?: { 
@@ -301,12 +335,6 @@
        const elements = spatialOutput?.parsedAnalysis?.elements || [];
        const roomType = spatialOutput?.parsedAnalysis?.roomType || "living room";
        const styleIdentified = spatialOutput?.parsedAnalysis?.styleIdentified || "modern";
-       
-       // Update step to processing
-       await supabase.from("pipeline_steps").update({
-         status: "processing",
-         started_at: new Date().toISOString(),
-       }).eq("session_id", sessionId).eq("step_number", stepNumber);
        
        // Execute the step
        console.log(`Executing step ${stepNumber}: ${functionName}`);
@@ -341,17 +369,20 @@
        
        // Update step to error
        const { supabase } = await import("@/integrations/supabase/client");
-       await supabase.from("pipeline_steps").update({
+        await supabase.from("pipeline_steps").upsert({
+          session_id: sessionId,
+          step_number: stepNumber,
+          step_name: stepName,
          status: "error",
          error_message: error instanceof Error ? error.message : "Unknown error",
          completed_at: new Date().toISOString(),
-       }).eq("session_id", sessionId).eq("step_number", stepNumber);
+        }, { onConflict: "session_id,step_number" });
        
        onStepExecuted?.();
      } finally {
        setIsExecuting(false);
      }
-   }, [sessionId, designImageUrl, stepNumber, isVisualPipeline, onStepExecuted]);
+    }, [sessionId, designImageUrl, stepNumber, stepName, isVisualPipeline, onStepExecuted]);
  
    const content = (
      <ScrollArea className="max-h-[70vh]">
