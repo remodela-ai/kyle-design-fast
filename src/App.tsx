@@ -10,6 +10,7 @@ import { KustrOfficeProvider } from "@/contexts/KustrOfficeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DesignerRoute from "@/components/DesignerRoute";
 import OnboardingRoute from "@/components/OnboardingRoute";
+import { GlobalLayout } from "@/components/GlobalLayout";
 import Index from "./pages/Index";
 import BlinkDesign from "./pages/BlinkDesign";
 import Shazam from "./pages/Shazam";
@@ -55,54 +56,55 @@ const App = () => (
         <DesignerProfileProvider>
           <KustrOfficeProvider>
             <KyleProvider>
-              <Routes>
-
-                {/* Public routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/blink-design" element={<BlinkDesign />} />
-                <Route path="/shazam" element={<Shazam />} />
-                <Route path="/create-agent" element={<CreateAgent />} />
-                <Route path="/360-free-project" element={<FreeProject360 />} />
-                <Route path="/design-review" element={<DesignReview />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/designer-onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
-                
-                {/* Designer routes - require auth + profile */}
-                <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
-                
-                {/* Designer onboarding - main route */}
-                <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
-                
-                {/* Kustr Design routes */}
-                <Route path="/kustr" element={<KustrLanding />} />
-                <Route path="/kustr/auth" element={<KustrAuth />} />
-                <Route path="/kustr/onboarding" element={<KustrOnboarding />} />
-                <Route path="/kustr/dashboard" element={<KustrDashboard />} />
-                <Route path="/kustr/leads" element={<Leads />} />
-                <Route path="/kustr/leads/:leadId" element={<LeadDetail />} />
-                <Route path="/kustr/leads/:leadId/proposal" element={<Proposal />} />
-                 <Route path="/kustr/embed" element={<EmbedGenerator />} />
-                 <Route path="/kustr/analytics" element={<Analytics />} />
-                
-                {/* Public Kyle widget */}
-                <Route path="/kyle" element={<KylePublic />} />
-                
-                {/* Backlog */}
-                <Route path="/backlog" element={<Backlog />} />
-                <Route path="/documentation" element={<Documentation />} />
-                 <Route path="/screenshots" element={<Screenshots />} />
-                 <Route path="/test" element={<TestIdeas />} />
-                
-                {/* Protected routes - Super Admin only */}
-                <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
-                <Route path="/daily-next-interiors" element={<ProtectedRoute><DailyNextInteriors /></ProtectedRoute>} />
-                <Route path="/daily-oriel-carlos" element={<ProtectedRoute><DailyOrielCarlos /></ProtectedRoute>} />
-                <Route path="/gtm-analytics" element={<ProtectedRoute><GTMAnalytics /></ProtectedRoute>} />
-                <Route path="/onboarding2" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-               <TestGuideFloating />
+              <GlobalLayout>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/blink-design" element={<BlinkDesign />} />
+                  <Route path="/shazam" element={<Shazam />} />
+                  <Route path="/create-agent" element={<CreateAgent />} />
+                  <Route path="/360-free-project" element={<FreeProject360 />} />
+                  <Route path="/design-review" element={<DesignReview />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/designer-onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
+                  
+                  {/* Designer routes - require auth + profile */}
+                  <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
+                  
+                  {/* Designer onboarding - main route */}
+                  <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
+                  
+                  {/* Kustr Design routes */}
+                  <Route path="/kustr" element={<KustrLanding />} />
+                  <Route path="/kustr/auth" element={<KustrAuth />} />
+                  <Route path="/kustr/onboarding" element={<KustrOnboarding />} />
+                  <Route path="/kustr/dashboard" element={<KustrDashboard />} />
+                  <Route path="/kustr/leads" element={<Leads />} />
+                  <Route path="/kustr/leads/:leadId" element={<LeadDetail />} />
+                  <Route path="/kustr/leads/:leadId/proposal" element={<Proposal />} />
+                  <Route path="/kustr/embed" element={<EmbedGenerator />} />
+                  <Route path="/kustr/analytics" element={<Analytics />} />
+                  
+                  {/* Public Kyle widget */}
+                  <Route path="/kyle" element={<KylePublic />} />
+                  
+                  {/* Backlog */}
+                  <Route path="/backlog" element={<Backlog />} />
+                  <Route path="/documentation" element={<Documentation />} />
+                  <Route path="/screenshots" element={<Screenshots />} />
+                  <Route path="/test" element={<TestIdeas />} />
+                  
+                  {/* Protected routes - Super Admin only */}
+                  <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
+                  <Route path="/daily-next-interiors" element={<ProtectedRoute><DailyNextInteriors /></ProtectedRoute>} />
+                  <Route path="/daily-oriel-carlos" element={<ProtectedRoute><DailyOrielCarlos /></ProtectedRoute>} />
+                  <Route path="/gtm-analytics" element={<ProtectedRoute><GTMAnalytics /></ProtectedRoute>} />
+                  <Route path="/onboarding2" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <TestGuideFloating />
+              </GlobalLayout>
             </KyleProvider>
           </KustrOfficeProvider>
         </DesignerProfileProvider>
