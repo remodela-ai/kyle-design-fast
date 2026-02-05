@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -15,9 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DesignReviewPanel } from "@/components/DesignReviewPanel";
 
 export default function Shazam() {
-  const navigate = useNavigate();
   const [localGenerating, setLocalGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
@@ -29,6 +29,7 @@ export default function Shazam() {
   const [usedLLM, setUsedLLM] = useState(false);
   const imageAreaRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
   
   const { 
     isConnected, 
@@ -375,23 +376,15 @@ Create a design that accurately reflects everything discussed in the conversatio
 
         {/* Action Buttons */}
         {generatedImage && !showLoading && (
-          <div className="flex gap-3 mt-4">
+          <div className="flex flex-wrap gap-3 mt-4 justify-center">
             <Button 
               variant="kyle" 
               size="sm" 
-              onClick={() => navigate("/design-review", { 
-                state: { 
-                  designImageUrl: generatedImage,
-                  transcript: originalSourceText,
-                  extractedInsights: optimizedPrompt || designSummary || "Design based on conversation",
-                  referenceImage: referenceImage || undefined,
-                  source: uploadedConversation ? "pdf" : "voice"
-                } 
-              })}
+              onClick={() => setShowReviewPanel(true)}
               className="rounded-full gap-2"
             >
               <Gift className="h-4 w-4" />
-              I want my free project
+              Refine & Get Free Project
             </Button>
             <Button 
               variant="outline" 
@@ -420,6 +413,19 @@ Create a design that accurately reflects everything discussed in the conversatio
               <FileText className="h-4 w-4" />
               See prompt
             </Button>
+          </div>
+        )}
+
+        {/* Design Review Panel - Inline */}
+        {showReviewPanel && generatedImage && (
+          <div className="w-full max-w-4xl mt-8">
+            <DesignReviewPanel
+              initialImageUrl={generatedImage}
+              extractedInsights={optimizedPrompt || designSummary || "Design based on conversation"}
+              transcript={originalSourceText}
+              referenceImage={referenceImage || undefined}
+              onClose={() => setShowReviewPanel(false)}
+            />
           </div>
         )}
 
