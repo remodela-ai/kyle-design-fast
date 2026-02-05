@@ -143,10 +143,26 @@ export default function KylePublic() {
         <div className="max-w-2xl w-full text-center space-y-8">
           {/* Kyle Avatar - Center */}
           <div className="relative">
+           {/* Outer glow container - double size */}
+           <div className={`w-64 h-64 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+             isConnected 
+               ? isSpeaking 
+                 ? 'bg-gradient-to-br from-primary/20 to-primary/5 glow-red' 
+                 : 'bg-gradient-to-br from-primary/10 to-transparent animate-pulse'
+               : 'bg-gradient-to-br from-muted/50 to-transparent'
+           }`}>
+             {/* Inner ring decoration */}
+             <div className={`absolute inset-4 rounded-full border-2 transition-all duration-300 ${
+               isConnected 
+                 ? isSpeaking 
+                   ? 'border-primary/40' 
+                   : 'border-primary/20'
+                 : 'border-border/30'
+             }`} />
             <img 
               src={kyleAvatar} 
               alt="Kyle" 
-              className={`w-32 h-32 mx-auto rounded-full object-cover border-4 transition-all duration-300 ${
+               className={`w-32 h-32 rounded-full object-cover border-4 transition-all duration-300 relative z-10 ${
                 isConnected 
                   ? isSpeaking 
                     ? 'border-primary shadow-lg shadow-primary/50 scale-105' 
@@ -154,6 +170,7 @@ export default function KylePublic() {
                   : 'border-border'
               }`}
             />
+           </div>
             {isConnected && (
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
                 <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} barCount={5} className="h-6" />
