@@ -31,7 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // CAPA 1 - Kyle (Central Orchestrator)
 const kyleNavItems = [
-  { icon: Bot, label: "Home", path: "/kyle", description: "Orquestador central" },
+  { icon: Bot, label: "Home", path: "/kustr-next", description: "Orquestador central" },
   { icon: Sparkles, label: "Kyle AI", path: "/shazam", description: "Diseño asistido" },
 ];
 
