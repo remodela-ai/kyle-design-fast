@@ -44,6 +44,7 @@ import KylePublic from "./pages/KylePublic";
  import Screenshots from "./pages/Screenshots";
  import TestIdeas from "./pages/TestIdeas";
  import { TestGuideFloating } from "./components/TestGuideFloating";
+ import ProjectDetail from "./pages/ProjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
                   
                   {/* Designer routes - require auth + profile */}
                   <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
+                   <Route path="/project/:sessionId" element={<DesignerRoute><ProjectDetail /></DesignerRoute>} />
                   
                   {/* Designer onboarding - main route */}
                   <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />

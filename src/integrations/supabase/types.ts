@@ -944,6 +944,7 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string | null
+          designer_id: string | null
           error_message: string | null
           id: string
           input_data: Json | null
@@ -959,6 +960,7 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           created_at?: string | null
+          designer_id?: string | null
           error_message?: string | null
           id?: string
           input_data?: Json | null
@@ -974,6 +976,7 @@ export type Database = {
         Update: {
           completed_at?: string | null
           created_at?: string | null
+          designer_id?: string | null
           error_message?: string | null
           id?: string
           input_data?: Json | null
@@ -987,6 +990,13 @@ export type Database = {
           visual_outcome_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pipeline_steps_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "designer_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pipeline_steps_session_id_fkey"
             columns: ["session_id"]
@@ -1003,7 +1013,12 @@ export type Database = {
           design_image_url: string | null
           designer_id: string | null
           id: string
+          iteration_count: number | null
+          management_completed: boolean | null
+          pipeline_completed: boolean | null
+          project_name: string | null
           session_id: string
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1012,7 +1027,12 @@ export type Database = {
           design_image_url?: string | null
           designer_id?: string | null
           id?: string
+          iteration_count?: number | null
+          management_completed?: boolean | null
+          pipeline_completed?: boolean | null
+          project_name?: string | null
           session_id: string
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1021,7 +1041,12 @@ export type Database = {
           design_image_url?: string | null
           designer_id?: string | null
           id?: string
+          iteration_count?: number | null
+          management_completed?: boolean | null
+          pipeline_completed?: boolean | null
+          project_name?: string | null
           session_id?: string
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1384,6 +1409,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       user_belongs_to_office: {
         Args: { _office_id: string; _user_id: string }
         Returns: boolean

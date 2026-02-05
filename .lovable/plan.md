@@ -1,6 +1,24 @@
 
 
 # Plan: Smart Project Folders con Versionado Multi-Tenant
+ 
+ ## ✅ IMPLEMENTED (2025-02-05)
+ 
+ ### Database Migration ✓
+ - Added columns to `project_sessions`: `project_name`, `status`, `pipeline_completed`, `management_completed`, `iteration_count`
+ - Added `designer_id` column to `pipeline_steps` 
+ - Created `is_super_admin()` security definer function using `has_kustr_role()`
+ - Updated RLS policies for multi-tenant access on both tables
+ 
+ ### Frontend Components ✓
+ - `src/hooks/useProjectFolder.ts` - Smart folder management hook
+ - `src/pages/ProjectDetail.tsx` - Project detail view with versions gallery and pipeline status
+ - Updated `src/pages/Dashboard.tsx` - Shows projects with badges, links to `/project/:sessionId`
+ - Updated `src/components/DesignReviewPanel.tsx` - Saves iterations to `design_generations`
+ - Updated `src/hooks/useDesignerSessions.ts` - Extended interface with new fields
+ - Added route `/project/:sessionId` in `src/App.tsx`
+ 
+ ---
 
 ## Análisis del Sistema Actual
 

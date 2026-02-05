@@ -11,6 +11,7 @@
  import { toast } from "sonner";
  import { useKyle } from "@/contexts/KyleContext";
  import { useNavigate } from "react-router-dom";
+   import { useDesignerProfile } from "@/hooks/useDesignerProfile";
  
  interface ImageItem {
    url: string;
@@ -39,6 +40,7 @@
    onSessionUpdate,
  }: DesignReviewPanelProps) {
    const navigate = useNavigate();
+     const { profile } = useDesignerProfile();
    const {
      isIterationConnected,
      isIterationSpeaking,
@@ -104,6 +106,20 @@
          if (onSessionUpdate) {
            onSessionUpdate(data.imageUrl, data.optimizedPrompt || refinedPrompt);
          }
+           
+           // Save iteration to design_generations
+           if (sessionId && profile?.id) {
+             await supabase.from('design_generations').insert([{
+               designer_id: profile.id,
+               session_id: sessionId,
+               image_url: data.imageUrl,
+               prompt: data.optimizedPrompt || refinedPrompt,
+               metadata: JSON.parse(JSON.stringify({ 
+                 iteration: newIteration, 
+                 referenceUsed: !!currentReferenceImage 
+               })),
+             }]);
+           }
  
          toast.success(`Iteration ${newIteration} generated!`);
        }

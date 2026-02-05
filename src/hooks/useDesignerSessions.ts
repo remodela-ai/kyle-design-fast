@@ -8,6 +8,11 @@ export interface DesignerSession {
   designer_id: string | null;
   design_image_url: string | null;
   conversation_summary: string | null;
+   project_name?: string | null;
+   status?: string;
+   pipeline_completed?: boolean;
+   management_completed?: boolean;
+   iteration_count?: number;
   created_at: string;
   updated_at: string;
 }
