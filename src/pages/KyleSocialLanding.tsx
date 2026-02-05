@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { ChevronUp, Sparkles, Loader2, Wand2, Trash2 } from "lucide-react";
+import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import kitchenHero from "@/assets/kitchen-hero.jpg";
@@ -47,6 +48,16 @@ const KyleSocialLanding = () => {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<GalleryImage[]>([]);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [editedPrompt, setEditedPrompt] = useState<string>("");
+  const [hiddenStaticIds, setHiddenStaticIds] = useState<string[]>([]);
+
+  // Load hidden static images from localStorage
+  useEffect(() => {
+    const hidden = localStorage.getItem("hiddenInspirationImages");
+    if (hidden) {
+      setHiddenStaticIds(JSON.parse(hidden));
+    }
+  }, []);
 
   // Fetch generated images from database
   useEffect(() => {
@@ -77,8 +88,11 @@ const KyleSocialLanding = () => {
     fetchGeneratedImages();
   }, []);
 
-  // Combine generated images (first) with static images
-  const allImages = [...generatedImages, ...staticInspirationImages];
+  // Filter out hidden static images and combine with generated
+  const visibleStaticImages = staticInspirationImages.filter(
+    (img) => !hiddenStaticIds.includes(img.id)
+  );
+  const allImages = [...generatedImages, ...visibleStaticImages];
 
   const handleStart = () => {
     navigate("/shazam");
@@ -91,8 +105,11 @@ const KyleSocialLanding = () => {
     setGeneratedImageUrl(null);
     
     try {
+      // Use edited prompt instead of original
+      const promptToUse = editedPrompt || selectedImage.prompt;
+      
       const { data, error } = await supabase.functions.invoke('generate-inspiration-image', {
-        body: { prompt: selectedImage.prompt, title: selectedImage.title }
+        body: { prompt: promptToUse, title: selectedImage.title }
       });
 
       if (error) throw error;
@@ -106,7 +123,7 @@ const KyleSocialLanding = () => {
             id: data.id,
             url: data.imageUrl,
             title: data.title || selectedImage.title,
-            prompt: selectedImage.prompt,
+            prompt: promptToUse,
             isStatic: false
           }, ...prev]);
         }
@@ -123,20 +140,29 @@ const KyleSocialLanding = () => {
     }
   };
 
-  const handleDeleteImage = async (imageId: string, e: React.MouseEvent) => {
+  const handleDeleteImage = async (imageId: string, isStatic: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDeletingId(imageId);
     
     try {
-      const { error } = await supabase
-        .from("inspiration_gallery")
-        .delete()
-        .eq("id", imageId);
+      if (isStatic) {
+        // Hide static image using localStorage
+        const newHidden = [...hiddenStaticIds, imageId];
+        setHiddenStaticIds(newHidden);
+        localStorage.setItem("hiddenInspirationImages", JSON.stringify(newHidden));
+        toast.success("Image removed from gallery");
+      } else {
+        // Delete from database
+        const { error } = await supabase
+          .from("inspiration_gallery")
+          .delete()
+          .eq("id", imageId);
 
-      if (error) throw error;
-      
-      setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
-      toast.success("Image removed from gallery");
+        if (error) throw error;
+        
+        setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
+        toast.success("Image removed from gallery");
+      }
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete image");
@@ -146,19 +172,27 @@ const KyleSocialLanding = () => {
   };
 
   const handleUseThisImage = () => {
-    if (generatedImageUrl) {
+    const imageUrl = generatedImageUrl || selectedImage?.url;
+    if (imageUrl) {
       navigate("/shazam", { 
         state: { 
-          referenceImage: generatedImageUrl,
-          initialPrompt: selectedImage?.prompt 
+          referenceImage: imageUrl,
+          initialPrompt: editedPrompt || selectedImage?.prompt 
         } 
       });
     }
   };
 
+  const handleOpenDialog = (image: GalleryImage) => {
+    setSelectedImage(image);
+    setEditedPrompt(image.prompt);
+    setGeneratedImageUrl(null);
+  };
+
   const handleCloseDialog = () => {
     setSelectedImage(null);
     setGeneratedImageUrl(null);
+    setEditedPrompt("");
   };
 
   return (
@@ -243,28 +277,26 @@ const KyleSocialLanding = () => {
                   
                   {/* AI Generated badge */}
                   {!image.isStatic && (
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 z-10">
                       <Sparkles className="h-3 w-3" />
                       AI
                     </div>
                   )}
 
-                  {/* Delete button for generated images */}
-                  {!image.isStatic && (
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => handleDeleteImage(image.id, e)}
-                      disabled={isDeletingId === image.id}
-                    >
-                      {isDeletingId === image.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
+                  {/* Delete button for ALL images */}
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
+                    disabled={isDeletingId === image.id}
+                  >
+                    {isDeletingId === image.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -275,8 +307,7 @@ const KyleSocialLanding = () => {
                       className="w-full gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedImage(image);
-                        setGeneratedImageUrl(null);
+                        handleOpenDialog(image);
                       }}
                     >
                       <Sparkles className="h-3 w-3" />
@@ -318,63 +349,54 @@ const KyleSocialLanding = () => {
                 )}
               </div>
               
-              {/* Prompt display */}
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1 font-medium">Prompt:</p>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {selectedImage.prompt}
-                </p>
+              {/* Editable Prompt */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
+                    Prompt (editable):
+                  </p>
+                </div>
+                <Textarea
+                  value={editedPrompt}
+                  onChange={(e) => setEditedPrompt(e.target.value)}
+                  className="min-h-[100px] text-sm"
+                  placeholder="Describe your ideal kitchen design..."
+                />
               </div>
 
               {/* Action buttons */}
-              <div className="flex gap-3">
-                {!generatedImageUrl ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
                   <Button 
                     onClick={handleGenerateImage}
                     disabled={isGenerating}
                     className="flex-1 gap-2"
+                    variant={generatedImageUrl ? "outline" : "default"}
                   >
                     {isGenerating ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating...
+                        {generatedImageUrl ? "Regenerating..." : "Generating..."}
                       </>
                     ) : (
                       <>
                         <Wand2 className="h-4 w-4" />
-                        Generate Image
+                        {generatedImageUrl ? "Regenerate" : "Generate Image"}
                       </>
                     )}
                   </Button>
-                ) : (
-                  <>
-                    <Button 
-                      variant="outline"
-                      onClick={handleGenerateImage}
-                      disabled={isGenerating}
-                      className="flex-1 gap-2"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Regenerating...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="h-4 w-4" />
-                          Regenerate
-                        </>
-                      )}
-                    </Button>
-                    <Button 
-                      onClick={handleUseThisImage}
-                      className="flex-1 gap-2"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Use This with Kyle
-                    </Button>
-                  </>
-                )}
+                </div>
+                
+                {/* Always show "Use with Kyle" button */}
+                <Button 
+                  onClick={handleUseThisImage}
+                  className="w-full gap-2"
+                  variant="secondary"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {generatedImageUrl ? "Use Generated with Kyle" : "Use This with Kyle"}
+                </Button>
               </div>
             </div>
           )}
