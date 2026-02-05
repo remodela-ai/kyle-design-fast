@@ -59,10 +59,11 @@
    const [isRegenerating, setIsRegenerating] = useState(false);
    const [useImageAsReference, setUseImageAsReference] = useState(true);
  
-   // Get the current selected image URL for reference
-   const currentReferenceImage = useImageAsReference && images.length > 0 
-     ? images[selectedImageIndex]?.url 
-     : referenceImage;
+    // Get the current selected image URL for reference
+    // IMPORTANT: always fall back to a valid image URL so we actually send a reference image to the backend.
+    const currentReferenceImage = useImageAsReference
+      ? (images[selectedImageIndex]?.url ?? referenceImage ?? initialImageUrl)
+      : referenceImage;
  
    // Handle regeneration
    const handleRegenerate = useCallback(async (additionalFeedback?: string) => {
@@ -77,12 +78,18 @@
        // Add consistency instruction
        const consistencyPrompt = `${refinedPrompt}\n\nIMPORTANT: Maintain the same camera angle, room layout, architectural elements, and overall composition as the original design. Only modify the specific elements mentioned in the refinement request.`;
        
-       const { data, error } = await supabase.functions.invoke('blink-design', {
-         body: { 
-           prompt: consistencyPrompt,
-           referenceImage: currentReferenceImage || undefined
-         }
-       });
+        const referenceToSend = currentReferenceImage ?? undefined;
+        console.info("[DesignReviewPanel] blink-design invoke", {
+          hasReferenceImage: !!referenceToSend,
+          referenceImage: referenceToSend ? `${referenceToSend.slice(0, 60)}...` : null,
+        });
+
+        const { data, error } = await supabase.functions.invoke('blink-design', {
+          body: { 
+            prompt: consistencyPrompt,
+            referenceImage: referenceToSend,
+          }
+        });
  
        if (error) throw error;
  
