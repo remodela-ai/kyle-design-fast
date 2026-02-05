@@ -1,8 +1,29 @@
  import { useState } from "react";
  import { Button } from "@/components/ui/button";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from "lucide-react";
+import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette, Image } from "lucide-react";
  import { useNavigate } from "react-router-dom";
+
+// Import screenshots
+import screenshotDashboard from "@/assets/docs/screenshot-dashboard.jpg";
+import screenshotLeads from "@/assets/docs/screenshot-leads.jpg";
+import screenshotKyleVoice from "@/assets/docs/screenshot-kyle-voice.jpg";
+import screenshotAnalytics from "@/assets/docs/screenshot-analytics.jpg";
+import screenshotEmbed from "@/assets/docs/screenshot-embed.jpg";
+import screenshotProposal from "@/assets/docs/screenshot-proposal.jpg";
+
+// Screenshot component for documentation
+const DocScreenshot = ({ src, alt, caption }: { src: string; alt: string; caption: string }) => (
+  <figure className="my-6 not-prose">
+    <div className="border border-border rounded-lg overflow-hidden shadow-lg">
+      <img src={src} alt={alt} className="w-full h-auto" />
+    </div>
+    <figcaption className="text-sm text-muted-foreground text-center mt-2 flex items-center justify-center gap-2">
+      <Image className="h-4 w-4" />
+      {caption}
+    </figcaption>
+  </figure>
+);
  
  const Documentation = () => {
    const navigate = useNavigate();
@@ -135,6 +156,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
       {/* Use Cases */}
       <h2 className="text-2xl font-bold border-b pb-2 mt-8">Casos de Uso Reales</h2>
       
+      <DocScreenshot 
+        src={screenshotDashboard} 
+        alt="Dashboard principal de Kyle" 
+        caption="Fig. 1: Panel de control principal mostrando métricas de leads y actividad del equipo"
+      />
+
       {/* Client Use Cases */}
       <div className="not-prose mt-6 mb-8">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -204,6 +231,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
         </div>
       </div>
 
+      <DocScreenshot 
+        src={screenshotKyleVoice} 
+        alt="Interfaz de voz de Kyle" 
+        caption="Fig. 2: Interfaz de conversación por voz de Kyle para captura de leads"
+      />
+
       {/* Designer Use Cases */}
       <div className="not-prose mb-8">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -272,6 +305,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
           </div>
         </div>
       </div>
+
+      <DocScreenshot 
+        src={screenshotAnalytics} 
+        alt="Dashboard de analytics" 
+        caption="Fig. 3: Panel de analytics con métricas de conversión y revenue"
+      />
     </section>
 
      {/* Cover Page */}
@@ -345,6 +384,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 2: System Architecture */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">2. Arquitectura del Sistema</h2>
+      
+      <DocScreenshot 
+        src={screenshotDashboard} 
+        alt="Vista general del sistema" 
+        caption="Fig. 4: Vista general del sistema mostrando navegación y componentes principales"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Diagrama de Arquitectura</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -402,6 +447,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 3: Database Schema */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">3. Esquema de Base de Datos</h2>
+      
+      <DocScreenshot 
+        src={screenshotLeads} 
+        alt="Gestión de leads" 
+        caption="Fig. 5: Panel de gestión de leads mostrando el pipeline de estados"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Diagrama Entidad-Relación</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -467,6 +518,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 4-5: Use Cases */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">4. Casos de Uso Principales</h2>
+      
+      <DocScreenshot 
+        src={screenshotKyleVoice} 
+        alt="Captura de leads con Kyle" 
+        caption="Fig. 6: Interfaz de captura de leads mediante conversación de voz"
+      />
        
        <div className="mt-6 space-y-8">
          <div className="border rounded-lg p-4">
@@ -557,6 +614,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 6: User Flows */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">5. Flujos de Usuario</h2>
+      
+      <DocScreenshot 
+        src={screenshotProposal} 
+        alt="Sistema de propuestas" 
+        caption="Fig. 7: Generación y visualización de propuestas de diseño"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Flujo: Captación de Lead</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -630,6 +693,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 7: Edge Functions */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">6. Catálogo de Edge Functions</h2>
+      
+      <DocScreenshot 
+        src={screenshotEmbed} 
+        alt="Generador de embed" 
+        caption="Fig. 8: Configurador del widget embebible de Kyle"
+      />
        
        <div className="overflow-x-auto mt-4">
          <table className="min-w-full border text-sm">
@@ -770,6 +839,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 9: Security */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">8. Seguridad y RLS</h2>
+      
+      <DocScreenshot 
+        src={screenshotAnalytics} 
+        alt="Panel de analytics" 
+        caption="Fig. 9: Dashboard de métricas para monitoreo de seguridad y rendimiento"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Políticas de Row Level Security</h3>
        <p className="mt-2">
@@ -985,6 +1060,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
       {/* Use Cases */}
       <h2 className="text-2xl font-bold border-b pb-2 mt-8">Real Use Cases</h2>
       
+      <DocScreenshot 
+        src={screenshotDashboard} 
+        alt="Kyle main dashboard" 
+        caption="Fig. 1: Main control panel showing lead metrics and team activity"
+      />
+
       {/* Client Use Cases */}
       <div className="not-prose mt-6 mb-8">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -1054,6 +1135,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
         </div>
       </div>
 
+      <DocScreenshot 
+        src={screenshotKyleVoice} 
+        alt="Kyle voice interface" 
+        caption="Fig. 2: Kyle voice conversation interface for lead capture"
+      />
+
       {/* Designer Use Cases */}
       <div className="not-prose mb-8">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -1122,6 +1209,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
           </div>
         </div>
       </div>
+
+      <DocScreenshot 
+        src={screenshotAnalytics} 
+        alt="Analytics dashboard" 
+        caption="Fig. 3: Analytics panel with conversion and revenue metrics"
+      />
     </section>
 
      {/* Cover Page */}
@@ -1195,6 +1288,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 2: System Architecture */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">2. System Architecture</h2>
+      
+      <DocScreenshot 
+        src={screenshotDashboard} 
+        alt="System overview" 
+        caption="Fig. 4: System overview showing navigation and main components"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Architecture Diagram</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -1252,6 +1351,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 3: Database Schema */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">3. Database Schema</h2>
+      
+      <DocScreenshot 
+        src={screenshotLeads} 
+        alt="Lead management" 
+        caption="Fig. 5: Lead management panel showing the status pipeline"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Entity-Relationship Diagram</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -1317,6 +1422,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 4-5: Use Cases */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">4. Core Use Cases</h2>
+      
+      <DocScreenshot 
+        src={screenshotKyleVoice} 
+        alt="Lead capture with Kyle" 
+        caption="Fig. 6: Lead capture interface via voice conversation"
+      />
        
        <div className="mt-6 space-y-8">
          <div className="border rounded-lg p-4">
@@ -1407,6 +1518,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 6: User Flows */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">5. User Flows</h2>
+      
+      <DocScreenshot 
+        src={screenshotProposal} 
+        alt="Proposal system" 
+        caption="Fig. 7: Design proposal generation and preview"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Flow: Lead Capture</h3>
        <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto mt-4">
@@ -1480,6 +1597,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 7: Edge Functions */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">6. Edge Functions Catalog</h2>
+      
+      <DocScreenshot 
+        src={screenshotEmbed} 
+        alt="Embed generator" 
+        caption="Fig. 8: Kyle widget embed configurator"
+      />
        
        <div className="overflow-x-auto mt-4">
          <table className="min-w-full border text-sm">
@@ -1620,6 +1743,12 @@ import { Download, FileText, ArrowLeft, Lightbulb, Target, Users, Palette } from
      {/* Page 9: Security */}
      <section className="py-8 print:page-break-after-always">
        <h2 className="text-2xl font-bold border-b pb-2">8. Security & RLS</h2>
+      
+      <DocScreenshot 
+        src={screenshotAnalytics} 
+        alt="Analytics panel" 
+        caption="Fig. 9: Metrics dashboard for security and performance monitoring"
+      />
        
        <h3 className="text-xl font-semibold mt-6">Row Level Security Policies</h3>
        <p className="mt-2">
