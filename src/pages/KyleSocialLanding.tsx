@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { ChevronUp, Sparkles } from "lucide-react";
+import { ChevronUp, Sparkles, Loader2, Wand2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import kitchenHero from "@/assets/kitchen-hero.jpg";
 
 const inspirationImages = [
@@ -33,9 +35,55 @@ const inspirationImages = [
 const KyleSocialLanding = () => {
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<typeof inspirationImages[0] | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
   const handleStart = () => {
     navigate("/shazam");
+  };
+
+  const handleGenerateImage = async () => {
+    if (!selectedImage) return;
+    
+    setIsGenerating(true);
+    setGeneratedImageUrl(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-inspiration-image', {
+        body: { prompt: selectedImage.prompt }
+      });
+
+      if (error) throw error;
+      
+      if (data?.imageUrl) {
+        setGeneratedImageUrl(data.imageUrl);
+        toast.success("Image generated successfully!");
+      } else {
+        throw new Error("No image URL returned");
+      }
+    } catch (error) {
+      console.error("Generation error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate image");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleUseThisImage = () => {
+    if (generatedImageUrl) {
+      // Navigate to Kyle with the generated image as reference
+      navigate("/shazam", { 
+        state: { 
+          referenceImage: generatedImageUrl,
+          initialPrompt: selectedImage?.prompt 
+        } 
+      });
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedImage(null);
+    setGeneratedImageUrl(null);
   };
 
   return (
@@ -122,10 +170,11 @@ const KyleSocialLanding = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedImage(image);
+                        setGeneratedImageUrl(null);
                       }}
                     >
                       <Sparkles className="h-3 w-3" />
-                      See Prompt
+                      Generate Design
                     </Button>
                   </div>
                 </div>
@@ -135,29 +184,91 @@ const KyleSocialLanding = () => {
         </div>
       </div>
 
-      {/* Prompt Dialog */}
-      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
-        <DialogContent className="max-w-md">
+      {/* Generation Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && handleCloseDialog()}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
               {selectedImage?.title}
             </DialogTitle>
             <DialogDescription>
-              AI prompt to generate this kitchen design
+              Generate a unique AI design based on this style
             </DialogDescription>
           </DialogHeader>
           {selectedImage && (
             <div className="space-y-4">
-              <img 
-                src={selectedImage.url} 
-                alt={selectedImage.title}
-                className="w-full aspect-video object-cover rounded-lg"
-              />
+              {/* Show generated image or original */}
+              <div className="relative">
+                <img 
+                  src={generatedImageUrl || selectedImage.url} 
+                  alt={selectedImage.title}
+                  className="w-full aspect-video object-cover rounded-lg"
+                />
+                {generatedImageUrl && (
+                  <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
+                    AI Generated
+                  </div>
+                )}
+              </div>
+              
+              {/* Prompt display */}
               <div className="p-4 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1 font-medium">Prompt:</p>
                 <p className="text-sm text-foreground leading-relaxed">
                   {selectedImage.prompt}
                 </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                {!generatedImageUrl ? (
+                  <Button 
+                    onClick={handleGenerateImage}
+                    disabled={isGenerating}
+                    className="flex-1 gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4" />
+                        Generate Image
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={handleGenerateImage}
+                      disabled={isGenerating}
+                      className="flex-1 gap-2"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Regenerating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="h-4 w-4" />
+                          Regenerate
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      onClick={handleUseThisImage}
+                      className="flex-1 gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Use This with Kyle
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
