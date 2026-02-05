@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Home, CheckCircle, RefreshCw, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TranscriptViewer } from "@/components/TranscriptViewer";
 import { InsightsEditor } from "@/components/InsightsEditor";
@@ -48,11 +50,18 @@ export default function DesignReview() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [transcript, setTranscript] = useState(state?.transcript || "");
   const [currentInsights, setCurrentInsights] = useState(state?.extractedInsights || "");
-  const [referenceImage] = useState(state?.referenceImage);
+  const [initialReferenceImage] = useState(state?.referenceImage);
   const [source] = useState<"voice" | "pdf">(state?.source || "voice");
+  const [useImageAsReference, setUseImageAsReference] = useState(true);
   
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [iterationFeedback, setIterationFeedback] = useState<string[]>([]);
+  
+  // Get the current reference image based on toggle
+  // IMPORTANT: use the currently selected image from the carousel to maintain consistency
+  const currentReferenceImage = useImageAsReference 
+    ? (images[selectedImageIndex]?.url || state?.designImageUrl)
+    : initialReferenceImage;
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   // Ref to track if we should iterate on disconnect
@@ -128,10 +137,15 @@ export default function DesignReview() {
       // Add instruction to maintain consistency
       const consistencyPrompt = `${refinedPrompt}\n\nIMPORTANT: Maintain the same camera angle, room layout, architectural elements, and overall composition as the original design. Only modify the specific elements mentioned in the refinement request.`;
       
+      console.info("[DesignReview] blink-design invoke", {
+        hasReferenceImage: !!currentReferenceImage,
+        referenceImage: currentReferenceImage ? `${currentReferenceImage.slice(0, 60)}...` : null,
+      });
+      
       const { data, error } = await supabase.functions.invoke('blink-design', {
         body: { 
           prompt: consistencyPrompt,
-          referenceImage: referenceImage || undefined
+          referenceImage: currentReferenceImage || undefined
         }
       });
 
@@ -168,7 +182,7 @@ export default function DesignReview() {
       setIterationFeedback([]);
       feedbackRef.current = [];
     }
-  }, [currentInsights, referenceImage, images.length]);
+  }, [currentInsights, currentReferenceImage, images.length]);
 
   // Handle voice-based iteration
   const handleVoiceIteration = useCallback((feedback: string) => {
@@ -273,6 +287,25 @@ export default function DesignReview() {
               onInsightsChange={setCurrentInsights}
               isEditable={!isRegenerating && !isConnected}
             />
+            
+            {/* Image Reference Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-card border border-border">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="use-image-ref"
+                  checked={useImageAsReference}
+                  onCheckedChange={setUseImageAsReference}
+                />
+                <Label htmlFor="use-image-ref" className="text-sm font-medium cursor-pointer">
+                  Use current image as reference
+                </Label>
+              </div>
+              {useImageAsReference && (
+                <span className="text-xs text-muted-foreground">
+                  Maintains visual consistency
+                </span>
+              )}
+            </div>
             
             {/* Regenerate Button */}
             <Button
