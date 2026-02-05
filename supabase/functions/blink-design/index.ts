@@ -222,7 +222,11 @@ IMPORTANT:
     if (referenceImage) {
       input.input_images = [referenceImage];
       input.aspect_ratio = "match_input_image";
-      console.log("[blink-design] ✅ Added reference image using input_images array (correct Flux 2 Pro parameter)");
+      // image_prompt_strength controls how much the reference image influences the output
+      // 0.0 = ignore reference completely, 1.0 = maximum adherence to reference
+      // Using 0.75 for strong consistency while allowing requested changes
+      input.image_prompt_strength = 0.75;
+      console.log("[blink-design] ✅ Added reference image with image_prompt_strength=0.75 for strong consistency");
     }
 
     // Enhanced logging for debugging
@@ -230,7 +234,8 @@ IMPORTANT:
       hasReferenceImage: !!referenceImage,
       aspectRatio: input.aspect_ratio,
       promptLength: finalPrompt.length,
-      inputImagesCount: (input.input_images as string[] | undefined)?.length || 0
+      inputImagesCount: (input.input_images as string[] | undefined)?.length || 0,
+      imagePromptStrength: input.image_prompt_strength || "N/A"
     }));
 
     console.log("[blink-design] Generating image with Flux 2 Pro...");
