@@ -91,6 +91,16 @@ const platforms: PlatformConfig[] = [
       video: ["1920x1080 (Full HD)", "3840x2160 (4K)", "1080x1920 (Shorts)"],
     },
   },
+  {
+    id: "tiktok",
+    name: "TikTok",
+    icon: Video,
+    color: "bg-black",
+    formats: {
+      image: ["1080x1920 (Profile)", "1080x1080 (Avatar)"],
+      video: ["1080x1920 (TikTok)", "1080x1920 (Story)"],
+    },
+  },
 ];
 
 export default function Marketing() {
@@ -220,7 +230,7 @@ export default function Marketing() {
                 <CardTitle className="text-sm">Platform</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-3">
-                <div className="grid grid-cols-5 gap-1.5">
+                <div className="grid grid-cols-6 gap-1.5">
                   {platforms.map((platform) => {
                     const Icon = platform.icon;
                     return (
