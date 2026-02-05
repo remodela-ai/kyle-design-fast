@@ -31,8 +31,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // CAPA 1 - Kyle (Central Orchestrator)
 const kyleNavItems = [
-  { icon: Bot, label: "Kyle AI", path: "/kyle", description: "Orquestador central" },
-  { icon: Sparkles, label: "Co-create", path: "/shazam", description: "Diseño asistido" },
+  { icon: Bot, label: "Home", path: "/kyle", description: "Orquestador central" },
+  { icon: Sparkles, label: "Kyle AI", path: "/shazam", description: "Diseño asistido" },
 ];
 
 // CAPA 2 - Journeys (6 macro-flujos de negocio)
