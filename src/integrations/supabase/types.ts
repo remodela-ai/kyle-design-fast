@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      bathroom_inspiration_gallery: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          prompt: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt?: string
+          title?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
