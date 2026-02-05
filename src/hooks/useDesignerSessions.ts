@@ -117,17 +117,45 @@ export const useDesignerSessions = () => {
        return { data: data as DesignerSession, error: null };
      } catch (err) {
        console.error('Error fetching session:', err);
-       return { data: null, error: err instanceof Error ? err : new Error('Failed to fetch session') };
-     }
-   }, []);
+        return { data: null, error: err instanceof Error ? err : new Error('Failed to fetch session') };
+      }
+    }, []);
+
+    // Delete a session by ID
+    const deleteSession = useCallback(async (sessionId: string) => {
+      try {
+        // First delete related pipeline_steps
+        await supabase
+          .from('pipeline_steps')
+          .delete()
+          .eq('session_id', sessionId);
+
+        // Then delete the session
+        const { error: deleteError } = await supabase
+          .from('project_sessions')
+          .delete()
+          .eq('session_id', sessionId);
+
+        if (deleteError) throw deleteError;
+
+        // Update local state
+        setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+
+        return { success: true, error: null };
+      } catch (err) {
+        console.error('Error deleting session:', err);
+        return { success: false, error: err instanceof Error ? err : new Error('Failed to delete session') };
+      }
+    }, []);
  
-  return {
-    sessions,
-    loading,
-    error,
-    refreshSessions: fetchSessions,
-    getDesignerId,
-     upsertSession,
-     getSession,
-  };
+   return {
+     sessions,
+     loading,
+     error,
+     refreshSessions: fetchSessions,
+     getDesignerId,
+      upsertSession,
+      getSession,
+      deleteSession,
+   };
 };
