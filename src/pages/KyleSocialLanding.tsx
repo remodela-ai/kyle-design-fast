@@ -11,23 +11,23 @@ const KyleSocialLanding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Hero Background Image */}
-      <div className="absolute inset-0">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Hero Image - Top section */}
+      <div className="relative h-[35vh] md:h-[40vh] w-full overflow-hidden">
         <img 
           src={kitchenHero} 
           alt="Luxury modern kitchen" 
           className="w-full h-full object-cover"
         />
-        {/* Gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+        {/* Subtle bottom fade to blend with content */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-end pb-12 px-6">
+      {/* Content Section */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 -mt-12">
         <div className="flex flex-col items-center max-w-md w-full text-center gap-6">
           
-          {/* Hero headline - punchy and direct */}
+          {/* Hero headline */}
           <div className="space-y-3">
             <h1 className="text-2xl md:text-4xl font-bold text-foreground leading-tight">
               Meet <span className="text-primary">Kyle</span>,<br />
@@ -46,7 +46,7 @@ const KyleSocialLanding = () => {
             aria-label="Start conversation with Kyle"
           >
             {/* Outer glow ring */}
-            <div className="absolute -inset-4 rounded-full bg-primary/30 blur-xl group-hover:bg-primary/40 transition-colors" />
+            <div className="absolute -inset-4 rounded-full bg-primary/25 blur-xl group-hover:bg-primary/35 transition-colors" />
             
             <KyleAvatar size="lg" />
             
