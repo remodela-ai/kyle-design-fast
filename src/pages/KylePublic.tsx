@@ -152,7 +152,7 @@ export default function KylePublic() {
                : 'bg-gradient-to-br from-muted/50 to-transparent'
            }`}>
              {/* Inner ring decoration */}
-             <div className={`absolute inset-4 rounded-full border-2 transition-all duration-300 ${
+             <div className={`absolute inset-2 rounded-full border-2 transition-all duration-300 ${
                isConnected 
                  ? isSpeaking 
                    ? 'border-primary/40' 
@@ -162,7 +162,7 @@ export default function KylePublic() {
             <img 
               src={kyleAvatar} 
               alt="Kyle" 
-               className={`w-32 h-32 rounded-full object-cover border-4 transition-all duration-300 relative z-10 ${
+               className={`w-52 h-52 rounded-full object-cover border-4 transition-all duration-300 relative z-10 ${
                 isConnected 
                   ? isSpeaking 
                     ? 'border-primary shadow-lg shadow-primary/50 scale-105' 
