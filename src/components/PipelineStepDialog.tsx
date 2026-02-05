@@ -84,17 +84,32 @@
    onExecute: () => void;
  }
  
- function StepContent({ 
-   step, 
-   stepName, 
-   stepNumber, 
-   isVisualPipeline, 
+ function StepContent({
+   step,
+   stepName,
+   stepNumber,
+   isVisualPipeline,
    sessionId,
    designImageUrl,
    isExecuting,
    onExecute,
  }: StepContentProps) {
-   const canExecute = !isExecuting && sessionId && designImageUrl;
+   const canExecute = sessionId && designImageUrl;
+ 
+   // Show executing state with spinner
+   if (isExecuting) {
+     return (
+       <div className="flex flex-col items-center justify-center py-12 text-center">
+         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+           <Loader2 className="h-8 w-8 text-primary animate-spin" />
+         </div>
+         <h3 className="text-lg font-medium mb-2">Generating...</h3>
+         <p className="text-sm text-muted-foreground max-w-sm">
+           Kyle is working on this step. Please wait a moment.
+         </p>
+       </div>
+     );
+   }
  
    if (!step || step.status === "pending") {
      return (
@@ -112,19 +127,9 @@
              size="sm"
              className="mt-4 gap-2"
              onClick={onExecute}
-             disabled={isExecuting}
            >
-             {isExecuting ? (
-               <>
-                 <Loader2 className="h-4 w-4 animate-spin" />
-                 Ejecutando...
-               </>
-             ) : (
-               <>
-                 <Play className="h-4 w-4" />
-                 Ejecutar paso
-               </>
-             )}
+               <Play className="h-4 w-4" />
+               Ejecutar paso
            </Button>
          )}
        </div>
@@ -161,19 +166,9 @@
              size="sm"
              className="gap-2"
              onClick={onExecute}
-             disabled={isExecuting}
            >
-             {isExecuting ? (
-               <>
-                 <Loader2 className="h-4 w-4 animate-spin" />
-                 Reintentando...
-               </>
-             ) : (
-               <>
-                 <RotateCcw className="h-4 w-4" />
-                 Reintentar
-               </>
-             )}
+             <RotateCcw className="h-4 w-4" />
+             Reintentar
            </Button>
          )}
        </div>
