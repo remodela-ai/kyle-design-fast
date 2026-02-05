@@ -444,12 +444,15 @@ const KyleSocialLanding = () => {
                       alt={image.title}
                       className="w-full aspect-[4/3] object-cover"
                     />
-                    {!image.isStatic && (
-                      <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
-                        <Sparkles className="h-4 w-4" />
-                        AI Generated
-                      </div>
-                    )}
+                    <button
+                      onClick={() => navigate("/shazam", { 
+                        state: { referenceImage: image.url, initialPrompt: image.prompt } 
+                      })}
+                      className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Iterate with Kyle
+                    </button>
                   </div>
                   <div className="p-4 space-y-2 bg-background">
                     <h4 className="font-semibold text-base">{image.title}</h4>
