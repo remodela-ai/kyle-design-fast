@@ -1,315 +1,438 @@
 
+# Implementation Plan: Complete Sales Funnel Automation
 
-# Plan: Smart Project Folders con Versionado Multi-Tenant
- 
- ## ✅ IMPLEMENTED (2025-02-05)
- 
- ### Database Migration ✓
- - Added columns to `project_sessions`: `project_name`, `status`, `pipeline_completed`, `management_completed`, `iteration_count`
- - Added `designer_id` column to `pipeline_steps` 
- - Created `is_super_admin()` security definer function using `has_kustr_role()`
- - Updated RLS policies for multi-tenant access on both tables
- 
- ### Frontend Components ✓
- - `src/hooks/useProjectFolder.ts` - Smart folder management hook
- - `src/pages/ProjectDetail.tsx` - Project detail view with versions gallery and pipeline status
- - Updated `src/pages/Dashboard.tsx` - Shows projects with badges, links to `/project/:sessionId`
- - Updated `src/components/DesignReviewPanel.tsx` - Saves iterations to `design_generations`
- - Updated `src/hooks/useDesignerSessions.ts` - Extended interface with new fields
- - Added route `/project/:sessionId` in `src/App.tsx`
- 
- ---
+This plan covers the four missing stages in your interior design studio's business process: **Automated Nurturing**, **Demo Scheduling**, **Electronic Signatures**, and **Payment Processing**.
 
-## Análisis del Sistema Actual
+---
 
-### Estado de las Tablas
+## Overview
 
-| Tabla | Uso Actual | Problema |
-|-------|-----------|----------|
-| `project_sessions` | Solo imagen + resumen | No guarda iteraciones ni vincula pipeline |
-| `pipeline_steps` | Guarda pasos del pipeline | No tiene RLS, cualquiera puede ver todo |
-| `design_generations` | **Vacía, sin usar** | Ya tiene schema ideal para iteraciones |
-| `designer_profiles` | Perfiles de diseñadores | Bien configurada |
+The current system handles:
+- Content generation (Marketing)
+- Lead capture (Kyle Widget)
+- Lead qualification and status management
+- Proposal generation with fee calculation
+- Basic email notifications
 
-### Datos en DB Actualmente
+We'll add the missing automation to create a complete end-to-end sales funnel.
+
+---
+
+## Phase 1: Automated Nurturing Sequences
+
+### What This Does
+Automatically sends follow-up emails based on lead status changes and time elapsed, keeping leads engaged without manual intervention.
+
+### Database Changes
+
+**New table: `nurturing_sequences`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| office_id | uuid | FK to offices |
+| name | text | "New Lead Welcome", "Post-Qualification", etc. |
+| trigger_status | lead_status | Status that activates sequence |
+| is_active | boolean | Enable/disable sequence |
+
+**New table: `nurturing_steps`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| sequence_id | uuid | FK to nurturing_sequences |
+| step_order | integer | 1, 2, 3... |
+| delay_hours | integer | Hours after previous step |
+| email_subject | text | Subject template |
+| email_body | text | HTML body template |
+| include_moodboard | boolean | Attach generated moodboard |
+
+**New table: `nurturing_log`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| lead_id | uuid | FK to leads |
+| step_id | uuid | FK to nurturing_steps |
+| sent_at | timestamp | When email was sent |
+| opened_at | timestamp | Email open tracking |
+| clicked_at | timestamp | Link click tracking |
+
+### Backend Functions
+
+**`nurturing-scheduler`** (Edge Function)
+- Runs on a schedule (every 15 minutes via external cron or Supabase pg_cron)
+- Queries leads that have pending nurturing steps
+- Sends emails via Resend with personalized content
+- Logs delivery status
+
+**`nurturing-trigger`** (Edge Function)
+- Called when lead status changes
+- Enrolls lead in appropriate sequence
+- Cancels previous sequences if status changes
+
+### UI Components
+
+**Nurturing Settings Page** (`/kustr/settings/nurturing`)
+- List of sequences with on/off toggles
+- Sequence editor with drag-and-drop step ordering
+- Email template editor with variable placeholders
+- Preview mode to test emails
+
+---
+
+## Phase 2: Demo Scheduling with Calendar Integration
+
+### What This Does
+Allows leads to book consultation appointments directly, with automatic calendar sync and reminders.
+
+### Integration Approach
+
+**Option A: Google Calendar Connector** (Recommended)
+- Uses existing connector gateway infrastructure
+- Team members connect their Google Calendar
+- Available slots calculated from calendar free/busy
+- Events created automatically when booked
+
+**Option B: Calendly Embed**
+- Simpler implementation
+- Embed Calendly widget in lead-facing pages
+- Webhook integration for booking notifications
+
+### Database Changes
+
+**New table: `scheduling_availability`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| team_member_id | uuid | FK to team_members |
+| day_of_week | integer | 0-6 (Sunday-Saturday) |
+| start_time | time | e.g., "09:00" |
+| end_time | time | e.g., "17:00" |
+
+**New table: `appointments`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| lead_id | uuid | FK to leads |
+| team_member_id | uuid | FK to team_members |
+| scheduled_at | timestamp | Appointment time |
+| duration_minutes | integer | 30, 60, 90 |
+| type | text | "discovery", "site_visit", "design_review" |
+| location | text | Address or "Virtual" |
+| video_link | text | Zoom/Meet link |
+| status | text | "scheduled", "completed", "cancelled", "no_show" |
+| notes | text | Pre-appointment notes |
+| reminder_sent | boolean | Tracking flag |
+
+### Backend Functions
+
+**`scheduling-availability`** (Edge Function)
+- Queries team member availability
+- Checks Google Calendar for conflicts
+- Returns available time slots for next 2 weeks
+
+**`scheduling-book`** (Edge Function)
+- Creates appointment record
+- Creates Google Calendar event
+- Sends confirmation email to lead
+- Updates lead status to "contacted"
+
+**`scheduling-reminders`** (Edge Function)
+- Runs daily
+- Sends 24-hour and 1-hour reminders
+- Includes video link for virtual appointments
+
+### UI Components
+
+**Booking Widget** (Public-facing)
+- Embedded in lead email nurturing
+- Shows available team members
+- Calendar date picker
+- Time slot selection
+- Confirmation screen
+
+**Appointments Dashboard** (`/kustr/appointments`)
+- Daily/weekly calendar view
+- Upcoming appointments list
+- Quick actions: reschedule, cancel, mark complete
+- Integration with lead detail page
+
+---
+
+## Phase 3: Electronic Contract Signing
+
+### What This Does
+Enables legally-binding digital signatures on design agreements, eliminating paper contracts.
+
+### Integration Approach
+
+**In-house Solution** (Recommended for cost control)
+- Custom signature capture component
+- Signature stored as image in storage bucket
+- Legally compliant with timestamp and IP logging
+- PDF generation of signed contract
+
+### Database Changes
+
+**New columns on `proposals` table:**
+| Column | Type | Description |
+|--------|------|-------------|
+| signature_url | text | Stored signature image URL |
+| signed_by_name | text | Typed name confirmation |
+| signed_by_email | text | Email used for signing |
+| signed_at | timestamp | Legal timestamp |
+| signed_ip | text | IP address for legal record |
+| pdf_url | text | Final signed PDF URL |
+
+**New table: `signature_audit_log`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| proposal_id | uuid | FK to proposals |
+| event_type | text | "viewed", "signed", "downloaded" |
+| ip_address | text | Client IP |
+| user_agent | text | Browser info |
+| timestamp | timestamp | Event time |
+
+### Backend Functions
+
+**`proposal-sign`** (Edge Function)
+- Validates signature data
+- Stores signature image to storage
+- Updates proposal status to "signed"
+- Generates signed PDF
+- Logs audit trail
+- Triggers payment flow
+
+**`proposal-pdf`** (Edge Function)
+- Converts agreement HTML to PDF
+- Overlays signature image
+- Adds timestamp and legal footer
+- Stores in storage bucket
+
+### UI Components
+
+**Public Proposal View** (`/proposal/:id`)
+- Professional proposal presentation
+- Signature pad component (touch-enabled)
+- "I agree to terms" checkbox
+- Type-to-sign option
+- Download signed PDF button
+
+**Signature Tracking in Lead Detail**
+- Shows signature status
+- Link to signed PDF
+- Audit log viewer
+
+---
+
+## Phase 4: Payment Processing with Stripe
+
+### What This Does
+Collects deposits and milestone payments automatically, with installment support.
+
+### Integration Approach
+
+**Stripe Integration** (via Lovable's built-in tool)
+- One-time setup with secret key
+- Payment links for each milestone
+- Automatic invoice generation
+- Webhook handling for payment events
+
+### Database Changes
+
+**New table: `payments`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| proposal_id | uuid | FK to proposals |
+| lead_id | uuid | FK to leads |
+| amount | numeric | Payment amount |
+| milestone | text | "deposit", "design_milestone", "final" |
+| stripe_payment_intent_id | text | Stripe reference |
+| stripe_invoice_id | text | Invoice reference |
+| status | text | "pending", "processing", "completed", "failed" |
+| paid_at | timestamp | When payment completed |
+| receipt_url | text | Stripe receipt URL |
+
+**New table: `payment_schedules`**
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| proposal_id | uuid | FK to proposals |
+| milestone | text | Payment milestone name |
+| percentage | integer | e.g., 50, 25, 25 |
+| due_date | date | When payment is due |
+| reminder_sent | boolean | Tracking flag |
+
+### Backend Functions
+
+**`payment-create-session`** (Edge Function)
+- Creates Stripe Checkout session
+- Includes customer info from lead
+- Sets up payment schedule
+- Returns checkout URL
+
+**`payment-webhook`** (Edge Function)
+- Handles Stripe webhook events
+- Updates payment status
+- Triggers next phase when paid
+- Sends receipt emails
+- Updates lead status on deposit
+
+**`payment-reminders`** (Edge Function)
+- Runs daily
+- Checks for upcoming due dates
+- Sends payment reminder emails
+
+### UI Components
+
+**Payment Button in Proposal**
+- "Pay Deposit" button after signing
+- Stripe Checkout redirect
+- Success/failure handling
+
+**Payments Dashboard** (`/kustr/payments`)
+- Outstanding balances
+- Payment history
+- Invoice management
+- Manual payment recording
+
+**Payment Status in Lead Detail**
+- Visual payment progress
+- Individual milestone status
+- Quick link to send reminder
+
+---
+
+## Implementation Order
+
+### Sprint 1: Foundation (Week 1-2)
+1. Create all new database tables with migrations
+2. Set up Stripe integration using Lovable tool
+3. Implement basic payment collection flow
+4. Add payment status to proposal page
+
+### Sprint 2: Signatures (Week 3)
+1. Build signature pad component
+2. Create public proposal view
+3. Implement PDF generation
+4. Add audit logging
+
+### Sprint 3: Scheduling (Week 4-5)
+1. Connect Google Calendar via connector
+2. Build availability management UI
+3. Create public booking widget
+4. Implement appointment reminders
+
+### Sprint 4: Nurturing (Week 6-7)
+1. Build nurturing sequence editor
+2. Implement email templates with variables
+3. Create scheduler function
+4. Add analytics tracking
+
+### Sprint 5: Integration & Polish (Week 8)
+1. Connect all stages into unified flow
+2. Add dashboard overview metrics
+3. Test complete lead-to-client journey
+4. Performance optimization
+
+---
+
+## Updated Lead Status Flow
 
 ```text
-project_sessions: 3 registros
-  - 2 con designer_id: NULL (no asociados)
-  - 1 con designer_id asignado (sesión actual: 90a1e9d5...)
-
-pipeline_steps: ~1500+ registros
-  - Sin RLS real (políticas públicas)
-  - Todos los usuarios ven todos los pipelines
-
-design_generations: 0 registros
-  - No se está usando
+NEW ──────────────────────────────────────────────────────────────────────► LOST
+  │                                                                           ▲
+  │ [Kyle captures lead]                                                      │
+  │ [Nurturing: Welcome sequence starts]                                      │
+  ▼                                                                           │
+QUALIFIED ────────────────────────────────────────────────────────────────────┤
+  │                                                                           │
+  │ [AI analyzes budget & requirements]                                       │
+  │ [Nurturing: Qualification sequence]                                       │
+  ▼                                                                           │
+CONTACTED ────────────────────────────────────────────────────────────────────┤
+  │                                                                           │
+  │ [Appointment booked & completed]                                          │
+  │ [Calendar: Demo scheduled]                                                │
+  ▼                                                                           │
+PROPOSAL_SENT ────────────────────────────────────────────────────────────────┤
+  │                                                                           │
+  │ [Proposal viewed & signed]                                                │
+  │ [E-signature: Contract signed]                                            │
+  ▼                                                                           │
+CONVERTED ────────────────────────────────────────────────────────────────────┘
+  │
+  │ [Deposit paid via Stripe]
+  │ [Payment: Deposit collected]
+  ▼
+[PROJECT EXECUTION PIPELINE]
 ```
 
 ---
 
-## Arquitectura Propuesta: Smart Project Folders
+## Technical Considerations
 
-### Concepto
+### Security
+- All new tables will have RLS policies scoped to office_id
+- Signature data encrypted at rest
+- Payment webhooks validated with Stripe signature
+- Audit logs for compliance
 
-Cada **Project Session** se convierte en un "Smart Folder" que contiene:
+### Required API Keys
+- **Stripe Secret Key**: For payment processing (will use Lovable's Stripe tool)
+- **Google Calendar**: Via connector gateway (already available)
+- **Resend**: Already configured for emails
 
-1. **Imagen Principal**: El diseño aprobado actual
-2. **Historial de Versiones**: Todas las iteraciones (design_generations)
-3. **Documentos del Pipeline**: Los 16 pasos (Visual + Management)
-4. **Acceso Multi-Tenant**: Cada diseñador ve solo sus proyectos, Super Admin ve todo
-
-### Diagrama de Relaciones
-
-```text
-designer_profiles (1)
-       │
-       ├──────────────────┐
-       │                  │
-       ▼                  ▼
-project_sessions (N)   design_generations (N)
-       │                  │
-       │                  └── (versiones/iteraciones)
-       │
-       └──► pipeline_steps (16 por sesión)
-             ├── Visual Steps (1-8)
-             └── Management Steps (1-8)
-```
+### Performance
+- Scheduler functions use background tasks
+- PDF generation is async with storage
+- Calendar queries cached for 5 minutes
 
 ---
 
-## Cambios de Base de Datos
+## Files to Create/Modify
 
-### 1. Agregar columnas a `project_sessions`
+### New Edge Functions
+- `supabase/functions/nurturing-scheduler/index.ts`
+- `supabase/functions/nurturing-trigger/index.ts`
+- `supabase/functions/scheduling-availability/index.ts`
+- `supabase/functions/scheduling-book/index.ts`
+- `supabase/functions/scheduling-reminders/index.ts`
+- `supabase/functions/proposal-sign/index.ts`
+- `supabase/functions/proposal-pdf/index.ts`
+- `supabase/functions/payment-create-session/index.ts`
+- `supabase/functions/payment-webhook/index.ts`
+- `supabase/functions/payment-reminders/index.ts`
 
-```sql
-ALTER TABLE project_sessions ADD COLUMN IF NOT EXISTS project_name TEXT;
-ALTER TABLE project_sessions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
-ALTER TABLE project_sessions ADD COLUMN IF NOT EXISTS pipeline_completed BOOLEAN DEFAULT FALSE;
-ALTER TABLE project_sessions ADD COLUMN IF NOT EXISTS management_completed BOOLEAN DEFAULT FALSE;
-ALTER TABLE project_sessions ADD COLUMN IF NOT EXISTS iteration_count INTEGER DEFAULT 0;
-```
+### New Frontend Pages
+- `src/pages/kustr/Appointments.tsx`
+- `src/pages/kustr/Payments.tsx`
+- `src/pages/kustr/NurturingSettings.tsx`
+- `src/pages/public/ProposalView.tsx`
+- `src/pages/public/BookAppointment.tsx`
 
-### 2. Agregar `designer_id` a `pipeline_steps`
+### New Components
+- `src/components/kustr/SignaturePad.tsx`
+- `src/components/kustr/CalendarBooking.tsx`
+- `src/components/kustr/PaymentProgress.tsx`
+- `src/components/kustr/NurturingSequenceEditor.tsx`
+- `src/components/kustr/AppointmentCalendar.tsx`
 
-```sql
-ALTER TABLE pipeline_steps ADD COLUMN IF NOT EXISTS designer_id UUID;
-```
-
-### 3. Crear RLS para `project_sessions` (Multi-Tenant)
-
-```sql
--- Política: Diseñadores ven solo sus proyectos
-CREATE POLICY "Designers can view own projects"
-  ON project_sessions FOR SELECT
-  USING (
-    designer_id IN (
-      SELECT id FROM designer_profiles WHERE user_id = auth.uid()
-    )
-    OR designer_id IS NULL  -- Legacy projects sin asignar
-  );
-
--- Política: Super Admin ve todos los proyectos
-CREATE POLICY "Super admin can view all projects"
-  ON project_sessions FOR SELECT
-  USING (
-    (SELECT email FROM auth.users WHERE id = auth.uid()) = 'oriel@copilotinnovations.com'
-  );
-```
-
-### 4. Crear RLS para `pipeline_steps`
-
-```sql
--- Política: Usuarios ven solo pasos de sus proyectos
-CREATE POLICY "Users can view own pipeline steps"
-  ON pipeline_steps FOR SELECT
-  USING (
-    session_id IN (
-      SELECT session_id FROM project_sessions 
-      WHERE designer_id IN (
-        SELECT id FROM designer_profiles WHERE user_id = auth.uid()
-      )
-    )
-  );
-
--- Política: Super Admin ve todos los pasos
-CREATE POLICY "Super admin can view all pipeline steps"
-  ON pipeline_steps FOR SELECT
-  USING (
-    (SELECT email FROM auth.users WHERE id = auth.uid()) = 'oriel@copilotinnovations.com'
-  );
-```
+### Modified Files
+- `src/hooks/useLeads.ts` - Add nurturing status tracking
+- `src/pages/kustr/LeadDetail.tsx` - Add appointments, payments sections
+- `src/pages/kustr/Proposal.tsx` - Add signature and payment buttons
+- `src/App.tsx` - Add new routes
+- `supabase/config.toml` - Register new functions
 
 ---
 
-## Cambios en el Frontend
+## Success Metrics
 
-### 1. Nuevo Hook: `useProjectFolder`
-
-Crear `src/hooks/useProjectFolder.ts`:
-
-```typescript
-// Maneja un proyecto individual como "Smart Folder"
-interface ProjectFolder {
-  session: ProjectSession;
-  iterations: DesignGeneration[];
-  pipelineSteps: PipelineStep[];
-  managementSteps: PipelineStep[];
-}
-
-export function useProjectFolder(sessionId: string) {
-  // Cargar sesión + iteraciones + pipeline steps
-  // Funciones: addIteration, updateSession, runKyleReview
-}
-```
-
-### 2. Modificar `useDesignerSessions`
-
-- Agregar filtrado por rol (Super Admin vs Designer)
-- Incluir conteo de iteraciones y estado del pipeline
-- Agregar método `getAllSessions()` para Super Admin
-
-### 3. Nueva Página: Project Detail View
-
-Crear `src/pages/ProjectDetail.tsx`:
-
-```text
-/project/:sessionId
-
-┌─────────────────────────────────────────────────────────────┐
-│  Project: Mountain Living Room                              │
-│  Status: Pipeline Complete ✓    Last edited: 5 min ago     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────┐  ┌──────────────────────────────────────┐ │
-│  │              │  │  VERSIONS (5)                        │ │
-│  │   Approved   │  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐    │ │
-│  │   Design     │  │  │ v1  │ │ v2  │ │ v3  │ │ v4  │    │ │
-│  │              │  │  └─────┘ └─────┘ └─────┘ └─────┘    │ │
-│  └──────────────┘  └──────────────────────────────────────┘ │
-│                                                             │
-│  PIPELINE DOCUMENTATION                                     │
-│  ┌──────────┬──────────┬──────────┬──────────┐             │
-│  │ Spatial  │ Plans    │ Moodboard│ Flatlay  │  ...        │
-│  │   ✓      │   ✓      │    ✓     │    ✓     │             │
-│  └──────────┴──────────┴──────────┴──────────┘             │
-│                                                             │
-│  MANAGEMENT DOCS                                            │
-│  ┌──────────┬──────────┬──────────┬──────────┐             │
-│  │ Proposal │   BOM    │ Timeline │  Specs   │  ...        │
-│  │   ✓      │   ✓      │    ✓     │    ✓     │             │
-│  └──────────┴──────────┴──────────┴──────────┘             │
-│                                                             │
-│  [ 🎙️ Talk to Kyle about this project ]                    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 4. Modificar Dashboard
-
-Actualizar `src/pages/Dashboard.tsx`:
-
-- Mostrar estado del pipeline en cada card
-- Indicar número de iteraciones
-- Para Super Admin: mostrar toggle "Ver todos los proyectos"
-- Agregar filtros por estado (Active, Pipeline Complete, etc.)
-
-### 5. Guardar Iteraciones en `design_generations`
-
-Modificar `src/pages/Shazam.tsx` y `DesignReviewPanel.tsx`:
-
-```typescript
-// Al generar cada iteración, guardar en design_generations
-await supabase.from('design_generations').insert({
-  designer_id: profile.id,
-  session_id: currentSessionId,
-  image_url: data.imageUrl,
-  prompt: optimizedPrompt,
-  metadata: { iteration: iterationNumber, referenceUsed: !!referenceImage }
-});
-```
-
-### 6. Vincular Pipeline al Designer
-
-Modificar `usePipeline.ts`:
-
-```typescript
-// Al crear pipeline_steps, incluir designer_id
-const stepsToInsert = PIPELINE_STEPS.map(s => ({
-  session_id: newSessionId,
-  step_number: s.number,
-  step_name: s.name,
-  status: "pending",
-  designer_id: designerId || null, // NUEVO
-}));
-```
-
----
-
-## Flujo de Datos Multi-Tenant
-
-### Diseñador Normal
-
-```text
-1. Login → designer_profiles.user_id = auth.uid()
-2. Dashboard → project_sessions WHERE designer_id = profile.id
-3. Crear proyecto → INSERT con designer_id = profile.id
-4. Ver pipeline → pipeline_steps via session_id
-```
-
-### Super Admin
-
-```text
-1. Login → email = 'oriel@copilotinnovations.com'
-2. Dashboard → ALL project_sessions (toggle disponible)
-3. Puede ver proyectos de cualquier diseñador
-4. No puede modificar proyectos de otros (solo lectura)
-```
-
----
-
-## Kyle en el Contexto del Proyecto
-
-### Nueva funcionalidad: "Talk to Kyle about this project"
-
-En la página de detalle del proyecto, Kyle podrá:
-
-1. **Revisar toda la documentación** del pipeline
-2. **Sugerir modificaciones** basadas en el historial
-3. **Generar nuevas iteraciones** manteniendo contexto
-4. **Responder preguntas** sobre el proyecto específico
-
-Esto requiere crear un nuevo agente de ElevenLabs específico para revisión de proyectos que reciba el contexto completo del folder.
-
----
-
-## Archivos a Crear/Modificar
-
-| Archivo | Acción | Descripción |
-|---------|--------|-------------|
-| `src/hooks/useProjectFolder.ts` | Crear | Hook para manejar un proyecto como folder |
-| `src/pages/ProjectDetail.tsx` | Crear | Vista detallada del proyecto |
-| `src/hooks/useDesignerSessions.ts` | Modificar | Agregar soporte multi-tenant |
-| `src/pages/Dashboard.tsx` | Modificar | Toggle Super Admin, estados |
-| `src/pages/Shazam.tsx` | Modificar | Guardar iteraciones |
-| `src/components/DesignReviewPanel.tsx` | Modificar | Guardar en design_generations |
-| `src/hooks/usePipeline.ts` | Modificar | Agregar designer_id a steps |
-| `src/App.tsx` | Modificar | Agregar ruta /project/:id |
-
-### Migraciones SQL
-
-1. Agregar columnas a `project_sessions`
-2. Agregar `designer_id` a `pipeline_steps`
-3. Crear políticas RLS multi-tenant para ambas tablas
-
----
-
-## Resultado Esperado
-
-1. **Smart Folders**: Cada proyecto contiene diseño + versiones + documentos
-2. **Versionado Completo**: Todas las iteraciones guardadas y navegables
-3. **Pipeline Integrado**: Los 16 documentos asociados al proyecto
-4. **Multi-Tenant**: Diseñadores ven solo sus proyectos
-5. **Super Admin View**: Oriel puede ver todos los proyectos del estudio
-6. **Kyle Contextual**: Puede revisar y discutir proyectos específicos
+After implementation, you'll be able to track:
+- **Nurturing effectiveness**: Open rates, click rates, time-to-qualification
+- **Scheduling efficiency**: Booking rate, no-show rate, time-to-appointment
+- **Signature conversion**: View-to-sign rate, time-to-sign
+- **Payment performance**: Collection rate, time-to-payment, outstanding balances
+- **Overall funnel**: Lead-to-client conversion rate, average sales cycle length
 
