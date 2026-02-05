@@ -16,6 +16,7 @@
    url: string;
    label: string;
    iteration: number;
+  prompt?: string;
  }
  
  interface DesignReviewPanelProps {
@@ -45,7 +46,7 @@
    } = useKyle();
  
    const [images, setImages] = useState<ImageItem[]>([
-     { url: initialImageUrl, label: "Original", iteration: 0 },
+    { url: initialImageUrl, label: "Original", iteration: 0, prompt: extractedInsights },
    ]);
    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
    const [currentInsights, setCurrentInsights] = useState(extractedInsights);
@@ -84,7 +85,8 @@
          const newImage: ImageItem = {
            url: data.imageUrl,
            label: `Iteration ${newIteration}`,
-           iteration: newIteration
+          iteration: newIteration,
+          prompt: data.optimizedPrompt || refinedPrompt
          };
          
          setImages(prev => [...prev, newImage]);
@@ -117,6 +119,26 @@
      return () => setIterationCallback(null);
    }, [handleVoiceIteration, setIterationCallback]);
  
+  // Handle prompt change from carousel
+  const handlePromptChange = useCallback((index: number, newPrompt: string) => {
+    setImages(prev => prev.map((img, i) => 
+      i === index ? { ...img, prompt: newPrompt } : img
+    ));
+    // If editing the currently selected image, update insights too
+    if (index === selectedImageIndex) {
+      setCurrentInsights(newPrompt);
+    }
+  }, [selectedImageIndex]);
+
+  // Sync insights when selecting a different image
+  const handleImageSelect = useCallback((index: number) => {
+    setSelectedImageIndex(index);
+    const selectedImage = images[index];
+    if (selectedImage?.prompt) {
+      setCurrentInsights(selectedImage.prompt);
+    }
+  }, [images]);
+
    // Handle approval - navigate to pipeline
    const handleApprove = () => {
      const selectedImage = images[selectedImageIndex];
@@ -245,8 +267,10 @@
            <ImageCarousel
              images={images}
              selectedIndex={selectedImageIndex}
-             onSelect={setSelectedImageIndex}
+            onSelect={handleImageSelect}
              isLoading={isRegenerating}
+            onPromptChange={handlePromptChange}
+            isPromptEditable={!isRegenerating && !isIterationConnected}
            />
  
            <Button
