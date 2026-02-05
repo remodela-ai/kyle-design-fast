@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Check, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 interface ImageItem {
   url: string;
   label: string;
   iteration: number;
+  prompt?: string;
 }
 
 interface ImageCarouselProps {
@@ -15,6 +18,8 @@ interface ImageCarouselProps {
   selectedIndex: number;
   onSelect: (index: number) => void;
   isLoading?: boolean;
+  onPromptChange?: (index: number, newPrompt: string) => void;
+  isPromptEditable?: boolean;
 }
 
 export function ImageCarousel({
@@ -22,8 +27,18 @@ export function ImageCarousel({
   selectedIndex,
   onSelect,
   isLoading = false,
+  onPromptChange,
+  isPromptEditable = true,
 }: ImageCarouselProps) {
   const [viewingIndex, setViewingIndex] = useState(0);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [editedPrompt, setEditedPrompt] = useState("");
+
+  // Sync edited prompt when viewing index changes
+  useEffect(() => {
+    const currentImage = images[viewingIndex];
+    setEditedPrompt(currentImage?.prompt || "");
+  }, [viewingIndex, images]);
 
   const handlePrev = () => {
     setViewingIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
@@ -36,6 +51,13 @@ export function ImageCarousel({
   const handleSelect = (index: number) => {
     onSelect(index);
     setViewingIndex(index);
+  };
+
+  const handlePromptChange = (value: string) => {
+    setEditedPrompt(value);
+    if (onPromptChange) {
+      onPromptChange(viewingIndex, value);
+    }
   };
 
   if (images.length === 0) {
@@ -142,6 +164,53 @@ export function ImageCarousel({
           ))}
         </div>
       )}
+
+      {/* Prompt Viewer/Editor */}
+      <Collapsible open={isPromptOpen} onOpenChange={setIsPromptOpen}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-between gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="text-xs">
+                {isPromptOpen ? "Hide prompt" : "View prompt for this iteration"}
+              </span>
+            </div>
+            {isPromptOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">
+                Prompt for {currentImage.label}
+              </span>
+              {!isPromptEditable && (
+                <span className="text-xs text-muted-foreground italic">Read-only</span>
+              )}
+            </div>
+            <Textarea
+              value={editedPrompt}
+              onChange={(e) => handlePromptChange(e.target.value)}
+              placeholder="No prompt available for this iteration"
+              className="min-h-[120px] text-xs font-mono resize-y"
+              readOnly={!isPromptEditable}
+            />
+            {editedPrompt && (
+              <p className="text-xs text-muted-foreground">
+                {editedPrompt.length} characters
+              </p>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Select button */}
       {selectedIndex !== viewingIndex && (
