@@ -42,6 +42,7 @@ import KylePublic from "./pages/KylePublic";
  import Documentation from "./pages/Documentation";
  import Screenshots from "./pages/Screenshots";
  import TestIdeas from "./pages/TestIdeas";
+ import { TestGuideFloating } from "./components/TestGuideFloating";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
           <KustrOfficeProvider>
             <KyleProvider>
               <Routes>
+
                 {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/blink-design" element={<BlinkDesign />} />
@@ -100,6 +102,7 @@ const App = () => (
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+               <TestGuideFloating />
             </KyleProvider>
           </KustrOfficeProvider>
         </DesignerProfileProvider>
