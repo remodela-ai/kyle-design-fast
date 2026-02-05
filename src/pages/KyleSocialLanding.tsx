@@ -37,9 +37,6 @@ const KyleSocialLanding = () => {
             <div className="absolute -inset-6 rounded-full bg-primary/25 blur-xl group-hover:bg-primary/35 transition-colors" />
             
             <KyleAvatar size="xxl" />
-            
-            {/* Online indicator */}
-            <div className="absolute bottom-6 right-6 w-5 h-5 rounded-full bg-primary border-2 border-background animate-pulse" />
           </button>
 
           {/* CTA indicator - right below avatar */}
