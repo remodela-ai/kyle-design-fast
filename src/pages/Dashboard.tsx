@@ -15,7 +15,13 @@ import {
   CheckCircle,
   Play,
   Trash2,
+  MoreVertical,
 } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
  
  interface ExtendedSession {
    id: string;
@@ -193,15 +199,33 @@ const Dashboard = () => {
                              <Zap className="h-8 w-8 text-muted-foreground" />
                            </div>
                          )}
-                        {/* Delete button */}
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 left-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleDeleteProject(e, session.session_id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {/* More options popover */}
+                        <Popover>
+                          <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="absolute top-2 left-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-auto p-2" 
+                            align="start"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="gap-2 w-full justify-start"
+                              onClick={(e) => handleDeleteProject(e, session.session_id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Eliminar proyecto
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                         {/* Status badges */}
                         <div className="absolute top-2 right-2 flex gap-1">
                           {session.pipeline_completed && (
