@@ -40,6 +40,7 @@ import Proposal from "./pages/kustr/Proposal";
 
 // Public Kyle page
 import KylePublic from "./pages/KylePublic";
+import KyleSocialLanding from "./pages/KyleSocialLanding";
  import Documentation from "./pages/Documentation";
  import Screenshots from "./pages/Screenshots";
  import TestIdeas from "./pages/TestIdeas";
@@ -89,6 +90,7 @@ const App = () => (
                   
                   {/* Public Kyle widget */}
                   <Route path="/kyle" element={<KylePublic />} />
+                  <Route path="/start" element={<KyleSocialLanding />} />
                   
                   {/* Backlog */}
                   <Route path="/backlog" element={<Backlog />} />
