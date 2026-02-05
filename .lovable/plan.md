@@ -1,102 +1,136 @@
 
+# Plan: Corregir Dashboard y Persistir Sesiones de Diseño
 
-# Plan: Corregir Image-to-Image en Flux 2 Pro
+## Problemas Identificados
 
-## Diagnóstico del Problema
-
-He identificado la causa raíz del problema de consistencia en las iteraciones:
-
-**El código actual usa parámetros INCORRECTOS para Flux 2 Pro:**
+### 1. Sidebar Duplicado
+El archivo `Dashboard.tsx` incluye su propio `<AppSidebar>` en la línea 96, pero la página ya está envuelta en `<GlobalLayout>` (App.tsx línea 59) que también incluye `<AppSidebar>`.
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  CÓDIGO ACTUAL (INCORRECTO)                                 │
-├─────────────────────────────────────────────────────────────┤
-│  input.image_prompt = referenceImage                        │
-│  input.image_prompt_strength = 0.70                         │
-│                                                             │
-│  ❌ Estos parámetros NO EXISTEN en Flux 2 Pro               │
-│  ❌ El modelo los ignora completamente                      │
-│  ❌ Genera una imagen nueva sin referencia                  │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│  PARÁMETROS CORRECTOS según documentación                   │
-├─────────────────────────────────────────────────────────────┤
-│  input.input_images = [referenceImageUrl]  (array)          │
-│                                                             │
-│  ✅ El modelo usa la imagen como referencia visual          │
-│  ✅ Mantiene la composición y elementos arquitectónicos     │
-└─────────────────────────────────────────────────────────────┘
+App.tsx
+  └── GlobalLayout (tiene AppSidebar) 
+        └── Dashboard (tiene OTRO AppSidebar) ← DUPLICADO
 ```
 
-## Modelo en Uso
+### 2. Sesiones No Se Guardan desde Shazam
+Las sesiones de diseño solo se crean cuando se inicia el pipeline completo (`usePipeline.ts` línea 667), pero cuando el usuario:
+- Habla con Kyle en `/shazam`
+- Genera un diseño con Flux 2 Pro
+- Hace iteraciones en el `DesignReviewPanel`
 
-- **Modelo**: `black-forest-labs/flux-2-pro` via Replicate API
-- **Versión SDK**: `replicate@0.25.2`
-- **Capacidad**: Soporta hasta 8 imágenes de referencia
+**Ninguna de estas acciones crea un registro en `project_sessions`**.
+
+### 3. designer_id es NULL
+La única sesión en la base de datos tiene `designer_id: null` porque no hay lógica para asociar el perfil del diseñador autenticado.
+
+---
 
 ## Cambios Requeridos
 
-### 1. Actualizar Edge Function `blink-design`
+### Fase 1: Eliminar Sidebar Duplicado
 
-Modificar `supabase/functions/blink-design/index.ts`:
+**Archivo**: `src/pages/Dashboard.tsx`
 
-**Antes (líneas 156-160):**
+- Eliminar la importación de `AppSidebar`
+- Eliminar el estado `sidebarCollapsed` y `mobileMenuOpen`
+- Eliminar el componente `<AppSidebar>` del JSX
+- Eliminar el botón de menú móvil del header (GlobalLayout ya lo maneja)
+- Ajustar la estructura del layout para usar solo el wrapper de GlobalLayout
+
+### Fase 2: Auto-Guardar Sesiones desde Shazam
+
+**Archivo**: `src/pages/Shazam.tsx`
+
+Agregar lógica para crear/actualizar `project_sessions` automáticamente cuando:
+
+1. **Se genera el primer diseño**: Crear nueva sesión con:
+   - `session_id`: UUID generado
+   - `design_image_url`: La imagen generada
+   - `conversation_summary`: El transcript o resumen
+   - `designer_id`: Del perfil del diseñador autenticado
+
+2. **Se hacen iteraciones**: Actualizar la sesión existente con:
+   - La imagen más reciente
+   - El prompt actualizado
+
+**Nuevo estado necesario**:
 ```typescript
-if (referenceImage) {
-  input.image_prompt = referenceImage;           // ❌ Parámetro incorrecto
-  input.image_prompt_strength = 0.70;            // ❌ No existe
-}
+const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 ```
 
-**Después:**
+**Lógica de guardado**:
 ```typescript
-if (referenceImage) {
-  input.input_images = [referenceImage];         // ✅ Array de URLs
-  input.aspect_ratio = "match_input_image";      // ✅ Mantener proporción
-}
+// En generateDesign(), después de obtener la imagen:
+const { profile } = useDesignerProfile();
+
+const sessionId = currentSessionId || crypto.randomUUID();
+await supabase.from('project_sessions').upsert({
+  session_id: sessionId,
+  design_image_url: data.imageUrl,
+  conversation_summary: optimizedPrompt || promptToUse,
+  designer_id: profile?.id || null,
+});
+setCurrentSessionId(sessionId);
 ```
 
-### 2. Mejorar el Prompt para Edición
+### Fase 3: Guardar Iteraciones desde DesignReviewPanel
 
-Cuando hay una imagen de referencia, el prompt debe ser más específico sobre qué mantener y qué cambiar:
+**Archivo**: `src/components/DesignReviewPanel.tsx`
 
-```typescript
-if (referenceImage) {
-  const editingPrompt = `Edit this interior design image: ${refinedChanges}. 
-Keep the same room layout, camera angle, and architectural structure. 
-Only modify the specific elements mentioned.`;
-}
-```
+- Recibir `sessionId` como prop desde Shazam
+- Actualizar la sesión cada vez que se genera una iteración
+- Opcionalmente: Guardar cada iteración en `design_generations` para historial completo
 
-### 3. Agregar Logging Mejorado
+### Fase 4: Mejorar Dashboard para Mostrar Sesiones como Proyectos
 
-Para debugging futuro:
+**Archivo**: `src/pages/Dashboard.tsx`
 
-```typescript
-console.log("[blink-design] Input parameters:", JSON.stringify({
-  hasReferenceImage: !!referenceImage,
-  aspectRatio: input.aspect_ratio,
-  promptLength: finalImagePrompt.length,
-  inputImagesCount: input.input_images?.length || 0
-}));
-```
+- Renombrar sección "Recent Sessions" a "Design Projects"
+- Hacer las cards clickeables para reabrir la sesión en Shazam
+- Mostrar thumbnail de la última imagen
+- Mostrar el resumen de la conversación
+- Agregar navegación: `/shazam?session=<id>`
 
-## Resumen Técnico
+**Archivo**: `src/pages/Shazam.tsx`
 
-| Aspecto | Antes | Después |
-|---------|-------|---------|
-| Parámetro imagen | `image_prompt` (inexistente) | `input_images` (array) |
-| Control fuerza | `image_prompt_strength` | No necesario (el prompt controla) |
-| Aspect ratio | `"1:1"` fijo | `"match_input_image"` cuando hay ref |
-| Tipo de prompt | Mismo para todo | Diferenciado: generación vs edición |
+- Leer query param `?session=<id>` al cargar
+- Si existe, cargar la sesión desde BD
+- Popular `generatedImage`, `optimizedPrompt` y `images` del historial
+
+---
+
+## Estructura de Datos Actual vs Propuesta
+
+### Actual (project_sessions)
+| Campo | Uso Actual |
+|-------|-----------|
+| session_id | ID único |
+| design_image_url | Solo 1 imagen |
+| conversation_summary | Solo 1 resumen |
+| designer_id | Casi siempre NULL |
+
+### Propuesta (sin cambios de schema)
+Usar `design_generations` para guardar historial de iteraciones por sesión:
+- `session_id`: Vincula a project_sessions
+- `image_url`: Cada iteración
+- `prompt`: Prompt de cada iteración
+- `designer_id`: ID del diseñador
+
+---
+
+## Archivos a Modificar
+
+1. `src/pages/Dashboard.tsx` - Eliminar sidebar duplicado, mejorar UI de proyectos
+2. `src/pages/Shazam.tsx` - Auto-guardar sesiones, cargar sesiones existentes
+3. `src/components/DesignReviewPanel.tsx` - Persistir iteraciones
+4. `src/hooks/useDesignerSessions.ts` - Agregar funciones para crear/actualizar sesiones
+
+---
 
 ## Resultado Esperado
 
-Después de este cambio:
-1. La primera imagen se genera normalmente desde el transcript
-2. Las iteraciones reciben la imagen anterior como `input_images[0]`
-3. El modelo edita la imagen existente en lugar de generar una nueva
-4. Se mantiene la consistencia arquitectónica y de composición
-
+1. **Un solo sidebar** en toda la app
+2. **Cada interacción con Kyle crea un "proyecto"** automáticamente
+3. **Las iteraciones se guardan** dentro del proyecto
+4. **El dashboard muestra proyectos** como carpetas clickeables
+5. **Se puede continuar trabajando** desde donde se dejó
