@@ -8,6 +8,7 @@ import { Mic, MicOff, Phone, Sparkles, Loader2 } from "lucide-react";
 import { useKyleLeadAgent } from "@/hooks/useKyleLeadAgent";
 import { useToast } from "@/hooks/use-toast";
 import { AudioWaves } from "@/components/AudioWaves";
+import kyleAvatar from "@/assets/kyle-avatar.jpeg";
 
 export default function KylePublic() {
   const [searchParams] = useSearchParams();
@@ -95,9 +96,11 @@ export default function KylePublic() {
       <header className="p-4 border-b border-border/50">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">K</span>
-            </div>
+            <img 
+              src={kyleAvatar} 
+              alt="Kyle" 
+              className="w-10 h-10 rounded-full object-cover border-2 border-primary"
+            />
             <div>
               <h1 className="font-semibold text-foreground">Kyle</h1>
               <p className="text-xs text-muted-foreground">Design Consultant</p>
