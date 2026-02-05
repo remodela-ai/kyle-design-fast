@@ -13,14 +13,14 @@ const KyleSocialLanding = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Image - Top section */}
-      <div className="relative h-[30vh] w-full overflow-hidden">
+      <div className="relative h-[40vh] w-full overflow-hidden">
         <img 
           src={kitchenHero} 
           alt="Luxury modern kitchen" 
           className="w-full h-full object-cover"
         />
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* Content Section */}
@@ -30,16 +30,16 @@ const KyleSocialLanding = () => {
           {/* Kyle Avatar - positioned at top of content, overlapping image */}
           <button
             onClick={handleStart}
-            className="group relative focus:outline-none focus:ring-0 transition-transform hover:scale-[1.02] active:scale-[0.98] -mt-20"
+            className="group relative focus:outline-none focus:ring-0 transition-transform hover:scale-[1.02] active:scale-[0.98] -mt-32"
             aria-label="Start conversation with Kyle"
           >
             {/* Outer glow ring */}
-            <div className="absolute -inset-4 rounded-full bg-primary/25 blur-xl group-hover:bg-primary/35 transition-colors" />
+            <div className="absolute -inset-6 rounded-full bg-primary/25 blur-xl group-hover:bg-primary/35 transition-colors" />
             
-            <KyleAvatar size="lg" />
+            <KyleAvatar size="xxl" />
             
             {/* Online indicator */}
-            <div className="absolute bottom-4 right-4 w-4 h-4 rounded-full bg-primary border-2 border-background animate-pulse" />
+            <div className="absolute bottom-6 right-6 w-5 h-5 rounded-full bg-primary border-2 border-background animate-pulse" />
           </button>
 
           {/* CTA indicator - right below avatar */}
