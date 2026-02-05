@@ -2,27 +2,16 @@ import { KyleAvatar } from "./KyleAvatar";
 import { PipelineSection } from "./PipelineSection";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { Menu, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface CanvasProps {
-  onMenuClick?: () => void;
-}
-
-export function Canvas({ onMenuClick }: CanvasProps) {
+export function Canvas() {
   const navigate = useNavigate();
 
   return (
     <div className="flex-1 flex flex-col items-center p-4 md:p-8 relative overflow-y-auto">
       {/* Background gradient effect */}
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
-      
-      {/* Mobile menu button - fixed/floating */}
-      <div className="fixed top-4 left-4 z-50 md:hidden">
-        <Button variant="icon" size="icon" onClick={onMenuClick}>
-          <Menu className="h-5 w-5" />
-        </Button>
-      </div>
       
       {/* Theme toggle - fixed/floating, subtle */}
       <div className="fixed top-4 right-4 z-50">
