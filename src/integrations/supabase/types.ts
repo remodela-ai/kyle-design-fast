@@ -712,6 +712,114 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          lead_id: string | null
+          notification_type: string
+          proposal_id: string | null
+          recipient_email: string
+          recipient_team_member_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          notification_type: string
+          proposal_id?: string | null
+          recipient_email: string
+          recipient_team_member_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string | null
+          notification_type?: string
+          proposal_id?: string | null
+          recipient_email?: string
+          recipient_team_member_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_recipient_team_member_id_fkey"
+            columns: ["recipient_team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_frequency: string | null
+          id: string
+          lead_assigned_email: boolean | null
+          new_lead_email: boolean | null
+          new_message_email: boolean | null
+          proposal_viewed_email: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email_frequency?: string | null
+          id?: string
+          lead_assigned_email?: boolean | null
+          new_lead_email?: boolean | null
+          new_message_email?: boolean | null
+          proposal_viewed_email?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email_frequency?: string | null
+          id?: string
+          lead_assigned_email?: boolean | null
+          new_lead_email?: boolean | null
+          new_message_email?: boolean | null
+          proposal_viewed_email?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: true
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offices: {
         Row: {
           address: string | null
