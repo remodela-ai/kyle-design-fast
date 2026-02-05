@@ -36,7 +36,7 @@ const publicNavItems = [
 const designerNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Sparkles, label: "Co-create", path: "/shazam" },
-  { icon: FolderKanban, label: "Collections", path: "/dashboard" },
+  { icon: FolderKanban, label: "Projects", path: "/dashboard" },
 ];
 
 // Kustr Design routes
