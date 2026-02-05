@@ -1,4 +1,4 @@
- import { useState } from "react";
+ import { useState, useCallback } from "react";
  import {
    Dialog,
    DialogContent,
@@ -12,7 +12,7 @@
    DrawerTitle,
  } from "@/components/ui/drawer";
  import { useIsMobile } from "@/hooks/use-mobile";
- import { CheckCircle, Clock, AlertCircle, FileText, ExternalLink } from "lucide-react";
+ import { CheckCircle, Clock, AlertCircle, FileText, ExternalLink, Play, RotateCcw, Loader2 } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { ScrollArea } from "@/components/ui/scroll-area";
  
@@ -31,8 +31,13 @@
  interface PipelineStepDialogProps {
    step: PipelineStepData | null;
    stepName: string;
+   stepNumber: number;
+   isVisualPipeline: boolean;
+   sessionId: string;
+   designImageUrl: string | null;
    open: boolean;
    onOpenChange: (open: boolean) => void;
+   onStepExecuted?: () => void;
  }
  
  function StepStatusBadge({ status }: { status: string }) {
@@ -68,7 +73,29 @@
    }
  }
  
- function StepContent({ step, stepName }: { step: PipelineStepData | null; stepName: string }) {
+ interface StepContentProps {
+   step: PipelineStepData | null;
+   stepName: string;
+   stepNumber: number;
+   isVisualPipeline: boolean;
+   sessionId: string;
+   designImageUrl: string | null;
+   isExecuting: boolean;
+   onExecute: () => void;
+ }
+ 
+ function StepContent({ 
+   step, 
+   stepName, 
+   stepNumber, 
+   isVisualPipeline, 
+   sessionId,
+   designImageUrl,
+   isExecuting,
+   onExecute,
+ }: StepContentProps) {
+   const canExecute = !isExecuting && sessionId && designImageUrl;
+ 
    if (!step || step.status === "pending") {
      return (
        <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -77,8 +104,29 @@
          </div>
          <h3 className="text-lg font-medium mb-2">Documento pendiente</h3>
          <p className="text-sm text-muted-foreground max-w-sm">
-           Este paso del pipeline aún no ha sido ejecutado. Completa los pasos anteriores para generar este documento.
+           Este paso del pipeline aún no ha sido ejecutado.
          </p>
+         {canExecute && (
+           <Button
+             variant="kyle"
+             size="sm"
+             className="mt-4 gap-2"
+             onClick={onExecute}
+             disabled={isExecuting}
+           >
+             {isExecuting ? (
+               <>
+                 <Loader2 className="h-4 w-4 animate-spin" />
+                 Ejecutando...
+               </>
+             ) : (
+               <>
+                 <Play className="h-4 w-4" />
+                 Ejecutar paso
+               </>
+             )}
+           </Button>
+         )}
        </div>
      );
    }
@@ -107,6 +155,27 @@
          <p className="text-sm text-muted-foreground max-w-sm mb-4">
            {step.error_message || "Ocurrió un error al generar este documento."}
          </p>
+         {canExecute && (
+           <Button
+             variant="outline"
+             size="sm"
+             className="gap-2"
+             onClick={onExecute}
+             disabled={isExecuting}
+           >
+             {isExecuting ? (
+               <>
+                 <Loader2 className="h-4 w-4 animate-spin" />
+                 Reintentando...
+               </>
+             ) : (
+               <>
+                 <RotateCcw className="h-4 w-4" />
+                 Reintentar
+               </>
+             )}
+           </Button>
+         )}
        </div>
      );
    }
@@ -159,21 +228,152 @@
    );
  }
  
- export function PipelineStepDialog({ step, stepName, open, onOpenChange }: PipelineStepDialogProps) {
+ export function PipelineStepDialog({ 
+   step, 
+   stepName, 
+   stepNumber,
+   isVisualPipeline,
+   sessionId,
+   designImageUrl,
+   open, 
+   onOpenChange,
+   onStepExecuted,
+ }: PipelineStepDialogProps) {
    const isMobile = useIsMobile();
+   const [isExecuting, setIsExecuting] = useState(false);
+ 
+   const handleExecuteStep = useCallback(async () => {
+     if (!sessionId || !designImageUrl) return;
+     
+     setIsExecuting(true);
+     
+     try {
+       // Import supabase dynamically to avoid circular deps
+       const { supabase } = await import("@/integrations/supabase/client");
+       
+       // Determine which function to call based on step number and pipeline type
+       const visualFunctions: Record<number, string> = {
+         1: "pipeline-spatial-analysis",
+         2: "nano-planta", // Step 2 needs special handling
+         3: "pipeline-items-extraction",
+         4: "pipeline-moodboard",
+         5: "pipeline-flatlay",
+         6: "pipeline-colors-textures",
+         7: "pipeline-storybook",
+         8: "pipeline-video-presentation",
+       };
+       
+       const managementFunctions: Record<number, string> = {
+         9: "management-proposal-budget",
+         10: "management-bom",
+         11: "management-timeline",
+         12: "management-specs",
+         13: "management-suppliers",
+         14: "management-installation",
+         15: "management-checklist",
+         16: "management-cover",
+       };
+       
+       const functionName = isVisualPipeline 
+         ? visualFunctions[stepNumber] 
+         : managementFunctions[stepNumber];
+       
+       if (!functionName) {
+         throw new Error(`No function found for step ${stepNumber}`);
+       }
+       
+       // Get spatial analysis data for context (needed by most steps)
+       const { data: spatialStep } = await supabase
+         .from("pipeline_steps")
+         .select("output_data")
+         .eq("session_id", sessionId)
+         .eq("step_number", 1)
+         .single();
+       
+       const spatialOutput = spatialStep?.output_data as { 
+         parsedAnalysis?: { 
+           elements?: unknown[]; 
+           roomType?: string; 
+           styleIdentified?: string;
+         } 
+       } | null;
+       
+       const elements = spatialOutput?.parsedAnalysis?.elements || [];
+       const roomType = spatialOutput?.parsedAnalysis?.roomType || "living room";
+       const styleIdentified = spatialOutput?.parsedAnalysis?.styleIdentified || "modern";
+       
+       // Update step to processing
+       await supabase.from("pipeline_steps").update({
+         status: "processing",
+         started_at: new Date().toISOString(),
+       }).eq("session_id", sessionId).eq("step_number", stepNumber);
+       
+       // Execute the step
+       console.log(`Executing step ${stepNumber}: ${functionName}`);
+       
+       const { data, error } = await supabase.functions.invoke(functionName, {
+         body: { 
+           sessionId, 
+           designImageUrl,
+           elements,
+           roomType,
+           styleIdentified,
+           spatialAnalysis: spatialOutput?.parsedAnalysis,
+         },
+       });
+       
+       if (error) throw error;
+       
+       console.log(`Step ${stepNumber} completed:`, data);
+       
+       // Update step to completed
+       await supabase.from("pipeline_steps").update({
+         status: "completed",
+         output_data: data?.output || data,
+         visual_outcome_url: data?.imageUrl || null,
+         completed_at: new Date().toISOString(),
+       }).eq("session_id", sessionId).eq("step_number", stepNumber);
+       
+       onStepExecuted?.();
+       
+     } catch (error) {
+       console.error(`Error executing step ${stepNumber}:`, error);
+       
+       // Update step to error
+       const { supabase } = await import("@/integrations/supabase/client");
+       await supabase.from("pipeline_steps").update({
+         status: "error",
+         error_message: error instanceof Error ? error.message : "Unknown error",
+         completed_at: new Date().toISOString(),
+       }).eq("session_id", sessionId).eq("step_number", stepNumber);
+       
+       onStepExecuted?.();
+     } finally {
+       setIsExecuting(false);
+     }
+   }, [sessionId, designImageUrl, stepNumber, isVisualPipeline, onStepExecuted]);
  
    const content = (
      <ScrollArea className="max-h-[70vh]">
        <div className="p-1">
          <div className="flex items-center justify-between mb-4">
            <StepStatusBadge status={step?.status || "pending"} />
-           {step?.created_at && step.status === "completed" && (
+           {step?.created_at && step?.status === "completed" && (
              <span className="text-xs text-muted-foreground">
                {new Date(step.created_at).toLocaleDateString()}
              </span>
            )}
          </div>
-         <StepContent step={step} stepName={stepName} />
+         <StepContent 
+           step={step} 
+           stepName={stepName}
+           stepNumber={stepNumber}
+           isVisualPipeline={isVisualPipeline}
+           sessionId={sessionId}
+           designImageUrl={designImageUrl}
+           isExecuting={isExecuting}
+           onExecute={handleExecuteStep}
+         />
        </div>
      </ScrollArea>
    );
