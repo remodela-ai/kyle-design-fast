@@ -92,7 +92,7 @@ const App = () => (
                   
                   {/* Public Kyle widget */}
                   <Route path="/kyle" element={<KylePublic />} />
-                  <Route path="/start" element={<KyleSocialLanding />} />
+                  <Route path="/kitchen" element={<KyleSocialLanding />} />
                   <Route path="/bathroom" element={<BathroomSocialLanding />} />
                   
                   {/* Marketing */}
