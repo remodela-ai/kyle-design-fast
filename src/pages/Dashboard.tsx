@@ -1,422 +1,174 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AppSidebar } from '@/components/AppSidebar';
-import { useDesignerProfile } from '@/hooks/useDesignerProfile';
-import { useDesignerCollections } from '@/hooks/useDesignerCollections';
-import { useDesignerSessions } from '@/hooks/useDesignerSessions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { 
-  Menu, 
-  Plus, 
-  FolderOpen, 
-  Image, 
-  Zap, 
-  Clock,
-  Eye,
-  EyeOff,
-  Globe,
-  Users,
-  Loader2,
-  Sparkles,
-} from 'lucide-react';
-import type { VisibilityType } from '@/hooks/useDesignerCollections';
-
-const Dashboard = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { profile, loading: profileLoading } = useDesignerProfile();
-  const { 
-    collections, 
-    generations, 
-    loading: collectionsLoading,
-    createCollection,
-  } = useDesignerCollections();
-  const { sessions, loading: sessionsLoading } = useDesignerSessions();
-  
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
-  const [newCollection, setNewCollection] = useState({
-    name: '',
-    description: '',
-    visibility: 'private' as VisibilityType,
-  });
-
-  const handleCreateCollection = async () => {
-    if (!newCollection.name.trim()) {
-      toast({
-        title: 'Name required',
-        description: 'Please enter a collection name',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const { error } = await createCollection(newCollection);
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({
-      title: 'Collection created',
-      description: `"${newCollection.name}" has been created.`,
-    });
-    
-    setNewCollection({ name: '', description: '', visibility: 'private' });
-    setIsCreatingCollection(false);
-  };
-
-  const getVisibilityIcon = (visibility: VisibilityType) => {
-    switch (visibility) {
-      case 'private': return <EyeOff className="h-3 w-3" />;
-      case 'shared': return <Users className="h-3 w-3" />;
-      case 'public': return <Globe className="h-3 w-3" />;
-    }
-  };
-
-  const loading = profileLoading || collectionsLoading || sessionsLoading;
-
-  return (
-    <div className="flex min-h-screen bg-background">
-      <AppSidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-      />
-      
-      <main className="flex-1 flex flex-col overflow-y-auto">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="flex items-center justify-between px-4 md:px-6 h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="icon" size="icon" onClick={() => setMobileMenuOpen(true)} className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold">Dashboard</h1>
-                {profile && (
-                  <p className="text-sm text-muted-foreground">
-                    Welcome back, {profile.display_name}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button onClick={() => navigate('/shazam')} className="hidden sm:flex">
-                <Sparkles className="mr-2 h-4 w-4" />
-                New Design
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="flex-1 p-4 md:p-6 space-y-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <FolderOpen className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{collections.length}</p>
-                      <p className="text-xs text-muted-foreground">Collections</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Image className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{generations.length}</p>
-                      <p className="text-xs text-muted-foreground">Designs</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Zap className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{sessions.length}</p>
-                      <p className="text-xs text-muted-foreground">Sessions</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Clock className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {sessions.length > 0 
-                          ? new Date(sessions[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                          : '--'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Last Active</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Quick Action */}
-              <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-primary/10">
-                      <Sparkles className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Ready to co-create?</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Start a new design session with Kyle
-                      </p>
-                    </div>
-                  </div>
-                  <Button onClick={() => navigate('/shazam')} size="lg">
-                    <Zap className="mr-2 h-4 w-4" />
-                    Start Session
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Collections Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Your Collections</h2>
-                  <Dialog open={isCreatingCollection} onOpenChange={setIsCreatingCollection}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Collection
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create Collection</DialogTitle>
-                        <DialogDescription>
-                          Organize your designs into collections
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="collection-name">Name</Label>
-                          <Input
-                            id="collection-name"
-                            placeholder="My Collection"
-                            value={newCollection.name}
-                            onChange={(e) => setNewCollection(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="collection-description">Description</Label>
-                          <Textarea
-                            id="collection-description"
-                            placeholder="What's this collection about?"
-                            value={newCollection.description}
-                            onChange={(e) => setNewCollection(prev => ({ ...prev, description: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="collection-visibility">Visibility</Label>
-                          <Select
-                            value={newCollection.visibility}
-                            onValueChange={(value: VisibilityType) => 
-                              setNewCollection(prev => ({ ...prev, visibility: value }))
-                            }
-                          >
-                            <SelectTrigger id="collection-visibility">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="private">
-                                <div className="flex items-center gap-2">
-                                  <EyeOff className="h-4 w-4" />
-                                  Private
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="shared">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4" />
-                                  Shared
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="public">
-                                <div className="flex items-center gap-2">
-                                  <Globe className="h-4 w-4" />
-                                  Public
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button onClick={handleCreateCollection} className="w-full">
-                          Create Collection
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                {collections.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="p-8 text-center">
-                      <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="font-medium mb-2">No collections yet</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Create your first collection to organize your designs
-                      </p>
-                      <Button variant="outline" onClick={() => setIsCreatingCollection(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create Collection
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {collections.map(collection => (
-                      <Card key={collection.id} className="hover:border-primary/50 transition-colors cursor-pointer">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start justify-between">
-                            <CardTitle className="text-base">{collection.name}</CardTitle>
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              {getVisibilityIcon(collection.visibility)}
-                              {collection.visibility}
-                            </Badge>
-                          </div>
-                          {collection.description && (
-                            <CardDescription className="line-clamp-2">
-                              {collection.description}
-                            </CardDescription>
-                          )}
-                        </CardHeader>
-                        <CardContent>
-                          <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
-                            {collection.cover_image_url ? (
-                              <img 
-                                src={collection.cover_image_url} 
-                                alt={collection.name}
-                                className="w-full h-full object-cover rounded-lg"
-                              />
-                            ) : (
-                              <FolderOpen className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {generations.filter(g => g.collection_id === collection.id).length} designs
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Recent Sessions */}
-              {sessions.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">Recent Sessions</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sessions.slice(0, 6).map(session => (
-                      <Card key={session.id} className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
-                        <div className="aspect-video bg-muted">
-                          {session.design_image_url ? (
-                            <img 
-                              src={session.design_image_url} 
-                              alt="Design session"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Zap className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="p-3">
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {session.conversation_summary || 'Design session'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(session.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Recent Designs */}
-              {generations.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">Recent Designs</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {generations.slice(0, 8).map(gen => (
-                      <Card key={gen.id} className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
-                        <div className="aspect-square bg-muted">
-                          <img 
-                            src={gen.image_url} 
-                            alt={gen.prompt || 'Design'}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {gen.prompt || 'Untitled'}
-                            </p>
-                            <Badge variant="outline" className="text-xs">
-                              {getVisibilityIcon(gen.visibility)}
-                            </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Dashboard;
+ import { useNavigate } from 'react-router-dom';
+ import { useDesignerProfile } from '@/hooks/useDesignerProfile';
+ import { useDesignerSessions } from '@/hooks/useDesignerSessions';
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+ import { 
+   Plus, 
+   FolderOpen, 
+   Image, 
+   Zap, 
+   Clock,
+   Loader2,
+ } from 'lucide-react';
+ 
+ const Dashboard = () => {
+   const navigate = useNavigate();
+   const { profile, loading: profileLoading } = useDesignerProfile();
+   const { sessions, loading: sessionsLoading } = useDesignerSessions();
+ 
+   const loading = profileLoading || sessionsLoading;
+ 
+   return (
+     <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6">
+       {/* Page Header */}
+       <div className="mb-6">
+         <h1 className="text-2xl font-semibold">Dashboard</h1>
+         {profile && (
+           <p className="text-sm text-muted-foreground">
+             Welcome back, {profile.display_name}
+           </p>
+         )}
+       </div>
+ 
+       {/* Content */}
+       <div className="space-y-6">
+         {loading ? (
+           <div className="flex items-center justify-center py-20">
+             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+           </div>
+         ) : (
+           <>
+             {/* Quick Stats */}
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               <Card>
+                 <CardContent className="p-4 flex items-center gap-3">
+                   <div className="p-2 rounded-lg bg-primary/10">
+                     <Zap className="h-5 w-5 text-primary" />
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold">{sessions.length}</p>
+                     <p className="text-xs text-muted-foreground">Projects</p>
+                   </div>
+                 </CardContent>
+               </Card>
+               
+               <Card>
+                 <CardContent className="p-4 flex items-center gap-3">
+                   <div className="p-2 rounded-lg bg-primary/10">
+                     <Image className="h-5 w-5 text-primary" />
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold">{sessions.filter(s => s.design_image_url).length}</p>
+                     <p className="text-xs text-muted-foreground">Designs</p>
+                   </div>
+                 </CardContent>
+               </Card>
+               
+               <Card>
+                 <CardContent className="p-4 flex items-center gap-3">
+                   <div className="p-2 rounded-lg bg-primary/10">
+                     <FolderOpen className="h-5 w-5 text-primary" />
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold">{sessions.filter(s => s.conversation_summary).length}</p>
+                     <p className="text-xs text-muted-foreground">With Summary</p>
+                   </div>
+                 </CardContent>
+               </Card>
+               
+               <Card>
+                 <CardContent className="p-4 flex items-center gap-3">
+                   <div className="p-2 rounded-lg bg-primary/10">
+                     <Clock className="h-5 w-5 text-primary" />
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold">
+                       {sessions.length > 0 
+                         ? new Date(sessions[0].created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                         : '--'}
+                     </p>
+                     <p className="text-xs text-muted-foreground">Last Active</p>
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
+ 
+             {/* Design Projects Section */}
+             <div className="space-y-4">
+               <div className="flex items-center justify-between">
+                 <h2 className="text-lg font-semibold">Design Projects</h2>
+                 <button
+                   onClick={() => navigate('/shazam')}
+                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                 >
+                   <Plus className="h-4 w-4" />
+                   New Project
+                 </button>
+               </div>
+ 
+               {sessions.length === 0 ? (
+                 <Card className="border-dashed">
+                   <CardContent className="p-8 text-center">
+                     <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                     <h3 className="font-medium mb-2">No projects yet</h3>
+                     <p className="text-sm text-muted-foreground mb-4">
+                       Start a conversation with Kyle to create your first design
+                     </p>
+                     <button
+                       onClick={() => navigate('/shazam')}
+                       className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                     >
+                       <Plus className="h-4 w-4" />
+                       Start with Kyle
+                     </button>
+                   </CardContent>
+                 </Card>
+               ) : (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                   {sessions.map(session => (
+                     <Card 
+                       key={session.id} 
+                       className="overflow-hidden hover:border-primary/50 transition-colors cursor-pointer group"
+                       onClick={() => navigate(`/shazam?session=${session.session_id}`)}
+                     >
+                       <div className="aspect-video bg-muted relative">
+                         {session.design_image_url ? (
+                           <img 
+                             src={session.design_image_url} 
+                             alt="Design project"
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                           />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center">
+                             <Zap className="h-8 w-8 text-muted-foreground" />
+                           </div>
+                         )}
+                       </div>
+                       <CardHeader className="p-3">
+                         <CardTitle className="text-sm line-clamp-1">
+                           {session.conversation_summary 
+                             ? session.conversation_summary.substring(0, 50) + (session.conversation_summary.length > 50 ? '...' : '')
+                             : `Project ${session.session_id.substring(0, 8)}`}
+                         </CardTitle>
+                         <CardDescription className="text-xs">
+                           {new Date(session.created_at).toLocaleDateString('en-US', { 
+                             month: 'short', 
+                             day: 'numeric',
+                             hour: '2-digit',
+                             minute: '2-digit'
+                           })}
+                         </CardDescription>
+                       </CardHeader>
+                     </Card>
+                   ))}
+                 </div>
+               )}
+             </div>
+           </>
+         )}
+       </div>
+     </div>
+   );
+ };
+ 
+ export default Dashboard;
