@@ -25,6 +25,8 @@
    transcript: string;
    referenceImage?: string;
    onClose: () => void;
+   sessionId?: string | null;
+   onSessionUpdate?: (imageUrl: string, summary: string) => void;
  }
  
  export function DesignReviewPanel({
@@ -33,6 +35,8 @@
    transcript,
    referenceImage,
    onClose,
+   sessionId,
+   onSessionUpdate,
  }: DesignReviewPanelProps) {
    const navigate = useNavigate();
    const {
@@ -96,6 +100,11 @@
            setCurrentInsights(data.optimizedPrompt);
          }
          
+         // Update session with latest iteration
+         if (onSessionUpdate) {
+           onSessionUpdate(data.imageUrl, data.optimizedPrompt || refinedPrompt);
+         }
+ 
          toast.success(`Iteration ${newIteration} generated!`);
        }
      } catch (error) {
@@ -104,7 +113,7 @@
      } finally {
        setIsRegenerating(false);
      }
-   }, [currentInsights, currentReferenceImage, images.length]);
+   }, [currentInsights, currentReferenceImage, images.length, onSessionUpdate]);
  
    // Handle voice-based iteration
    const handleVoiceIteration = useCallback((feedback: string) => {

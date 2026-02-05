@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+ import { Link, useSearchParams } from "react-router-dom";
 import { Home, Gift, Heart, RotateCcw, Loader2, ChevronUp, ImagePlus, X, FileText, Upload, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -16,8 +16,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DesignReviewPanel } from "@/components/DesignReviewPanel";
+ import { useDesignerSessions } from "@/hooks/useDesignerSessions";
 
 export default function Shazam() {
+   const [searchParams] = useSearchParams();
   const [localGenerating, setLocalGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
@@ -31,7 +33,11 @@ export default function Shazam() {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [showReviewPanel, setShowReviewPanel] = useState(false);
   const reviewPanelRef = useRef<HTMLDivElement>(null);
+   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+   const [loadingSession, setLoadingSession] = useState(false);
   
+   const { upsertSession, getSession } = useDesignerSessions();
+ 
   const { 
     isConnected, 
     isSpeaking, 
@@ -43,6 +49,27 @@ export default function Shazam() {
     resetGenerating
   } = useKyle();
 
+   // Load existing session from URL param
+   useEffect(() => {
+     const sessionIdParam = searchParams.get('session');
+     if (sessionIdParam && !currentSessionId) {
+       setLoadingSession(true);
+       getSession(sessionIdParam).then(({ data, error }) => {
+         if (data && !error) {
+           setCurrentSessionId(data.session_id);
+           if (data.design_image_url) {
+             setGeneratedImage(data.design_image_url);
+           }
+           if (data.conversation_summary) {
+             setOptimizedPrompt(data.conversation_summary);
+           }
+           toast.success("Session loaded");
+         }
+         setLoadingSession(false);
+       });
+     }
+   }, [searchParams, currentSessionId, getSession]);
+ 
   // Handle PDF upload
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,6 +189,15 @@ Create a design that accurately reflects everything discussed in the conversatio
           setUsedLLM(true);
         }
         
+         // Auto-save session
+         const sessionId = currentSessionId || crypto.randomUUID();
+         await upsertSession({
+           session_id: sessionId,
+           design_image_url: data.imageUrl,
+           conversation_summary: data.optimizedPrompt || promptToUse.substring(0, 500),
+         });
+         setCurrentSessionId(sessionId);
+ 
         toast.success("Design created with Flux 2 Pro!");
       }
     } catch (error) {
@@ -171,7 +207,7 @@ Create a design that accurately reflects everything discussed in the conversatio
       setLocalGenerating(false);
       resetGenerating();
     }
-  }, [prompt, designSummary, referenceImage, resetGenerating]);
+   }, [prompt, designSummary, referenceImage, resetGenerating, currentSessionId, upsertSession]);
 
   // Register generation callback
   useEffect(() => {
@@ -202,6 +238,7 @@ Create a design that accurately reflects everything discussed in the conversatio
   };
 
   const getStatusText = () => {
+     if (loadingSession) return "Loading session...";
     if (localGenerating || isGenerating) return "Creating your design...";
     if (voiceCommandDetected) return "Voice command detected!";
     if (uploadedConversation) return ""; // Hide status when PDF loaded
@@ -210,7 +247,7 @@ Create a design that accurately reflects everything discussed in the conversatio
     return "Tap Kyle to start";
   };
 
-  const showLoading = localGenerating || isGenerating;
+   const showLoading = localGenerating || isGenerating || loadingSession;
 
   // Get the original source text for the dialog
   const originalSourceText = useMemo(() => {
@@ -431,6 +468,16 @@ Create a design that accurately reflects everything discussed in the conversatio
               transcript={originalSourceText}
               referenceImage={referenceImage || undefined}
               onClose={() => setShowReviewPanel(false)}
+             sessionId={currentSessionId}
+             onSessionUpdate={(imageUrl, summary) => {
+               if (currentSessionId) {
+                 upsertSession({
+                   session_id: currentSessionId,
+                   design_image_url: imageUrl,
+                   conversation_summary: summary,
+                 });
+               }
+             }}
             />
           </div>
         )}
