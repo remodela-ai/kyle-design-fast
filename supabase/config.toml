@@ -1,5 +1,8 @@
 project_id = "smbhkmahxxwichswvgep"
 
+ [functions.send-notification]
+ verify_jwt = false
+ 
 [functions.recover-elevenlabs-conversation]
 verify_jwt = false
 
