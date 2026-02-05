@@ -137,8 +137,17 @@ Example output format:
 
 Photorealistic interior design photograph. High-end architectural photography, professional lighting, magazine quality composition.`;
 
-    console.log("[blink-design] Final prompt for Flux 2 Pro:", finalImagePrompt.substring(0, 300) + "...");
-    console.log("[blink-design] Reference image:", referenceImage ? "provided" : "none");
+    // Build the final prompt - differentiate between generation and editing
+    let finalPrompt = finalImagePrompt;
+    if (referenceImage) {
+      // When editing, prepend instructions to maintain consistency
+      finalPrompt = `Edit this interior design image while maintaining the same room layout, camera angle, and architectural structure. Apply these changes: ${optimizedPrompt}
+
+IMPORTANT: Preserve the overall composition, lighting direction, and spatial arrangement. Only modify the specific elements mentioned.`;
+    }
+
+    console.log("[blink-design] Final prompt for Flux 2 Pro:", finalPrompt.substring(0, 300) + "...");
+    console.log("[blink-design] Reference image:", referenceImage ? referenceImage.substring(0, 50) + "..." : "none");
 
     const replicate = new Replicate({
       auth: REPLICATE_API_KEY,
@@ -146,19 +155,27 @@ Photorealistic interior design photograph. High-end architectural photography, p
 
     // Build input parameters for Flux 2 Pro
     const input: Record<string, unknown> = {
-      prompt: finalImagePrompt,
+      prompt: finalPrompt,
       aspect_ratio: "1:1",
       output_format: "webp",
       output_quality: 90,
       safety_tolerance: 2,
     };
 
-    // Add reference image if provided
+    // Add reference image if provided - using correct Flux 2 Pro parameters
     if (referenceImage) {
-      input.image_prompt = referenceImage;
-      input.image_prompt_strength = 0.70;
-      console.log("[blink-design] Added reference image with strength 0.70 for consistency");
+      input.input_images = [referenceImage];
+      input.aspect_ratio = "match_input_image";
+      console.log("[blink-design] ✅ Added reference image using input_images array (correct Flux 2 Pro parameter)");
     }
+
+    // Enhanced logging for debugging
+    console.log("[blink-design] Input parameters:", JSON.stringify({
+      hasReferenceImage: !!referenceImage,
+      aspectRatio: input.aspect_ratio,
+      promptLength: finalPrompt.length,
+      inputImagesCount: (input.input_images as string[] | undefined)?.length || 0
+    }));
 
     console.log("[blink-design] Generating image with Flux 2 Pro...");
     const output = await replicate.run("black-forest-labs/flux-2-pro", { input });
