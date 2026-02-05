@@ -28,6 +28,18 @@ serve(async (req) => {
 
     console.log("[generate-inspiration] Generating image with prompt:", prompt.substring(0, 100) + "...");
 
+    // System prompt for luxury American high-end kitchen generation
+    const systemPrompt = `You are a professional interior design photographer specializing in luxury American high-end kitchens. 
+Generate photorealistic images of stunning kitchens that embody:
+- High-end American luxury aesthetic (Hamptons, Manhattan penthouse, Beverly Hills mansion style)
+- Premium materials: Calacatta marble, quartzite, exotic woods, brass/gold hardware
+- Professional-grade appliances: Sub-Zero, Wolf, Thermador, La Cornue
+- Architectural details: coffered ceilings, statement range hoods, floor-to-ceiling windows
+- Generous proportions with oversized islands and ample counter space
+- Designer lighting: crystal chandeliers, sculptural pendants, under-cabinet LEDs
+- Warm yet sophisticated color palettes with rich textures
+Every image must look like it belongs in Architectural Digest or Elle Decor magazine.`;
+
     // Call Lovable AI image generation (Nano banana model)
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -39,8 +51,12 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash-image",
         messages: [
           {
+            role: "system",
+            content: systemPrompt
+          },
+          {
             role: "user",
-            content: `Generate a photorealistic interior design image: ${prompt}. Ultra high resolution, professional architectural photography, magazine quality.`
+            content: `Generate this luxury American high-end kitchen: ${prompt}. Photorealistic, 8K resolution, Architectural Digest quality, dramatic natural lighting.`
           }
         ],
         modalities: ["image", "text"]
