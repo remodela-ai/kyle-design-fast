@@ -37,8 +37,8 @@ const kyleNavItems = [
 
 // CAPA 2 - Journeys (6 macro-flujos de negocio)
 const journeyNavItems = [
-  { icon: Megaphone, label: "Marketing", path: "/kustr", status: "active" },
-  { icon: ShoppingCart, label: "Sales", path: "/kustr/leads", status: "active" },
+  { icon: Megaphone, label: "Marketing", path: "/kustr-next", status: "active" },
+  { icon: ShoppingCart, label: "Sales", path: "/kustr-next/leads", status: "active" },
   { icon: Palette, label: "Design", path: "/dashboard", status: "active" },
   { icon: ClipboardList, label: "Project Mgmt", path: "/project", status: "coming" },
   { icon: Package, label: "Procurement", path: "/procurement", status: "coming" },
@@ -48,8 +48,8 @@ const journeyNavItems = [
 // Operations & Analytics
 const operationsNavItems = [
   { icon: FolderKanban, label: "Projects", path: "/dashboard" },
-  { icon: BarChart3, label: "Analytics", path: "/kustr/analytics" },
-  { icon: Code, label: "Embed Widget", path: "/kustr/embed" },
+  { icon: BarChart3, label: "Analytics", path: "/kustr-next/analytics" },
+  { icon: Code, label: "Embed Widget", path: "/kustr-next/embed" },
 ];
 
 // Admin-only nav items

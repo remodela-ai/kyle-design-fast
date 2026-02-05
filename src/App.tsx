@@ -78,15 +78,15 @@ const App = () => (
                   <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
                   
                   {/* Kustr Design routes */}
-                  <Route path="/kustr" element={<KustrLanding />} />
-                  <Route path="/kustr/auth" element={<KustrAuth />} />
-                  <Route path="/kustr/onboarding" element={<KustrOnboarding />} />
-                  <Route path="/kustr/dashboard" element={<KustrDashboard />} />
-                  <Route path="/kustr/leads" element={<Leads />} />
-                  <Route path="/kustr/leads/:leadId" element={<LeadDetail />} />
-                  <Route path="/kustr/leads/:leadId/proposal" element={<Proposal />} />
-                  <Route path="/kustr/embed" element={<EmbedGenerator />} />
-                  <Route path="/kustr/analytics" element={<Analytics />} />
+                  <Route path="/kustr-next" element={<KustrLanding />} />
+                  <Route path="/kustr-next/auth" element={<KustrAuth />} />
+                  <Route path="/kustr-next/onboarding" element={<KustrOnboarding />} />
+                  <Route path="/kustr-next/dashboard" element={<KustrDashboard />} />
+                  <Route path="/kustr-next/leads" element={<Leads />} />
+                  <Route path="/kustr-next/leads/:leadId" element={<LeadDetail />} />
+                  <Route path="/kustr-next/leads/:leadId/proposal" element={<Proposal />} />
+                  <Route path="/kustr-next/embed" element={<EmbedGenerator />} />
+                  <Route path="/kustr-next/analytics" element={<Analytics />} />
                   
                   {/* Public Kyle widget */}
                   <Route path="/kyle" element={<KylePublic />} />

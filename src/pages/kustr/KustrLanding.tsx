@@ -62,7 +62,7 @@ const KustrLanding = () => {
               <Button
                 size="lg"
                 className="px-8"
-                onClick={() => navigate('/kustr/auth')}
+                onClick={() => navigate('/kustr-next/auth')}
               >
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -70,7 +70,7 @@ const KustrLanding = () => {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => navigate('/kustr/auth')}
+                onClick={() => navigate('/kustr-next/auth')}
               >
                 Sign In
               </Button>
@@ -114,7 +114,7 @@ const KustrLanding = () => {
           <Button
             size="lg"
             className="px-8"
-            onClick={() => navigate('/kustr/auth')}
+            onClick={() => navigate('/kustr-next/auth')}
           >
             Create Your Studio
             <ArrowRight className="ml-2 h-5 w-5" />
