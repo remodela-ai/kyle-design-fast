@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const publicNavItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: MessageSquare, label: "Kyle AI", path: "/kyle" },
+  { icon: Sparkles, label: "Kitchen Design", path: "/start" },
 ];
 
 // Designer nav items (authenticated users with profile)
