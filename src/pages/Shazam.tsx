@@ -30,6 +30,7 @@ export default function Shazam() {
   const imageAreaRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [showReviewPanel, setShowReviewPanel] = useState(false);
+  const reviewPanelRef = useRef<HTMLDivElement>(null);
   
   const { 
     isConnected, 
@@ -380,7 +381,12 @@ Create a design that accurately reflects everything discussed in the conversatio
             <Button 
               variant="kyle" 
               size="sm" 
-              onClick={() => setShowReviewPanel(true)}
+              onClick={() => {
+                setShowReviewPanel(true);
+                setTimeout(() => {
+                  reviewPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }}
               className="rounded-full gap-2"
             >
               <Gift className="h-4 w-4" />
@@ -418,7 +424,7 @@ Create a design that accurately reflects everything discussed in the conversatio
 
         {/* Design Review Panel - Inline */}
         {showReviewPanel && generatedImage && (
-          <div className="w-full max-w-4xl mt-8">
+          <div ref={reviewPanelRef} className="w-full max-w-4xl mt-8">
             <DesignReviewPanel
               initialImageUrl={generatedImage}
               extractedInsights={optimizedPrompt || designSummary || "Design based on conversation"}
