@@ -419,7 +419,7 @@ const KyleSocialLanding = () => {
                   </Card>
                 </HoverCardTrigger>
                 <HoverCardContent 
-                  className="w-[700px] max-w-[90vw] p-0 overflow-hidden fixed left-1/2 bottom-4 -translate-x-1/2 z-50" 
+                  className="w-[700px] max-w-[90vw] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
                   side="top" 
                   sideOffset={-9999}
                 >
