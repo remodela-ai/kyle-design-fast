@@ -69,18 +69,12 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    // Pick random elements
-    const style = kitchenStyles[Math.floor(Math.random() * kitchenStyles.length)];
-    const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
-    const features = luxuryFeatures[Math.floor(Math.random() * luxuryFeatures.length)];
-
-    const prompt = `Generate a stunning, photorealistic interior photograph of a ${style} luxury kitchen. 
-Color palette: ${palette}. 
-Features: ${features}.
-The image should look like it belongs in Architectural Digest magazine - ultra high resolution, professional interior photography, dramatic natural lighting, impeccable styling. 
-Show a wide-angle view that captures the full grandeur of the space. 8K quality, hyperrealistic.`;
-
-    const title = `${style} Kitchen`;
+    // Get prompt and title from request body (sent from frontend)
+    const { prompt, title } = await req.json();
+    
+    if (!prompt || !title) {
+      throw new Error("Prompt and title are required");
+    }
 
     console.log("Generating kitchen with prompt:", prompt);
 

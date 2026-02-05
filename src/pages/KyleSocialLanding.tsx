@@ -51,6 +51,9 @@ const KyleSocialLanding = () => {
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState<string>("");
   const [hiddenStaticIds, setHiddenStaticIds] = useState<string[]>([]);
+  const [showRandomDialog, setShowRandomDialog] = useState(false);
+  const [randomPrompt, setRandomPrompt] = useState<string>("");
+  const [randomTitle, setRandomTitle] = useState<string>("");
 
   // Load hidden static images from localStorage
   useEffect(() => {
@@ -196,11 +199,71 @@ const KyleSocialLanding = () => {
     setEditedPrompt("");
   };
 
-  const handleGenerateRandomKitchen = async () => {
+  // Generate a random prompt without creating the image
+  const generateRandomPromptPreview = () => {
+    const styles = [
+      "Ultra-modern minimalist",
+      "Warm Scandinavian hygge",
+      "Industrial loft",
+      "Mediterranean coastal",
+      "French country elegance",
+      "Japanese zen minimalism",
+      "Art deco glamour",
+      "Rustic farmhouse modern",
+      "Contemporary transitional",
+      "Bold maximalist",
+      "Soft organic modern",
+      "Sleek urban contemporary"
+    ];
+
+    const colorPalettes = [
+      "crisp whites with warm oak accents",
+      "deep navy blue with brass hardware",
+      "sage green with natural stone",
+      "charcoal gray with white marble veining",
+      "warm terracotta with cream tones",
+      "black matte with gold accents",
+      "soft blush pink with marble",
+      "rich emerald with copper details",
+      "warm walnut with cream lacquer",
+      "pure white with brushed nickel",
+      "moody forest green with natural wood",
+      "soft gray-blue with white quartz"
+    ];
+
+    const features = [
+      "waterfall island countertop",
+      "floor-to-ceiling custom cabinetry",
+      "statement range hood",
+      "integrated smart appliances",
+      "hidden pantry with pocket doors",
+      "dramatic pendant lighting cluster",
+      "built-in wine storage",
+      "open shelving with curated display",
+      "professional-grade range",
+      "oversized farmhouse sink"
+    ];
+
+    const style = styles[Math.floor(Math.random() * styles.length)];
+    const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+    const feature1 = features[Math.floor(Math.random() * features.length)];
+    const feature2 = features[Math.floor(Math.random() * features.length)];
+
+    const title = `${style} Kitchen`;
+    const prompt = `${style} luxury American kitchen design featuring ${palette}. The space includes a ${feature1} and ${feature2}. High-end finishes, natural light flooding through large windows, professional photography, interior design magazine quality, 8k resolution.`;
+
+    setRandomTitle(title);
+    setRandomPrompt(prompt);
+    setShowRandomDialog(true);
+  };
+
+  const handleConfirmRandomGeneration = async () => {
     setIsGeneratingRandom(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('generate-random-kitchen');
+      const { data, error } = await supabase.functions.invoke('generate-random-kitchen', {
+        body: { prompt: randomPrompt, title: randomTitle }
+      });
 
       if (error) throw error;
       
@@ -214,6 +277,7 @@ const KyleSocialLanding = () => {
         }, ...prev]);
         
         toast.success(`New ${data.title} generated!`);
+        setShowRandomDialog(false);
       } else {
         throw new Error("No image generated");
       }
@@ -222,6 +286,13 @@ const KyleSocialLanding = () => {
       toast.error(error instanceof Error ? error.message : "Failed to generate random kitchen");
     } finally {
       setIsGeneratingRandom(false);
+    }
+  };
+
+  const handleRandomDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !isGeneratingRandom) {
+      e.preventDefault();
+      handleConfirmRandomGeneration();
     }
   };
 
@@ -295,22 +366,12 @@ const KyleSocialLanding = () => {
             </div>
             
             <Button
-              onClick={handleGenerateRandomKitchen}
-              disabled={isGeneratingRandom}
+              onClick={generateRandomPromptPreview}
               className="gap-2 shrink-0"
               size="lg"
             >
-              {isGeneratingRandom ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  Generate Random Kitchen
-                </>
-              )}
+              <Plus className="h-4 w-4" />
+              Generate Random Kitchen
             </Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -452,6 +513,68 @@ const KyleSocialLanding = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Random Kitchen Confirmation Dialog */}
+      <Dialog open={showRandomDialog} onOpenChange={setShowRandomDialog}>
+        <DialogContent className="max-w-lg" onKeyDown={handleRandomDialogKeyDown}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-primary" />
+              {randomTitle}
+            </DialogTitle>
+            <DialogDescription>
+              Review the design description below. Press Enter or click Generate to create this kitchen.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                <Pencil className="h-3 w-3" />
+                Design Description (editable):
+              </p>
+              <Textarea
+                value={randomPrompt}
+                onChange={(e) => setRandomPrompt(e.target.value)}
+                className="min-h-[120px] text-sm"
+                placeholder="Describe your ideal kitchen design..."
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowRandomDialog(false)}
+                className="flex-1"
+                disabled={isGeneratingRandom}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirmRandomGeneration}
+                disabled={isGeneratingRandom}
+                className="flex-1 gap-2"
+              >
+                {isGeneratingRandom ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <p className="text-xs text-center text-muted-foreground">
+              Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd> to generate
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
