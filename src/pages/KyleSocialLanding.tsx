@@ -427,18 +427,18 @@ const KyleSocialLanding = () => {
                           }}
                         >
                           <Sparkles className="h-3 w-3" />
-                          Generate Design
+                          Generate Variations
                         </Button>
                       </div>
                     </div>
                   </Card>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-80 p-0 overflow-hidden" side="right" align="start">
+                <HoverCardContent className="w-[400px] p-0 overflow-hidden" side="right" align="start">
                   <div className="relative">
                     <img
                       src={image.url}
                       alt={image.title}
-                      className="w-full aspect-video object-cover"
+                      className="w-full aspect-[4/3] object-cover"
                     />
                     {!image.isStatic && (
                       <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
