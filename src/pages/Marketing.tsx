@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -111,7 +109,7 @@ export default function Marketing() {
 
   const handleGenerateImage = async () => {
     if (!prompt.trim()) {
-      toast({ title: "Error", description: "Por favor ingresa una descripción", variant: "destructive" });
+      toast({ title: "Error", description: "Please enter a description", variant: "destructive" });
       return;
     }
 
@@ -126,10 +124,10 @@ export default function Marketing() {
       if (error) throw error;
 
       setGeneratedContent(data.imageUrl);
-      toast({ title: "¡Imagen generada!", description: "Tu contenido está listo para descargar" });
+      toast({ title: "Image generated!", description: "Your content is ready to download" });
     } catch (error) {
       console.error("Error generating image:", error);
-      toast({ title: "Error", description: "No se pudo generar la imagen", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to generate image", variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
@@ -137,7 +135,7 @@ export default function Marketing() {
 
   const handleGenerateText = async () => {
     if (!prompt.trim()) {
-      toast({ title: "Error", description: "Por favor ingresa un tema o idea", variant: "destructive" });
+      toast({ title: "Error", description: "Please enter a topic or idea", variant: "destructive" });
       return;
     }
 
@@ -154,13 +152,12 @@ export default function Marketing() {
       if (error) throw error;
 
       setGeneratedText(data.content);
-      toast({ title: "¡Texto generado!", description: "Tu copy está listo" });
+      toast({ title: "Text generated!", description: "Your copy is ready" });
     } catch (error) {
       console.error("Error generating text:", error);
-      // Fallback con contenido de ejemplo
       const sampleContent = generateSampleContent(selectedPlatform, prompt);
       setGeneratedText(sampleContent);
-      toast({ title: "Contenido generado", description: "Usando plantilla optimizada" });
+      toast({ title: "Content generated", description: "Using optimized template" });
     } finally {
       setIsGenerating(false);
     }
@@ -168,12 +165,12 @@ export default function Marketing() {
 
   const generateSampleContent = (platform: Platform, topic: string): string => {
     const templates: Record<Platform, string> = {
-      instagram: `✨ ${topic}\n\n🔥 Descubre cómo transformamos espacios ordinarios en extraordinarios.\n\n💡 En cada proyecto ponemos pasión, creatividad y atención al detalle.\n\n👉 ¿Listo para tu próxima transformación?\n\n#InteriorDesign #HomeDecor #DesignInspiration #LuxuryInteriors #ModernLiving`,
-      facebook: `🏠 ${topic}\n\nEn nuestro último proyecto, combinamos funcionalidad y estética para crear un espacio que refleja la personalidad de nuestros clientes.\n\n✅ Diseño personalizado\n✅ Materiales de primera calidad\n✅ Atención al detalle\n\n📩 Contáctanos para una consulta gratuita.\n\n#DiseñoInterior #Arquitectura #Hogar`,
-      linkedin: `🎯 ${topic}\n\nEl diseño de interiores no es solo decoración, es estrategia.\n\nEn cada proyecto aplicamos metodologías que optimizan:\n• Flujo de trabajo\n• Bienestar del equipo\n• Imagen corporativa\n\n¿Tu espacio de trabajo refleja los valores de tu empresa?\n\n#InteriorDesign #CorporateDesign #WorkplaceDesign #BusinessStrategy`,
-      twitter: `${topic} 🏠✨\n\nTransformamos espacios. Creamos experiencias.\n\n¿Tu próximo proyecto? 👇`,
-      youtube: `${topic} | Tour Completo de Diseño Interior\n\nEn este video te mostramos el proceso completo de transformación de este increíble espacio. Desde el concepto inicial hasta el resultado final.\n\n🕐 Timestamps:\n00:00 - Intro\n01:30 - Concepto\n05:00 - Materiales\n10:00 - Resultado Final\n\n📱 Síguenos en redes para más contenido.`,
-      tiktok: `${topic} ✨🏠\n\nPOV: Cuando transformas un espacio aburrido en algo INCREÍBLE 🤯\n\n#InteriorDesign #HomeTransformation #DesignTok #Viral`,
+      instagram: `✨ ${topic}\n\n🔥 Discover how we transform ordinary spaces into extraordinary.\n\n💡 Every project is crafted with passion, creativity and attention to detail.\n\n👉 Ready for your next transformation?\n\n#InteriorDesign #HomeDecor #DesignInspiration #LuxuryInteriors #ModernLiving`,
+      facebook: `🏠 ${topic}\n\nIn our latest project, we combined functionality and aesthetics to create a space that reflects our clients' personality.\n\n✅ Custom design\n✅ Premium materials\n✅ Attention to detail\n\n📩 Contact us for a free consultation.\n\n#InteriorDesign #Architecture #Home`,
+      linkedin: `🎯 ${topic}\n\nInterior design is not just decoration, it's strategy.\n\nIn every project we apply methodologies that optimize:\n• Workflow\n• Team wellbeing\n• Corporate image\n\nDoes your workspace reflect your company values?\n\n#InteriorDesign #CorporateDesign #WorkplaceDesign #BusinessStrategy`,
+      twitter: `${topic} 🏠✨\n\nWe transform spaces. We create experiences.\n\nYour next project? 👇`,
+      youtube: `${topic} | Complete Interior Design Tour\n\nIn this video we show you the complete transformation process of this incredible space. From initial concept to final result.\n\n🕐 Timestamps:\n00:00 - Intro\n01:30 - Concept\n05:00 - Materials\n10:00 - Final Result\n\n📱 Follow us for more content.`,
+      tiktok: `${topic} ✨🏠\n\nPOV: When you transform a boring space into something INCREDIBLE 🤯\n\n#InteriorDesign #HomeTransformation #DesignTok #Viral`,
     };
     return templates[platform] || templates.instagram;
   };
@@ -181,7 +178,7 @@ export default function Marketing() {
   const handleCopyText = () => {
     if (generatedText) {
       navigator.clipboard.writeText(generatedText);
-      toast({ title: "¡Copiado!", description: "Texto copiado al portapapeles" });
+      toast({ title: "Copied!", description: "Text copied to clipboard" });
     }
   };
 
@@ -195,36 +192,35 @@ export default function Marketing() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Marketing Content Studio</h1>
-              <p className="text-sm text-muted-foreground">
-                Genera contenido para todas tus redes sociales
+              <h1 className="text-xl font-bold">Marketing Content Studio</h1>
+              <p className="text-xs text-muted-foreground">
+                Generate content for all your social networks
               </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <main className="flex-1 container mx-auto px-4 py-4 overflow-hidden">
+        <div className="grid lg:grid-cols-3 gap-4 h-full">
           {/* Left Panel - Configuration */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 flex flex-col gap-3 overflow-auto">
             {/* Platform Selection */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Plataforma</CardTitle>
-                <CardDescription>Selecciona la red social</CardDescription>
+            <Card className="shrink-0">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Platform</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-2">
+              <CardContent className="px-4 pb-3">
+                <div className="grid grid-cols-5 gap-1.5">
                   {platforms.map((platform) => {
                     const Icon = platform.icon;
                     return (
@@ -234,16 +230,16 @@ export default function Marketing() {
                           setSelectedPlatform(platform.id);
                           setSelectedFormat("");
                         }}
-                        className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
                           selectedPlatform === platform.id
                             ? "border-primary bg-primary/10"
                             : "border-border hover:border-primary/50"
                         }`}
                       >
-                        <div className={`p-2 rounded-full ${platform.color} text-white`}>
-                          <Icon className="h-4 w-4" />
+                        <div className={`p-1.5 rounded-full ${platform.color} text-white`}>
+                          <Icon className="h-3 w-3" />
                         </div>
-                        <span className="text-xs font-medium">{platform.name}</span>
+                        <span className="text-[10px] font-medium leading-tight">{platform.name.split(' ')[0]}</span>
                       </button>
                     );
                   })}
@@ -251,122 +247,146 @@ export default function Marketing() {
               </CardContent>
             </Card>
 
-            {/* Content Type */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Tipo de Contenido</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ContentType)}>
-                  <TabsList className="grid grid-cols-3 w-full">
-                    <TabsTrigger value="image" className="flex items-center gap-2">
-                      <Image className="h-4 w-4" />
-                      Imagen
-                    </TabsTrigger>
-                    <TabsTrigger value="text" className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Texto
-                    </TabsTrigger>
-                    <TabsTrigger value="video" className="flex items-center gap-2">
-                      <Video className="h-4 w-4" />
-                      Video
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </CardContent>
-            </Card>
-
-            {/* Format Selection */}
-            {activeTab !== "text" && (
+            {/* Content Type & Format Row */}
+            <div className="grid grid-cols-2 gap-3 shrink-0">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Formato</CardTitle>
-                  <CardDescription>Dimensiones optimizadas para {currentPlatform?.name}</CardDescription>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-sm">Type</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un formato" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFormats.map((format) => (
-                        <SelectItem key={format} value={format}>
-                          {format}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <CardContent className="px-4 pb-3">
+                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ContentType)}>
+                    <TabsList className="grid grid-cols-3 w-full h-8">
+                      <TabsTrigger value="image" className="text-xs px-2">
+                        <Image className="h-3 w-3" />
+                      </TabsTrigger>
+                      <TabsTrigger value="text" className="text-xs px-2">
+                        <FileText className="h-3 w-3" />
+                      </TabsTrigger>
+                      <TabsTrigger value="video" className="text-xs px-2">
+                        <Video className="h-3 w-3" />
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </CardContent>
               </Card>
-            )}
+
+              {activeTab !== "text" && (
+                <Card>
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm">Format</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-3">
+                    <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableFormats.map((format) => (
+                          <SelectItem key={format} value={format} className="text-xs">
+                            {format}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
             {/* Prompt Input */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {activeTab === "text" ? "Tema o Idea" : "Descripción"}
+            <Card className="flex-1 flex flex-col min-h-0">
+              <CardHeader className="py-3 px-4 shrink-0">
+                <CardTitle className="text-sm">
+                  {activeTab === "text" ? "Topic or Idea" : "Description"}
                 </CardTitle>
-                <CardDescription>
-                  {activeTab === "text"
-                    ? "Describe el tema para generar el copy"
-                    : "Describe lo que quieres generar"}
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="px-4 pb-3 flex flex-col gap-3 flex-1">
                 <Textarea
                   placeholder={
                     activeTab === "text"
-                      ? "Ej: Lanzamiento de nueva colección de cocinas modernas..."
-                      : "Ej: Cocina minimalista con isla central, tonos blancos y madera natural..."
+                      ? "Ex: Launch of new modern kitchen collection..."
+                      : "Ex: Minimalist kitchen with central island, white tones and natural wood..."
                   }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[120px]"
+                  className="flex-1 min-h-[80px] text-sm resize-none"
                 />
                 <Button
-                  className="w-full"
+                  className="w-full shrink-0"
+                  size="sm"
                   onClick={activeTab === "text" ? handleGenerateText : handleGenerateImage}
                   disabled={isGenerating || !prompt.trim()}
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generando...
+                      Generating...
                     </>
                   ) : (
                     <>
                       <Wand2 className="h-4 w-4 mr-2" />
-                      Generar {activeTab === "text" ? "Texto" : activeTab === "image" ? "Imagen" : "Video"}
+                      Generate {activeTab === "text" ? "Text" : activeTab === "image" ? "Image" : "Video"}
                     </>
                   )}
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Quick Templates */}
+            <Card className="shrink-0">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-sm">Quick Templates</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { title: "Project Post", desc: "Showcase your latest work", icon: Image },
+                    { title: "Promo Story", desc: "Promote your services", icon: Sparkles },
+                    { title: "Before/After", desc: "Impactful transformations", icon: RefreshCw },
+                    { title: "Testimonial", desc: "Happy clients", icon: Video },
+                  ].map((template) => (
+                    <button
+                      key={template.title}
+                      className="flex items-center gap-2 p-2 rounded-lg border border-border hover:border-primary/50 transition-colors text-left"
+                      onClick={() => setPrompt(template.desc)}
+                    >
+                      <div className="p-1.5 rounded bg-primary/10 shrink-0">
+                        <template.icon className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{template.title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{template.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Panel - Preview */}
-          <div className="lg:col-span-2">
-            <Card className="h-full">
-              <CardHeader>
+          <div className="lg:col-span-2 flex flex-col min-h-0">
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              <CardHeader className="py-3 px-4 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Vista Previa</CardTitle>
-                    <CardDescription>
-                      Contenido para {currentPlatform?.name}
+                    <CardTitle className="text-sm">Preview</CardTitle>
+                    <CardDescription className="text-xs">
+                      Content for {currentPlatform?.name}
                       {selectedFormat && ` • ${selectedFormat}`}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     {activeTab === "text" && generatedText && (
-                      <Button variant="outline" size="sm" onClick={handleCopyText}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copiar
+                      <Button variant="outline" size="sm" onClick={handleCopyText} className="h-7 text-xs">
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
                       </Button>
                     )}
                     {activeTab === "image" && generatedContent && (
-                      <Button variant="outline" size="sm" onClick={handleDownloadImage}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Descargar
+                      <Button variant="outline" size="sm" onClick={handleDownloadImage} className="h-7 text-xs">
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
                       </Button>
                     )}
                     {(generatedContent || generatedText) && (
@@ -375,101 +395,65 @@ export default function Marketing() {
                         size="sm"
                         onClick={activeTab === "text" ? handleGenerateText : handleGenerateImage}
                         disabled={isGenerating}
+                        className="h-7 text-xs"
                       >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
-                        Regenerar
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isGenerating ? "animate-spin" : ""}`} />
+                        Regenerate
                       </Button>
                     )}
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 flex items-center justify-center p-4 overflow-auto">
                 {activeTab === "text" ? (
-                  <div className="min-h-[400px] flex items-center justify-center">
-                    {generatedText ? (
-                      <div className="w-full max-w-lg">
-                        <div className="bg-muted rounded-lg p-6 whitespace-pre-wrap text-sm">
-                          {generatedText}
-                        </div>
-                        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{generatedText.length} caracteres</span>
-                          <Badge variant="secondary">{currentPlatform?.name}</Badge>
-                        </div>
+                  generatedText ? (
+                    <div className="w-full max-w-lg">
+                      <div className="bg-muted rounded-lg p-4 whitespace-pre-wrap text-sm max-h-[50vh] overflow-auto">
+                        {generatedText}
                       </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                        <p>Tu texto generado aparecerá aquí</p>
+                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{generatedText.length} characters</span>
+                        <Badge variant="secondary" className="text-xs">{currentPlatform?.name}</Badge>
                       </div>
-                    )}
-                  </div>
-                ) : activeTab === "image" ? (
-                  <div className="min-h-[400px] flex items-center justify-center">
-                    {generatedContent ? (
-                      <div className="relative group">
-                        <img
-                          src={generatedContent}
-                          alt="Generated content"
-                          className="max-w-full max-h-[500px] rounded-lg shadow-lg object-contain"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-4">
-                          <Button variant="secondary" size="sm" onClick={handleDownloadImage}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Descargar
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <Image className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                        <p>Tu imagen generada aparecerá aquí</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="min-h-[400px] flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Video className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                      <p className="mb-2">Generación de video</p>
-                      <Badge variant="outline">Próximamente</Badge>
                     </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Your generated text will appear here</p>
+                    </div>
+                  )
+                ) : activeTab === "image" ? (
+                  generatedContent ? (
+                    <div className="relative group">
+                      <img
+                        src={generatedContent}
+                        alt="Generated content"
+                        className="max-w-full max-h-[55vh] rounded-lg shadow-lg object-contain"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-4">
+                        <Button variant="secondary" size="sm" onClick={handleDownloadImage}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <Image className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Your generated image will appear here</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Video className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <p className="text-sm mb-2">Video generation</p>
+                    <Badge variant="outline">Coming Soon</Badge>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Quick Templates Section */}
-        <section className="mt-12">
-          <h2 className="text-xl font-bold mb-6">Plantillas Rápidas</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { title: "Post de Proyecto", desc: "Muestra tu último trabajo", icon: Image },
-              { title: "Story Promocional", desc: "Promociona tus servicios", icon: Sparkles },
-              { title: "Carrusel Before/After", desc: "Transformaciones impactantes", icon: RefreshCw },
-              { title: "Video Testimonio", desc: "Clientes satisfechos", icon: Video },
-            ].map((template) => (
-              <Card
-                key={template.title}
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setPrompt(template.desc)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <template.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm">{template.title}</h3>
-                      <p className="text-xs text-muted-foreground">{template.desc}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
       </main>
     </div>
   );
