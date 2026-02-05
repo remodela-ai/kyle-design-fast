@@ -44,9 +44,10 @@ import KyleSocialLanding from "./pages/KyleSocialLanding";
 import BathroomSocialLanding from "./pages/BathroomSocialLanding";
  import Documentation from "./pages/Documentation";
  import Screenshots from "./pages/Screenshots";
- import TestIdeas from "./pages/TestIdeas";
- import { TestGuideFloating } from "./components/TestGuideFloating";
- import ProjectDetail from "./pages/ProjectDetail";
+import TestIdeas from "./pages/TestIdeas";
+import { TestGuideFloating } from "./components/TestGuideFloating";
+import ProjectDetail from "./pages/ProjectDetail";
+import Marketing from "./pages/Marketing";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,9 @@ const App = () => (
                   <Route path="/kyle" element={<KylePublic />} />
                   <Route path="/start" element={<KyleSocialLanding />} />
                   <Route path="/bathroom" element={<BathroomSocialLanding />} />
+                  
+                  {/* Marketing */}
+                  <Route path="/marketing" element={<Marketing />} />
                   
                   {/* Backlog */}
                   <Route path="/backlog" element={<Backlog />} />
