@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil } from "lucide-react";
+import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -45,6 +45,7 @@ const KyleSocialLanding = () => {
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingRandom, setIsGeneratingRandom] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<GalleryImage[]>([]);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
@@ -195,6 +196,35 @@ const KyleSocialLanding = () => {
     setEditedPrompt("");
   };
 
+  const handleGenerateRandomKitchen = async () => {
+    setIsGeneratingRandom(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-random-kitchen');
+
+      if (error) throw error;
+      
+      if (data?.imageUrl && data?.id) {
+        setGeneratedImages(prev => [{
+          id: data.id,
+          url: data.imageUrl,
+          title: data.title,
+          prompt: data.prompt,
+          isStatic: false
+        }, ...prev]);
+        
+        toast.success(`New ${data.title} generated!`);
+      } else {
+        throw new Error("No image generated");
+      }
+    } catch (error) {
+      console.error("Random generation error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate random kitchen");
+    } finally {
+      setIsGeneratingRandom(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Image - Top section */}
@@ -252,15 +282,37 @@ const KyleSocialLanding = () => {
       {/* Inspiration Gallery Section */}
       <div className="px-4 py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-2">
-            Inspiration Gallery
-          </h2>
-          {generatedImages.length > 0 && (
-            <p className="text-center text-muted-foreground text-sm mb-8">
-              {generatedImages.length} AI-generated design{generatedImages.length !== 1 ? 's' : ''} • Click any card to generate more
-            </p>
-          )}
-          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+            <div className="text-center md:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                Inspiration Gallery
+              </h2>
+              {generatedImages.length > 0 && (
+                <p className="text-muted-foreground text-sm">
+                  {generatedImages.length} AI-generated design{generatedImages.length !== 1 ? 's' : ''} • Click any card to generate more
+                </p>
+              )}
+            </div>
+            
+            <Button
+              onClick={handleGenerateRandomKitchen}
+              disabled={isGeneratingRandom}
+              className="gap-2 shrink-0"
+              size="lg"
+            >
+              {isGeneratingRandom ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Generate Random Kitchen
+                </>
+              )}
+            </Button>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {allImages.map((image) => (
               <Card 
