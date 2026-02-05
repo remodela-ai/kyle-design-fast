@@ -162,7 +162,7 @@ export default function KylePublic() {
             <img 
               src={kyleAvatar} 
               alt="Kyle" 
-               className={`w-52 h-52 rounded-full object-cover object-[center_25%] border-4 transition-all duration-300 relative z-10 ${
+               className={`w-52 h-52 rounded-full object-contain border-4 transition-all duration-300 relative z-10 bg-card ${
                 isConnected 
                   ? isSpeaking 
                     ? 'border-primary shadow-lg shadow-primary/50 scale-105' 
