@@ -2,6 +2,7 @@ import { createContext, useContext, ReactNode, useCallback, useState, useRef } f
 import { useConversation } from "@11labs/react";
 
 const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
+const KYLE_ITERATION_AGENT_ID = "agent_8001kgg465sff939tkr973cqkesw";
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -25,6 +26,15 @@ interface KyleContextType {
   triggerGeneration: () => void;
   setGenerationCallback: (callback: (() => void) | null) => void;
   resetGenerating: () => void;
+  iterationMessages: ConversationMessage[];
+  isIterationConnected: boolean;
+  isIterationSpeaking: boolean;
+  startIterationConversation: () => Promise<void>;
+  stopIterationConversation: () => Promise<void>;
+  toggleIterationConversation: () => Promise<void>;
+  triggerIteration: () => void;
+  setIterationCallback: (callback: ((feedback: string) => void) | null) => void;
+  getIterationFeedback: () => string;
 }
 
 const KyleContext = createContext<KyleContextType | null>(null);
@@ -36,6 +46,9 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
   const [voiceCommandDetected, setVoiceCommandDetected] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const generationCallbackRef = useRef<(() => void) | null>(null);
+  const iterationCallbackRef = useRef<((feedback: string) => void) | null>(null);
+  const [iterationMessages, setIterationMessages] = useState<ConversationMessage[]>([]);
+  const iterationFeedbackRef = useRef<string[]>([]);
 
   const extractDesignSummary = (allMessages: ConversationMessage[]) => {
     const text = allMessages.map(m => m.content).join(" ").toLowerCase();
@@ -76,6 +89,80 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
       generationCallbackRef.current();
     }
   }, []);
+
+  // Iteration conversation for design review
+  const iterationConversation = useConversation({
+    onConnect: () => {
+      console.log("Kyle Iteration connected");
+      iterationFeedbackRef.current = [];
+      setIterationMessages([]);
+    },
+    onDisconnect: () => {
+      console.log("Kyle Iteration disconnected");
+    },
+    onMessage: (message) => {
+      console.log("Iteration message:", message);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const msg = message as any;
+      
+      if (msg?.message && msg?.source) {
+        const newMessage: ConversationMessage = {
+          role: msg.source === "user" ? "user" : "assistant",
+          content: msg.message,
+          timestamp: new Date(),
+        };
+        
+        setIterationMessages(prev => [...prev, newMessage]);
+
+        // Collect user feedback
+        if (msg.source === "user") {
+          iterationFeedbackRef.current.push(msg.message);
+          
+          // Detect iteration command
+          const text = msg.message.toLowerCase().replace(/[.,!?;:]/g, '');
+          const isIterateCommand = 
+            text.includes("iterate") ||
+            text.includes("generate") ||
+            text.includes("apply") ||
+            text.includes("update") ||
+            text.includes("refresh") ||
+            text.includes("cambiar") ||
+            text.includes("actualizar") ||
+            text.includes("aplicar");
+          
+          if (isIterateCommand) {
+            console.log("🎯 ITERATE COMMAND DETECTED in context!");
+            const feedback = iterationFeedbackRef.current.join(" ");
+            if (iterationCallbackRef.current && feedback.trim()) {
+              iterationCallbackRef.current(feedback);
+            }
+            iterationConversation.endSession();
+          }
+        }
+      }
+    },
+    onError: (err) => {
+      console.error("Kyle Iteration error:", err);
+    },
+  });
+
+  const triggerIteration = useCallback(async () => {
+    console.log("🚀 Iteration triggered");
+    setVoiceCommandDetected(true);
+    
+    try {
+      await iterationConversation.endSession();
+    } catch (e) {
+      console.log("Could not stop iteration:", e);
+    }
+    
+    setTimeout(() => setVoiceCommandDetected(false), 2000);
+    
+    const feedback = iterationFeedbackRef.current.join(" ");
+    if (iterationCallbackRef.current && feedback.trim()) {
+      iterationCallbackRef.current(feedback);
+    }
+  }, [iterationConversation]);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -183,6 +270,40 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     }
   }, [conversation]);
 
+  const startIterationConversation = useCallback(async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      
+      iterationFeedbackRef.current = [];
+      
+      await iterationConversation.startSession({
+        agentId: KYLE_ITERATION_AGENT_ID,
+        connectionType: "webrtc",
+      });
+    } catch (err) {
+      console.error("Failed to start iteration:", err);
+      setError(err instanceof Error ? err.message : "Failed to start iteration");
+    }
+  }, [iterationConversation]);
+
+  const stopIterationConversation = useCallback(async () => {
+    await iterationConversation.endSession();
+  }, [iterationConversation]);
+
+  const toggleIterationConversation = useCallback(async () => {
+    if (iterationConversation.status === "connected") {
+      await stopIterationConversation();
+    } else {
+      await startIterationConversation();
+    }
+  }, [iterationConversation.status, startIterationConversation, stopIterationConversation]);
+
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
   }, [conversation]);
@@ -202,6 +323,14 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
 
   const setGenerationCallback = useCallback((callback: (() => void) | null) => {
     generationCallbackRef.current = callback;
+  }, []);
+
+  const setIterationCallback = useCallback((callback: ((feedback: string) => void) | null) => {
+    iterationCallbackRef.current = callback;
+  }, []);
+
+  const getIterationFeedback = useCallback(() => {
+    return iterationFeedbackRef.current.join(" ");
   }, []);
 
   const resetGenerating = useCallback(() => {
@@ -224,6 +353,15 @@ function KyleProviderWithRouter({ children }: { children: ReactNode }) {
     triggerGeneration,
     setGenerationCallback,
     resetGenerating,
+    iterationMessages,
+    isIterationConnected: iterationConversation.status === "connected",
+    isIterationSpeaking: iterationConversation.isSpeaking,
+    startIterationConversation,
+    stopIterationConversation,
+    toggleIterationConversation,
+    triggerIteration,
+    setIterationCallback,
+    getIterationFeedback,
   };
 
   return (
