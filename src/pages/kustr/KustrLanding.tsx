@@ -1,132 +1,127 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Building2, ArrowRight, Users, Briefcase, TrendingUp, Palette, MapPin, Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const KustrLanding = () => {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const features = [
     {
       icon: Users,
       title: 'Team Management',
-      description: 'Manage your team members, roles, and collaboration across your design studio.',
+      description: 'Manage your team members and roles.',
     },
     {
       icon: Briefcase,
       title: 'Project Portfolio',
-      description: 'Track all your design projects from initial concept to final delivery.',
+      description: 'Track projects from concept to delivery.',
     },
     {
       icon: TrendingUp,
       title: 'Marketing Hub',
-      description: 'Create and schedule posts across all social media platforms.',
+      description: 'Schedule posts across platforms.',
     },
     {
       icon: MapPin,
       title: 'Multi-Location',
-      description: 'Manage multiple office locations with dedicated teams and resources.',
+      description: 'Manage multiple office locations.',
     },
     {
       icon: Palette,
       title: 'Client Management',
-      description: 'Keep track of your clients, projects, and communication history.',
+      description: 'Track clients and communication.',
     },
     {
       icon: Sparkles,
       title: 'Vendor Network',
-      description: 'Organize your material vendors, service providers, and strategic partners.',
+      description: 'Organize vendors and partners.',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Hero Section - Compact */}
+      <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary mb-8 shadow-2xl shadow-primary/25">
-              <Building2 className="h-10 w-10 text-primary-foreground" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4 shadow-xl shadow-primary/25">
+              <Building2 className="h-7 w-7 text-primary-foreground" />
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Design Studio Platform
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              The all-in-one management platform for interior design studios. 
-              Manage your office, team, projects, and marketing in one place.
+            <p className="text-base text-muted-foreground max-w-xl mx-auto mb-5">
+              The all-in-one management platform for interior design studios.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex gap-3 justify-center">
               <Button
-                size="lg"
-                className="px-8"
-                onClick={() => navigate('/kustr-next/auth')}
+                size="default"
+                className="px-6"
+                onClick={() => navigate(isLoggedIn ? '/kustr-next/dashboard' : '/kustr-next/auth')}
               >
                 Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/kustr-next/auth')}
-              >
-                Sign In
-              </Button>
+              {!isLoggedIn && (
+                <Button
+                  size="default"
+                  variant="outline"
+                  onClick={() => navigate('/kustr-next/auth')}
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold text-foreground text-center mb-4">Platform Features</h2>
-        <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          Everything you need to run a successful interior design studio
+      {/* Features Section - Compact Grid */}
+      <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h2 className="text-xl font-bold text-foreground text-center mb-1">Platform Features</h2>
+        <p className="text-sm text-muted-foreground text-center mb-5">
+          Everything you need to run a successful studio
         </p>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="bg-card border border-border rounded-2xl p-8 hover:border-primary/50 transition-colors"
+              className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-colors"
             >
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                <feature.icon className="h-7 w-7 text-primary" />
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                <feature.icon className="h-5 w-5 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-card-foreground mb-3">{feature.title}</h3>
-              <p className="text-muted-foreground">{feature.description}</p>
+              <h3 className="text-sm font-semibold text-card-foreground mb-1">{feature.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-primary/5 border border-primary/20 rounded-3xl p-12 text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            Ready to streamline your studio?
-          </h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Create your design studio profile and start managing your team, 
-            projects, and marketing efforts today.
-          </p>
-          <Button
-            size="lg"
-            className="px-8"
-            onClick={() => navigate('/kustr-next/auth')}
-          >
-            Create Your Studio
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-8">
+      {/* Footer - Minimal */}
+      <footer className="border-t border-border py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center gap-3 text-muted-foreground">
-            <Building2 className="h-5 w-5" />
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Building2 className="h-4 w-4" />
             <span>Design Studio Platform</span>
           </div>
         </div>
