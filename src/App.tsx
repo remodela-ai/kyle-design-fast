@@ -41,6 +41,7 @@ import Proposal from "./pages/kustr/Proposal";
 import KylePublic from "./pages/KylePublic";
  import Documentation from "./pages/Documentation";
  import Screenshots from "./pages/Screenshots";
+ import TestIdeas from "./pages/TestIdeas";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => (
                 <Route path="/backlog" element={<Backlog />} />
                 <Route path="/documentation" element={<Documentation />} />
                  <Route path="/screenshots" element={<Screenshots />} />
+                 <Route path="/test" element={<TestIdeas />} />
                 
                 {/* Protected routes - Super Admin only */}
                 <Route path="/productivity" element={<ProtectedRoute><Productivity /></ProtectedRoute>} />
