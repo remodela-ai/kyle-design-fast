@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Home, CheckCircle, RefreshCw, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
 import { useConversation } from "@11labs/react";
+import { useDesignerSessions } from "@/hooks/useDesignerSessions";
 
 // Kyle Iteration Agent - specialized for design refinement
 const KYLE_ITERATION_AGENT_ID = "agent_8001kgg465sff939tkr973cqkesw";
@@ -23,6 +24,7 @@ interface LocationState {
   extractedInsights: string;
   referenceImage?: string;
   source?: "voice" | "pdf";
+  sessionId?: string; // Allow passing session from Shazam
 }
 
 interface ImageItem {
@@ -35,7 +37,15 @@ interface ImageItem {
 export default function DesignReview() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const state = location.state as LocationState | null;
+  
+  // Session management - create intelligent folder
+  const { upsertSession } = useDesignerSessions();
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => {
+    // Priority: URL param > state > generate new
+    return searchParams.get('session') || state?.sessionId || crypto.randomUUID();
+  });
 
   // State management
   const [images, setImages] = useState<ImageItem[]>(() => {
@@ -179,6 +189,14 @@ export default function DesignReview() {
           setCurrentInsights(data.optimizedPrompt);
         }
         
+        // Save session to create smart project folder
+        await upsertSession({
+          session_id: currentSessionId,
+          design_image_url: data.imageUrl,
+          conversation_summary: iterationPrompt.substring(0, 500),
+        });
+        console.log("[DesignReview] Session saved:", currentSessionId);
+        
         toast.success(`Iteration ${newIteration} generated!`);
       }
     } catch (error) {
@@ -189,7 +207,7 @@ export default function DesignReview() {
       setIterationFeedback([]);
       feedbackRef.current = [];
     }
-  }, [currentInsights, currentReferenceImage, images.length]);
+  }, [currentInsights, currentReferenceImage, images.length, upsertSession, currentSessionId]);
 
   // Handle voice-based iteration
   const handleVoiceIteration = useCallback((feedback: string) => {
@@ -242,6 +260,19 @@ export default function DesignReview() {
       navigate("/shazam");
     }
   }, [state, navigate]);
+
+  // Save initial session when component mounts (create smart folder)
+  useEffect(() => {
+    if (state?.designImageUrl && currentSessionId) {
+      upsertSession({
+        session_id: currentSessionId,
+        design_image_url: state.designImageUrl,
+        conversation_summary: state.extractedInsights?.substring(0, 500) || "",
+      }).then(() => {
+        console.log("[DesignReview] Initial session created:", currentSessionId);
+      });
+    }
+  }, []); // Only run on mount
 
   // Handle approval - navigate to pipeline with selected image
   const handleApprove = () => {
