@@ -279,6 +279,30 @@ export type Database = {
         }
         Relationships: []
       }
+      inspiration_gallery: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          prompt: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt?: string
+          title?: string
+        }
+        Relationships: []
+      }
       kustr_project_files: {
         Row: {
           created_at: string

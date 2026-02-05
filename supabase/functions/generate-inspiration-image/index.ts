@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, title } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -20,6 +20,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const imageTitle = title || "AI Generated Kitchen";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -126,10 +128,30 @@ Every image must look like it belongs in Architectural Digest or Elle Decor maga
     
     console.log("[generate-inspiration] ✅ Persisted to:", urlData.publicUrl);
 
+    // Save to inspiration_gallery table
+    const { data: insertedRow, error: insertError } = await supabase
+      .from("inspiration_gallery")
+      .insert({
+        image_url: urlData.publicUrl,
+        title: imageTitle,
+        prompt: prompt
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("[generate-inspiration] Database insert error:", insertError);
+      // Don't fail the request, image was still generated
+    } else {
+      console.log("[generate-inspiration] ✅ Saved to gallery with id:", insertedRow?.id);
+    }
+
     return new Response(
       JSON.stringify({ 
         imageUrl: urlData.publicUrl,
-        prompt 
+        prompt,
+        id: insertedRow?.id,
+        title: imageTitle
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
