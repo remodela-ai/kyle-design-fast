@@ -338,7 +338,7 @@ const KyleSocialLanding = () => {
               Your Expert Kitchen Designer
             </h1>
             <p className="text-muted-foreground text-sm md:text-base max-w-sm mx-auto">
-              Get a stunning design concept in under 5 minutes.<br />
+              Get a stunning design concept in under 10 minutes.<br />
               100% free. Zero commitment.
             </p>
           </div>
