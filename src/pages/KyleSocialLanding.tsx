@@ -433,7 +433,11 @@ const KyleSocialLanding = () => {
                     </div>
                   </Card>
                 </HoverCardTrigger>
-                <HoverCardContent className="w-[400px] p-0 overflow-hidden" side="right" align="start">
+                <HoverCardContent 
+                  className="w-[800px] max-w-[90vw] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
+                  side="top" 
+                  sideOffset={-9999}
+                >
                   <div className="relative">
                     <img
                       src={image.url}
@@ -441,15 +445,15 @@ const KyleSocialLanding = () => {
                       className="w-full aspect-[4/3] object-cover"
                     />
                     {!image.isStatic && (
-                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" />
+                      <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+                        <Sparkles className="h-4 w-4" />
                         AI Generated
                       </div>
                     )}
                   </div>
-                  <div className="p-3 space-y-2">
-                    <h4 className="font-semibold text-sm">{image.title}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-3">{image.prompt}</p>
+                  <div className="p-4 space-y-2 bg-background">
+                    <h4 className="font-semibold text-base">{image.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-4">{image.prompt}</p>
                   </div>
                 </HoverCardContent>
               </HoverCard>
