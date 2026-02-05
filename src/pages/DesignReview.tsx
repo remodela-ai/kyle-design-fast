@@ -29,6 +29,7 @@ interface ImageItem {
   url: string;
   label: string;
   iteration: number;
+  prompt?: string;
 }
 
 export default function DesignReview() {
@@ -42,7 +43,8 @@ export default function DesignReview() {
       return [{
         url: state.designImageUrl,
         label: "Original",
-        iteration: 0
+        iteration: 0,
+        prompt: state.extractedInsights || ""
       }];
     }
     return [];
@@ -153,10 +155,15 @@ export default function DesignReview() {
 
       if (data?.imageUrl) {
         const newIteration = images.length;
+        // Store the prompt used for this iteration
+        const iterationPrompt = additionalFeedback 
+          ? `${currentInsights}\n\nRefinement: ${additionalFeedback}`
+          : currentInsights;
         const newImage: ImageItem = {
           url: data.imageUrl,
           label: `Iteration ${newIteration}`,
-          iteration: newIteration
+          iteration: newIteration,
+          prompt: iterationPrompt
         };
         
         setImages(prev => [...prev, newImage]);
