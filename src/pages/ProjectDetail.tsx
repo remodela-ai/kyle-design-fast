@@ -1,4 +1,4 @@
- import { useState } from "react";
+ import { useState, useCallback } from "react";
  import { useParams, Link, useNavigate } from "react-router-dom";
  import { ArrowLeft, Image, FileText, Play, CheckCircle, Clock, AlertCircle, Mic } from "lucide-react";
  import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@
  import { useProjectFolder } from "@/hooks/useProjectFolder";
  import { KyleAvatar } from "@/components/KyleAvatar";
  import { formatDistanceToNow } from "date-fns";
+ import { PipelineStepDialog } from "@/components/PipelineStepDialog";
+ import { PipelineStepData } from "@/hooks/useProjectFolder";
  
  const VISUAL_STEPS = [
    "Spatial Analysis",
@@ -49,6 +51,17 @@
    const navigate = useNavigate();
    const { folder, loading, error } = useProjectFolder(sessionId || null);
    const [selectedIteration, setSelectedIteration] = useState<number>(0);
+ const [selectedStep, setSelectedStep] = useState<{
+   step: PipelineStepData | null;
+   name: string;
+ } | null>(null);
+ 
+ const handleStepClick = useCallback((stepName: string, step: PipelineStepData | undefined) => {
+   setSelectedStep({
+     step: step || null,
+     name: stepName,
+   });
+ }, []);
  
    if (loading) {
      return (
@@ -191,18 +204,12 @@
                    return (
                      <div
                        key={stepName}
-                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                       onClick={() => {
-                         if (step?.visual_outcome_url) {
-                           window.open(step.visual_outcome_url, "_blank");
-                         }
-                       }}
+                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+                       onClick={() => handleStepClick(stepName, step)}
                      >
                        <StepStatusIcon status={step?.status || "pending"} />
-                       <span className="text-sm flex-1">{stepName}</span>
-                       {step?.visual_outcome_url && (
-                         <Play className="h-3 w-3 text-muted-foreground" />
-                       )}
+                       <span className="text-sm flex-1 group-hover:text-primary transition-colors">{stepName}</span>
+                       <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                      </div>
                    );
                  })}
@@ -228,18 +235,12 @@
                    return (
                      <div
                        key={stepName}
-                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                       onClick={() => {
-                         if (step?.visual_outcome_url) {
-                           window.open(step.visual_outcome_url, "_blank");
-                         }
-                       }}
+                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+                       onClick={() => handleStepClick(stepName, step)}
                      >
                        <StepStatusIcon status={step?.status || "pending"} />
-                       <span className="text-sm flex-1">{stepName}</span>
-                       {step?.visual_outcome_url && (
-                         <Play className="h-3 w-3 text-muted-foreground" />
-                       )}
+                       <span className="text-sm flex-1 group-hover:text-primary transition-colors">{stepName}</span>
+                       <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                      </div>
                    );
                  })}
@@ -269,6 +270,14 @@
            </Card>
          </div>
        </div>
+       
+       {/* Pipeline Step Dialog */}
+       <PipelineStepDialog
+         step={selectedStep?.step || null}
+         stepName={selectedStep?.name || ""}
+         open={!!selectedStep}
+         onOpenChange={(open) => !open && setSelectedStep(null)}
+       />
      </div>
    );
  }
