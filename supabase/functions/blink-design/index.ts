@@ -141,9 +141,19 @@ Photorealistic interior design photograph. High-end architectural photography, p
     let finalPrompt = finalImagePrompt;
     if (referenceImage) {
       // When editing, prepend instructions to maintain consistency
-      finalPrompt = `Edit this interior design image while maintaining the same room layout, camera angle, and architectural structure. Apply these changes: ${optimizedPrompt}
+      finalPrompt = `Edit this interior design image while maintaining the same room layout, camera angle, and architectural structure.
 
-IMPORTANT: Preserve the overall composition, lighting direction, and spatial arrangement. Only modify the specific elements mentioned.`;
+SPATIAL TRANSFORMATIONS GUIDE:
+- ROTATE furniture: When asked to rotate an object (e.g., "rotate the sofa 90 degrees"), imagine viewing the object from above and rotating it around its vertical axis. A sofa facing north should face east after a 90° clockwise rotation.
+- REPOSITION furniture: Move objects to new locations while maintaining their proper scale and perspective relative to the room.
+- MIRROR/FLIP: Create the mirror image of an object's orientation in the horizontal plane.
+
+Apply these changes: ${optimizedPrompt}
+
+IMPORTANT: 
+- Preserve the overall composition, lighting direction, and spatial arrangement for elements NOT being modified.
+- For rotation requests, ensure the object's new orientation is clearly visible and correctly rendered in 3D perspective.
+- Maintain realistic shadows and reflections after repositioning objects.`;
     }
 
     console.log("[blink-design] Final prompt for Flux 2 Pro:", finalPrompt.substring(0, 300) + "...");
