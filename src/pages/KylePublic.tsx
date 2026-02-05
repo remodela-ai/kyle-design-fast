@@ -9,6 +9,7 @@ import { useKyleLeadAgent } from "@/hooks/useKyleLeadAgent";
 import { useToast } from "@/hooks/use-toast";
 import { AudioWaves } from "@/components/AudioWaves";
 import kyleAvatar from "@/assets/kyle-avatar.jpeg";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function KylePublic() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,7 @@ export default function KylePublic() {
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
   const handleLeadCaptured = useCallback((leadId: string) => {
     console.log("Lead captured with ID:", leadId);
@@ -29,7 +31,7 @@ export default function KylePublic() {
     });
   }, [toast]);
 
-  const handleVoiceCommand = useCallback(() => {
+  const handleVoiceCommand = useCallback(async (transcript: string[]) => {
     console.log("🚀 Voice command triggered - generating design!");
     setIsGenerating(true);
     toast({
@@ -37,14 +39,44 @@ export default function KylePublic() {
       description: "Kyle is creating a preliminary design based on your conversation...",
     });
     
-    // Simulate generation (replace with actual generation logic)
-    setTimeout(() => {
-      setIsGenerating(false);
-      toast({
-        title: "✨ Design Ready!",
-        description: "Your preliminary design has been generated.",
+    try {
+      // Build the transcript string
+      const conversationTranscript = `---TRANSCRIPT---\n${transcript.join('\n')}\n---END TRANSCRIPT---`;
+      
+      console.log("[KylePublic] Calling blink-design with transcript:", conversationTranscript.substring(0, 200));
+      
+      const { data, error } = await supabase.functions.invoke('blink-design', {
+        body: {
+          prompt: conversationTranscript
+        }
       });
-    }, 5000);
+      
+      if (error) {
+        console.error("[KylePublic] blink-design error:", error);
+        throw error;
+      }
+      
+      console.log("[KylePublic] blink-design response:", data);
+      
+      if (data?.imageUrl) {
+        setGeneratedImageUrl(data.imageUrl);
+        toast({
+          title: "✨ Design Ready!",
+          description: "Your preliminary design has been generated.",
+        });
+      } else {
+        throw new Error("No image URL in response");
+      }
+    } catch (err) {
+      console.error("[KylePublic] Generation failed:", err);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: err instanceof Error ? err.message : "Could not generate design",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   }, [toast]);
 
   const {
@@ -55,10 +87,11 @@ export default function KylePublic() {
     voiceCommandDetected,
     toggleConversation,
     captureLead,
+    transcript,
   } = useKyleLeadAgent({
     officeId,
     onLeadCaptured: handleLeadCaptured,
-    onVoiceCommand: handleVoiceCommand,
+    onVoiceCommand: () => handleVoiceCommand(transcript),
   });
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -95,17 +128,7 @@ export default function KylePublic() {
       {/* Header */}
       <header className="p-4 border-b border-border/50">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src={kyleAvatar} 
-              alt="Kyle" 
-              className="w-10 h-10 rounded-full object-cover border-2 border-primary"
-            />
-            <div>
-              <h1 className="font-semibold text-foreground">Kyle</h1>
-              <p className="text-xs text-muted-foreground">Design Consultant</p>
-            </div>
-          </div>
+          <h1 className="font-semibold text-foreground">Kyle AI</h1>
           {isConnected && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -118,13 +141,31 @@ export default function KylePublic() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="max-w-2xl w-full text-center space-y-8">
+          {/* Kyle Avatar - Center */}
+          <div className="relative">
+            <img 
+              src={kyleAvatar} 
+              alt="Kyle" 
+              className={`w-32 h-32 mx-auto rounded-full object-cover border-4 transition-all duration-300 ${
+                isConnected 
+                  ? isSpeaking 
+                    ? 'border-primary shadow-lg shadow-primary/50 scale-105' 
+                    : 'border-primary/50 animate-pulse'
+                  : 'border-border'
+              }`}
+            />
+            {isConnected && (
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} barCount={5} className="h-6" />
+              </div>
+            )}
+          </div>
+
           {/* Status Message */}
           <div className="space-y-4">
             {isGenerating ? (
               <>
-                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                  <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                </div>
+                <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
                 <h2 className="text-2xl font-semibold text-foreground">
                   Generating your design...
                 </h2>
@@ -132,11 +173,28 @@ export default function KylePublic() {
                   Kyle is creating a preliminary visualization based on your conversation
                 </p>
               </>
+            ) : generatedImageUrl ? (
+              <>
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Your Preliminary Design
+                </h2>
+                <img 
+                  src={generatedImageUrl} 
+                  alt="Generated Design" 
+                  className="w-full max-w-lg mx-auto rounded-xl shadow-2xl border border-border"
+                />
+                <div className="flex gap-3 justify-center pt-4">
+                  <Button onClick={() => setGeneratedImageUrl(null)} variant="outline">
+                    Start New Conversation
+                  </Button>
+                  <Button onClick={() => window.open(generatedImageUrl, '_blank')}>
+                    View Full Size
+                  </Button>
+                </div>
+              </>
             ) : voiceCommandDetected ? (
               <>
-                <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto animate-pulse">
-                  <Sparkles className="w-10 h-10 text-primary-foreground animate-bounce" />
-                </div>
+                <Sparkles className="w-10 h-10 text-primary animate-bounce mx-auto" />
                 <h2 className="text-2xl font-bold text-primary uppercase tracking-wider">
                   Voice Command Detected!
                 </h2>
@@ -165,13 +223,6 @@ export default function KylePublic() {
             )}
           </div>
 
-          {/* Audio Visualization */}
-          {isConnected && (
-            <div className="py-8">
-              <AudioWaves isActive={isConnected} isSpeaking={isSpeaking} />
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive text-sm">
@@ -180,26 +231,28 @@ export default function KylePublic() {
           )}
 
           {/* Main Action Button */}
-          <div className="flex flex-col items-center gap-4">
-            <Button
-              onClick={toggleConversation}
-              size="lg"
-              className={`rounded-full w-20 h-20 ${
-                isConnected 
-                  ? 'bg-destructive hover:bg-destructive/90' 
-                  : 'bg-primary hover:bg-primary/90'
-              }`}
-            >
-              {isConnected ? (
-                <Phone className="w-8 h-8" />
-              ) : (
-                <Mic className="w-8 h-8" />
-              )}
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {isConnected ? 'End conversation' : 'Start conversation'}
-            </span>
-          </div>
+          {!generatedImageUrl && (
+            <div className="flex flex-col items-center gap-4">
+              <Button
+                onClick={toggleConversation}
+                size="lg"
+                className={`rounded-full w-20 h-20 ${
+                  isConnected 
+                    ? 'bg-destructive hover:bg-destructive/90' 
+                    : 'bg-primary hover:bg-primary/90'
+                }`}
+              >
+                {isConnected ? (
+                  <Phone className="w-8 h-8" />
+                ) : (
+                  <Mic className="w-8 h-8" />
+                )}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {isConnected ? 'End conversation' : 'Start conversation'}
+              </span>
+            </div>
+          )}
 
           {/* Contact Form Trigger */}
           {isConnected && (
