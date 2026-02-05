@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import kitchenHero from "@/assets/kitchen-hero.jpg";
@@ -376,59 +377,82 @@ const KyleSocialLanding = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {allImages.map((image) => (
-              <Card 
-                key={image.id}
-                className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 relative"
-              >
-                <div className="aspect-square relative overflow-hidden">
-                  <img
-                    src={image.url}
-                    alt={image.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  
-                  {/* AI Generated badge */}
-                  {!image.isStatic && (
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 z-10">
-                      <Sparkles className="h-3 w-3" />
-                      AI
-                    </div>
-                  )}
-
-                  {/* Delete button for ALL images */}
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
-                    disabled={isDeletingId === image.id}
+              <HoverCard openDelay={200} closeDelay={100}>
+                <HoverCardTrigger asChild>
+                  <Card 
+                    key={image.id}
+                    className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 relative cursor-pointer"
                   >
-                    {isDeletingId === image.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                    <div className="aspect-square relative overflow-hidden">
+                      <img
+                        src={image.url}
+                        alt={image.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      
+                      {/* AI Generated badge */}
+                      {!image.isStatic && (
+                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 z-10">
+                          <Sparkles className="h-3 w-3" />
+                          AI
+                        </div>
+                      )}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white text-sm font-medium truncate mb-2">{image.title}</p>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="w-full gap-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDialog(image);
-                      }}
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      Generate Design
-                    </Button>
+                      {/* Delete button for ALL images */}
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
+                        disabled={isDeletingId === image.id}
+                      >
+                        {isDeletingId === image.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                        <p className="text-white text-sm font-medium truncate mb-2">{image.title}</p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="w-full gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDialog(image);
+                          }}
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Generate Design
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80 p-0 overflow-hidden" side="right" align="start">
+                  <div className="relative">
+                    <img
+                      src={image.url}
+                      alt={image.title}
+                      className="w-full aspect-video object-cover"
+                    />
+                    {!image.isStatic && (
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI Generated
+                      </div>
+                    )}
                   </div>
-                </div>
-              </Card>
+                  <div className="p-3 space-y-2">
+                    <h4 className="font-semibold text-sm">{image.title}</h4>
+                    <p className="text-xs text-muted-foreground line-clamp-3">{image.prompt}</p>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
             ))}
           </div>
         </div>
