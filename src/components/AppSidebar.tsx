@@ -8,7 +8,6 @@ import {
   X,
   LogOut,
   Sparkles,
-  MessageSquare,
   FileText,
   BarChart3,
   Code,
@@ -21,6 +20,7 @@ import {
   HardHat,
   Bot,
   FolderKanban,
+  ExternalLink,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +43,11 @@ const journeyNavItems = [
   { icon: ClipboardList, label: "Project Mgmt", path: "/project", status: "coming" },
   { icon: Package, label: "Procurement", path: "/procurement", status: "coming" },
   { icon: HardHat, label: "Execution", path: "/execution", status: "coming" },
+];
+
+// Public Landings
+const landingNavItems = [
+  { icon: ExternalLink, label: "Kitchen Landing", path: "/start" },
 ];
 
 // Operations & Analytics
@@ -231,6 +236,26 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
               </ul>
             </>
           )}
+
+          {/* Public Landings */}
+          {(!collapsed || mobileOpen) && (
+            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+              Landings
+            </span>
+          )}
+          <ul className="space-y-1 mb-4">
+            {landingNavItems.map((item) => (
+              <li key={item.label}>
+                <SidebarNavItem
+                  icon={item.icon}
+                  label={item.label}
+                  collapsed={collapsed && !mobileOpen}
+                  onClick={onMobileClose}
+                  path={item.path}
+                />
+              </li>
+            ))}
+          </ul>
 
           {/* Admin Routes */}
           {isSuperAdmin && (
