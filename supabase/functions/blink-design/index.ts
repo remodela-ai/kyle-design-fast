@@ -156,8 +156,8 @@ Photorealistic interior design photograph. High-end architectural photography, p
     // Add reference image if provided
     if (referenceImage) {
       input.image_prompt = referenceImage;
-      input.image_prompt_strength = 0.35;
-      console.log("[blink-design] Added reference image with strength 0.35");
+      input.image_prompt_strength = 0.70;
+      console.log("[blink-design] Added reference image with strength 0.70 for consistency");
     }
 
     console.log("[blink-design] Generating image with Flux 2 Pro...");
