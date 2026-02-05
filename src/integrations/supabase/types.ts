@@ -47,6 +47,85 @@ export type Database = {
         }
         Relationships: []
       }
+      appointments: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          google_event_id: string | null
+          id: string
+          lead_id: string
+          location: string | null
+          notes: string | null
+          office_id: string
+          reminder_1h_sent: boolean
+          reminder_24h_sent: boolean
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          team_member_id: string
+          type: Database["public"]["Enums"]["appointment_type"]
+          updated_at: string
+          video_link: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          google_event_id?: string | null
+          id?: string
+          lead_id: string
+          location?: string | null
+          notes?: string | null
+          office_id: string
+          reminder_1h_sent?: boolean
+          reminder_24h_sent?: boolean
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          team_member_id: string
+          type?: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+          video_link?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          google_event_id?: string | null
+          id?: string
+          lead_id?: string
+          location?: string | null
+          notes?: string | null
+          office_id?: string
+          reminder_1h_sent?: boolean
+          reminder_24h_sent?: boolean
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          team_member_id?: string
+          type?: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+          video_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bathroom_inspiration_gallery: {
         Row: {
           created_at: string
@@ -868,6 +947,146 @@ export type Database = {
           },
         ]
       }
+      nurturing_log: {
+        Row: {
+          clicked_at: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          opened_at: string | null
+          sent_at: string | null
+          sequence_id: string
+          status: string
+          step_id: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          opened_at?: string | null
+          sent_at?: string | null
+          sequence_id: string
+          status?: string
+          step_id: string
+        }
+        Update: {
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          sequence_id?: string
+          status?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nurturing_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nurturing_log_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "nurturing_sequences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nurturing_log_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "nurturing_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nurturing_sequences: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          office_id: string
+          trigger_status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          office_id: string
+          trigger_status: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          office_id?: string
+          trigger_status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nurturing_sequences_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nurturing_steps: {
+        Row: {
+          created_at: string
+          delay_hours: number
+          email_body: string
+          email_subject: string
+          id: string
+          include_moodboard: boolean
+          sequence_id: string
+          step_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delay_hours?: number
+          email_body: string
+          email_subject: string
+          id?: string
+          include_moodboard?: boolean
+          sequence_id: string
+          step_order: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delay_hours?: number
+          email_body?: string
+          email_subject?: string
+          id?: string
+          include_moodboard?: boolean
+          sequence_id?: string
+          step_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nurturing_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "nurturing_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offices: {
         Row: {
           address: string | null
@@ -933,6 +1152,123 @@ export type Database = {
           session_number?: number
         }
         Relationships: []
+      }
+      payment_schedules: {
+        Row: {
+          amount: number | null
+          created_at: string
+          due_date: string | null
+          id: string
+          milestone: Database["public"]["Enums"]["payment_milestone"]
+          percentage: number
+          proposal_id: string
+          reminder_sent: boolean
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          milestone: Database["public"]["Enums"]["payment_milestone"]
+          percentage: number
+          proposal_id: string
+          reminder_sent?: boolean
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          milestone?: Database["public"]["Enums"]["payment_milestone"]
+          percentage?: number
+          proposal_id?: string
+          reminder_sent?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_schedules_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          lead_id: string
+          milestone: Database["public"]["Enums"]["payment_milestone"]
+          office_id: string
+          paid_at: string | null
+          proposal_id: string
+          receipt_url: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          lead_id: string
+          milestone: Database["public"]["Enums"]["payment_milestone"]
+          office_id: string
+          paid_at?: string | null
+          proposal_id: string
+          receipt_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          lead_id?: string
+          milestone?: Database["public"]["Enums"]["payment_milestone"]
+          office_id?: string
+          paid_at?: string | null
+          proposal_id?: string
+          receipt_url?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       person_profiles: {
         Row: {
@@ -1119,8 +1455,13 @@ export type Database = {
           id: string
           lead_id: string
           office_id: string
+          pdf_url: string | null
           sent_at: string | null
+          signature_url: string | null
           signed_at: string | null
+          signed_by_email: string | null
+          signed_by_name: string | null
+          signed_ip: string | null
           status: string
           total_fee: number
           updated_at: string
@@ -1137,8 +1478,13 @@ export type Database = {
           id?: string
           lead_id: string
           office_id: string
+          pdf_url?: string | null
           sent_at?: string | null
+          signature_url?: string | null
           signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
+          signed_ip?: string | null
           status?: string
           total_fee: number
           updated_at?: string
@@ -1155,8 +1501,13 @@ export type Database = {
           id?: string
           lead_id?: string
           office_id?: string
+          pdf_url?: string | null
           sent_at?: string | null
+          signature_url?: string | null
           signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
+          signed_ip?: string | null
           status?: string
           total_fee?: number
           updated_at?: string
@@ -1175,6 +1526,44 @@ export type Database = {
             columns: ["office_id"]
             isOneToOne: false
             referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduling_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_availability_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1228,6 +1617,44 @@ export type Database = {
             columns: ["office_id"]
             isOneToOne: false
             referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signature_audit_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          proposal_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          proposal_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          proposal_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signature_audit_log_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -1464,6 +1891,17 @@ export type Database = {
       }
     }
     Enums: {
+      appointment_status:
+        | "scheduled"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      appointment_type:
+        | "discovery"
+        | "site_visit"
+        | "design_review"
+        | "follow_up"
       client_status: "lead" | "active" | "completed" | "inactive"
       design_specialization:
         | "residential"
@@ -1485,6 +1923,18 @@ export type Database = {
         | "converted"
         | "lost"
       marketing_platform: "linkedin" | "facebook" | "instagram" | "tiktok" | "x"
+      payment_milestone:
+        | "deposit"
+        | "design_phase"
+        | "procurement"
+        | "installation"
+        | "final"
+      payment_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "refunded"
       post_status: "draft" | "scheduled" | "published"
       project_status: "planning" | "in_progress" | "review" | "completed"
       visibility_type: "private" | "shared" | "public"
@@ -1615,6 +2065,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      appointment_status: [
+        "scheduled",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      appointment_type: [
+        "discovery",
+        "site_visit",
+        "design_review",
+        "follow_up",
+      ],
       client_status: ["lead", "active", "completed", "inactive"],
       design_specialization: [
         "residential",
@@ -1638,6 +2101,20 @@ export const Constants = {
         "lost",
       ],
       marketing_platform: ["linkedin", "facebook", "instagram", "tiktok", "x"],
+      payment_milestone: [
+        "deposit",
+        "design_phase",
+        "procurement",
+        "installation",
+        "final",
+      ],
+      payment_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "refunded",
+      ],
       post_status: ["draft", "scheduled", "published"],
       project_status: ["planning", "in_progress", "review", "completed"],
       visibility_type: ["private", "shared", "public"],
