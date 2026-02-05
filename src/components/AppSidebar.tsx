@@ -2,22 +2,25 @@ import { cn } from "@/lib/utils";
 import kLogoImage from "@/assets/k-logo.png";
 import { Button } from "@/components/ui/button";
 import {
-  Home,
-  LayoutDashboard,
-  FolderKanban,
   User,
   ChevronLeft,
   ChevronRight,
   X,
-  UserCheck,
   LogOut,
   Sparkles,
-  Building2,
   MessageSquare,
   FileText,
   BarChart3,
   Code,
   Settings,
+  Megaphone,
+  ShoppingCart,
+  Palette,
+  ClipboardList,
+  Package,
+  HardHat,
+  Bot,
+  FolderKanban,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,31 +29,31 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Public nav items visible to everyone
-const publicNavItems = [
-  { icon: Home, label: "Home", path: "/" },
-  { icon: MessageSquare, label: "Kyle AI", path: "/kyle" },
-  { icon: Sparkles, label: "Kitchen Design", path: "/start" },
+// CAPA 1 - Kyle (Central Orchestrator)
+const kyleNavItems = [
+  { icon: Bot, label: "Kyle AI", path: "/kyle", description: "Orquestador central" },
+  { icon: Sparkles, label: "Co-create", path: "/shazam", description: "Diseño asistido" },
 ];
 
-// Designer nav items (authenticated users with profile)
-const designerNavItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Sparkles, label: "Co-create", path: "/shazam" },
+// CAPA 2 - Journeys (6 macro-flujos de negocio)
+const journeyNavItems = [
+  { icon: Megaphone, label: "Marketing", path: "/kustr", status: "active" },
+  { icon: ShoppingCart, label: "Sales", path: "/kustr/leads", status: "active" },
+  { icon: Palette, label: "Design", path: "/dashboard", status: "active" },
+  { icon: ClipboardList, label: "Project Mgmt", path: "/project", status: "coming" },
+  { icon: Package, label: "Procurement", path: "/procurement", status: "coming" },
+  { icon: HardHat, label: "Execution", path: "/execution", status: "coming" },
+];
+
+// Operations & Analytics
+const operationsNavItems = [
   { icon: FolderKanban, label: "Projects", path: "/dashboard" },
-];
-
-// Kustr Design routes
-const kustrNavItems = [
-  { icon: Building2, label: "Design Studio", path: "/kustr" },
-  { icon: BarChart3, label: "Leads", path: "/kustr/leads" },
-  { icon: FileText, label: "Analytics", path: "/kustr/analytics" },
+  { icon: BarChart3, label: "Analytics", path: "/kustr/analytics" },
   { icon: Code, label: "Embed Widget", path: "/kustr/embed" },
 ];
 
 // Admin-only nav items
 const adminNavItems = [
-  { icon: UserCheck, label: "Legacy Onboarding", path: "/onboarding2" },
   { icon: FileText, label: "Documentation", path: "/documentation" },
   { icon: Settings, label: "Backlog", path: "/backlog" },
 ];
@@ -160,14 +163,14 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {/* Main Navigation */}
+        {/* CAPA 1 - Kyle (Orquestador Central) */}
           {(!collapsed || mobileOpen) && (
-            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 block">
-              Navigation
+            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+              Kyle · Orquestador
             </span>
           )}
-          <ul className="space-y-1">
-            {publicNavItems.map((item) => (
+          <ul className="space-y-1 mb-4">
+            {kyleNavItems.map((item) => (
               <li key={item.label}>
                 <SidebarNavItem
                   icon={item.icon}
@@ -180,16 +183,41 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             ))}
           </ul>
 
-          {/* Designer Routes */}
+          {/* CAPA 2 - Journeys (Macro-flujos de negocio) */}
+          {(!collapsed || mobileOpen) && (
+            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+              Journeys
+            </span>
+          )}
+          <ul className="space-y-1 mb-4">
+            {journeyNavItems.map((item) => (
+              <li key={item.label} className="relative">
+                <SidebarNavItem
+                  icon={item.icon}
+                  label={item.label}
+                  collapsed={collapsed && !mobileOpen}
+                  onClick={item.status === "active" ? onMobileClose : undefined}
+                  path={item.status === "active" ? item.path : undefined}
+                />
+                {item.status === "coming" && !collapsed && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    Soon
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {/* Operations & Analytics */}
           {isAuthenticated && hasProfile && (
             <>
               {(!collapsed || mobileOpen) && (
-                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 mt-6 block">
-                  Designer
+                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+                  Operations
                 </span>
               )}
-              <ul className="space-y-1">
-                {designerNavItems.map((item) => (
+              <ul className="space-y-1 mb-4">
+                {operationsNavItems.map((item) => (
                   <li key={item.label}>
                     <SidebarNavItem
                       icon={item.icon}
@@ -204,31 +232,11 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             </>
           )}
 
-          {/* Kustr Design Routes */}
-          {(!collapsed || mobileOpen) && (
-            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 mt-6 block">
-              Design Studio
-            </span>
-          )}
-          <ul className="space-y-1">
-            {kustrNavItems.map((item) => (
-              <li key={item.label}>
-                <SidebarNavItem
-                  icon={item.icon}
-                  label={item.label}
-                  collapsed={collapsed && !mobileOpen}
-                  onClick={onMobileClose}
-                  path={item.path}
-                />
-              </li>
-            ))}
-          </ul>
-
           {/* Admin Routes */}
           {isSuperAdmin && (
             <>
               {(!collapsed || mobileOpen) && (
-                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-4 mt-6 block">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
                   Admin
                 </span>
               )}
