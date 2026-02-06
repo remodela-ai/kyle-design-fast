@@ -13,14 +13,17 @@ import {
   Code,
   Settings,
   Megaphone,
-  ShoppingCart,
+  Users,
   Palette,
-  ClipboardList,
+  FolderKanban,
   Package,
   HardHat,
   Bot,
-  FolderKanban,
   ExternalLink,
+  Calendar,
+  CreditCard,
+  Mail,
+  FileSignature,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,38 +32,53 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// ═══════════════════════════════════════════════════════════════════════════
 // CAPA 1 - Kyle (Central Orchestrator)
+// El punto de entrada único. Interfaz, memoria, router y supervisor.
+// ═══════════════════════════════════════════════════════════════════════════
 const kyleNavItems = [
-  { icon: Bot, label: "Home", path: "/kustr-next", description: "Orquestador central" },
-  { icon: Sparkles, label: "Kyle AI", path: "/shazam", description: "Diseño asistido" },
+  { icon: Bot, label: "Kyle Home", path: "/kustr-next", description: "Centro de comando" },
+  { icon: Sparkles, label: "Kyle Voice", path: "/shazam", description: "Diseño por voz" },
 ];
 
-// CAPA 2 - Journeys (6 macro-flujos de negocio)
+// ═══════════════════════════════════════════════════════════════════════════
+// CAPA 2 - Journeys (6 Macro-flujos de negocio)
+// Flujos completos activados por Kyle según contexto e intención del usuario.
+// Cada Journey contiene múltiples micro-agentes especializados (Capa 3).
+// ═══════════════════════════════════════════════════════════════════════════
 const journeyNavItems = [
-  { icon: Megaphone, label: "Marketing", path: "/marketing", status: "active" },
-  { icon: ShoppingCart, label: "Sales", path: "/kustr-next/leads", status: "active" },
-  { icon: Palette, label: "Design", path: "/dashboard", status: "active" },
-  { icon: ClipboardList, label: "Project Mgmt", path: "/project", status: "coming" },
-  { icon: Package, label: "Procurement", path: "/procurement", status: "coming" },
-  { icon: HardHat, label: "Execution", path: "/execution", status: "coming" },
+  { icon: Megaphone, label: "Marketing", path: "/marketing", status: "active", agents: 3 },
+  { icon: Users, label: "Sales", path: "/kustr-next/leads", status: "active", agents: 4 },
+  { icon: Palette, label: "Design", path: "/dashboard", status: "active", agents: 5 },
+  { icon: FolderKanban, label: "Project Mgmt", path: "/project", status: "coming", agents: 0 },
+  { icon: Package, label: "Procurement", path: "/procurement", status: "coming", agents: 0 },
+  { icon: HardHat, label: "Execution", path: "/execution", status: "coming", agents: 0 },
 ];
 
-// Public Landings
-const landingNavItems = [
-  { icon: ExternalLink, label: "Kitchen Landing", path: "/kitchen" },
-  { icon: ExternalLink, label: "Bathroom Landing", path: "/bathroom" },
+// Sales Funnel - Sub-routes del Journey de Sales
+const salesFunnelItems = [
+  { icon: Users, label: "Leads", path: "/kustr-next/leads" },
+  { icon: FileSignature, label: "Proposals", path: "/kustr-next/proposal" },
+  { icon: Calendar, label: "Appointments", path: "/kustr-next/appointments" },
+  { icon: Mail, label: "Nurturing", path: "/kustr-next/nurturing" },
+  { icon: CreditCard, label: "Payments", path: "/kustr-next/payments" },
 ];
 
 // Operations & Analytics
 const operationsNavItems = [
-  { icon: FolderKanban, label: "Projects", path: "/dashboard" },
   { icon: BarChart3, label: "Analytics", path: "/kustr-next/analytics" },
   { icon: Code, label: "Embed Widget", path: "/kustr-next/embed" },
 ];
 
+// Public Landings
+const landingNavItems = [
+  { icon: ExternalLink, label: "Kitchen", path: "/kitchen" },
+  { icon: ExternalLink, label: "Bathroom", path: "/bathroom" },
+];
+
 // Admin-only nav items
 const adminNavItems = [
-  { icon: FileText, label: "Documentation", path: "/documentation" },
+  { icon: FileText, label: "Docs", path: "/documentation" },
   { icon: Settings, label: "Backlog", path: "/backlog" },
 ];
 
@@ -171,11 +189,11 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {/* CAPA 1 - Kyle (Orquestador Central) */}
           {(!collapsed || mobileOpen) && (
-            <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
-              Kyle · Orquestador
+            <span className="text-xs text-primary font-semibold uppercase tracking-wider px-3 mb-2 block flex items-center gap-2">
+              <Bot className="h-3 w-3" /> Capa 1 · Kyle
             </span>
           )}
-          <ul className="space-y-1 mb-4">
+          <ul className="space-y-1 mb-4 bg-primary/5 rounded-lg p-2">
             {kyleNavItems.map((item) => (
               <li key={item.label}>
                 <SidebarNavItem
@@ -192,7 +210,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
           {/* CAPA 2 - Journeys (Macro-flujos de negocio) */}
           {(!collapsed || mobileOpen) && (
             <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
-              Journeys
+              Capa 2 · Journeys
             </span>
           )}
           <ul className="space-y-1 mb-4">
@@ -205,14 +223,43 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
                   onClick={item.status === "active" ? onMobileClose : undefined}
                   path={item.status === "active" ? item.path : undefined}
                 />
-                {item.status === "coming" && !collapsed && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                    Soon
+                {!collapsed && (
+                  <span className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded",
+                    item.status === "coming" 
+                      ? "text-muted-foreground bg-muted" 
+                      : "text-primary bg-primary/10"
+                  )}>
+                    {item.status === "coming" ? "Soon" : `${item.agents} agents`}
                   </span>
                 )}
               </li>
             ))}
           </ul>
+
+          {/* Sales Funnel - Expandido del Journey Sales */}
+          {isAuthenticated && hasProfile && (
+            <>
+              {(!collapsed || mobileOpen) && (
+                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+                  Sales Funnel
+                </span>
+              )}
+              <ul className="space-y-1 mb-4">
+                {salesFunnelItems.map((item) => (
+                  <li key={item.label}>
+                    <SidebarNavItem
+                      icon={item.icon}
+                      label={item.label}
+                      collapsed={collapsed && !mobileOpen}
+                      onClick={onMobileClose}
+                      path={item.path}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           {/* Operations & Analytics */}
           {isAuthenticated && hasProfile && (
