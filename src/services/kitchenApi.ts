@@ -78,9 +78,13 @@ export async function getProject(id: number): Promise<Project | null> {
 }
 
 export async function createProject(name: string): Promise<Project> {
+  // Get current user ID for RLS compliance
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
   const { data, error } = await (supabase as any)
     .from("kitchen_projects")
-    .insert({ name, status: "upload" })
+    .insert({ name, status: "upload", user_id: user.id })
     .select()
     .single();
 
