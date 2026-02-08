@@ -48,6 +48,7 @@ import TestIdeas from "./pages/TestIdeas";
 import { TestGuideFloating } from "./components/TestGuideFloating";
 import ProjectDetail from "./pages/ProjectDetail";
 import Marketing from "./pages/Marketing";
+import ClonKitchen from "./pages/ClonKitchen";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,7 @@ const App = () => (
                   
                   {/* Marketing */}
                   <Route path="/marketing" element={<Marketing />} />
+                  <Route path="/clon-kitchen" element={<ClonKitchen />} />
                   
                   {/* Backlog */}
                   <Route path="/backlog" element={<Backlog />} />
