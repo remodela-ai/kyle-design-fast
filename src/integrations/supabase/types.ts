@@ -406,6 +406,122 @@ export type Database = {
         }
         Relationships: []
       }
+      kitchen_catalog_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          icon: string | null
+          id: string
+          label: string
+          sort_order: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id: string
+          label: string
+          sort_order?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          label?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      kitchen_catalog_items: {
+        Row: {
+          brand: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          material: string | null
+          name: string
+          price: number | null
+        }
+        Insert: {
+          brand?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id: string
+          image_url?: string | null
+          material?: string | null
+          name: string
+          price?: number | null
+        }
+        Update: {
+          brand?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          material?: string | null
+          name?: string
+          price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_catalog_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kitchen_catalog_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchen_projects: {
+        Row: {
+          created_at: string | null
+          id: number
+          items: Json | null
+          layout_3d: Json | null
+          name: string
+          original_image_url: string | null
+          proposal_data: Json | null
+          redesign_image_url: string | null
+          segmentation_data: Json | null
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          items?: Json | null
+          layout_3d?: Json | null
+          name?: string
+          original_image_url?: string | null
+          proposal_data?: Json | null
+          redesign_image_url?: string | null
+          segmentation_data?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          items?: Json | null
+          layout_3d?: Json | null
+          name?: string
+          original_image_url?: string | null
+          proposal_data?: Json | null
+          redesign_image_url?: string | null
+          segmentation_data?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       kustr_project_files: {
         Row: {
           created_at: string

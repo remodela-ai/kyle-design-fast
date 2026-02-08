@@ -57,7 +57,7 @@ export interface CatalogItem {
 // ─── Project CRUD ───
 
 export async function getProjects(): Promise<Project[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("kitchen_projects")
     .select("*")
     .order("created_at", { ascending: false });
@@ -67,7 +67,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProject(id: number): Promise<Project | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("kitchen_projects")
     .select("*")
     .eq("id", id)
@@ -78,7 +78,7 @@ export async function getProject(id: number): Promise<Project | null> {
 }
 
 export async function createProject(name: string): Promise<Project> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("kitchen_projects")
     .insert({ name, status: "upload" })
     .select()
@@ -89,7 +89,7 @@ export async function createProject(name: string): Promise<Project> {
 }
 
 export async function deleteProject(id: number): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("kitchen_projects")
     .delete()
     .eq("id", id);
@@ -130,7 +130,7 @@ export async function uploadProjectImage(
   const imageUrl = urlData.publicUrl;
 
   // Update project with the image URL
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from("kitchen_projects")
     .update({ original_image_url: imageUrl, status: "upload" })
     .eq("id", projectId);
@@ -144,7 +144,7 @@ export async function uploadProjectImage(
 
 export async function segmentWithDino(projectId: number): Promise<void> {
   // Update status to segmenting
-  await supabase
+  await (supabase as any)
     .from("kitchen_projects")
     .update({ status: "segmenting" })
     .eq("id", projectId);
@@ -158,7 +158,7 @@ export async function segmentWithDino(projectId: number): Promise<void> {
 }
 
 export async function segmentWithSSA(projectId: number): Promise<void> {
-  await supabase
+  await (supabase as any)
     .from("kitchen_projects")
     .update({ status: "segmenting" })
     .eq("id", projectId);
@@ -172,7 +172,7 @@ export async function segmentWithSSA(projectId: number): Promise<void> {
 }
 
 export async function segmentWithSAM(projectId: number): Promise<void> {
-  await supabase
+  await (supabase as any)
     .from("kitchen_projects")
     .update({ status: "segmenting" })
     .eq("id", projectId);
@@ -192,7 +192,7 @@ export async function selectItem(
   categoryId: string,
   itemId: string
 ): Promise<void> {
-  const { data: project, error: fetchError } = await supabase
+  const { data: project, error: fetchError } = await (supabase as any)
     .from("kitchen_projects")
     .select("items")
     .eq("id", projectId)
@@ -200,7 +200,7 @@ export async function selectItem(
 
   if (fetchError) throw new Error(fetchError.message);
 
-  const items = (project.items as ProjectItem[]) || [];
+  const items = (project?.items as ProjectItem[]) || [];
   const filtered = items.filter((i) => i.category !== categoryId);
   // TODO: Look up item details from catalog
   filtered.push({
@@ -211,7 +211,7 @@ export async function selectItem(
     price: 0,
   });
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("kitchen_projects")
     .update({ items: filtered })
     .eq("id", projectId);
@@ -223,7 +223,7 @@ export async function removeItem(
   projectId: number,
   categoryId: string
 ): Promise<void> {
-  const { data: project, error: fetchError } = await supabase
+  const { data: project, error: fetchError } = await (supabase as any)
     .from("kitchen_projects")
     .select("items")
     .eq("id", projectId)
@@ -231,10 +231,10 @@ export async function removeItem(
 
   if (fetchError) throw new Error(fetchError.message);
 
-  const items = (project.items as ProjectItem[]) || [];
+  const items = (project?.items as ProjectItem[]) || [];
   const filtered = items.filter((i) => i.category !== categoryId);
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("kitchen_projects")
     .update({ items: filtered })
     .eq("id", projectId);
@@ -245,7 +245,7 @@ export async function removeItem(
 // ─── AI Rendering ───
 
 export async function renderRedesign(projectId: number): Promise<{ redesignImageUrl: string }> {
-  await supabase
+  await (supabase as any)
     .from("kitchen_projects")
     .update({ status: "rendering" })
     .eq("id", projectId);
@@ -262,7 +262,7 @@ export async function saveRenderResult(
   projectId: number,
   redesignImageUrl: string
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("kitchen_projects")
     .update({ redesign_image_url: redesignImageUrl, status: "rendered" })
     .eq("id", projectId);
@@ -295,7 +295,7 @@ export async function generateProposal(projectId: number): Promise<any> {
 // ─── Catalog ───
 
 export async function getCatalogCategories(): Promise<CatalogCategory[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("kitchen_catalog_categories")
     .select("*, items:kitchen_catalog_items(*)");
 

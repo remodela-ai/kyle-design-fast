@@ -9,7 +9,7 @@ export default function Proposals() {
   const { data: projectsList, isLoading } = useProjects();
 
   const proposedProjects = projectsList?.filter(
-    (p) => p.status === "proposal" || p.redesign_image_url
+    (p) => p.status === "rendered" || p.redesign_image_url
   ) || [];
 
   return (
@@ -44,7 +44,7 @@ export default function Proposals() {
                       <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     </div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">{project.status === "proposal" ? "Proposal Ready" : "Render Complete"}</Badge>
+                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">{project.status === "rendered" ? "Render Complete" : "In Progress"}</Badge>
                     </div>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(project.created_at).toLocaleDateString()}</span>
                   </div>
