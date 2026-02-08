@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useProject, useCatalogCategories, useSegmentDino, useRenderRedesign } from "@/hooks/useKitchenApi";
-import { ArrowLeft, Wand2, Paintbrush, Box, FileText, Loader2, Check } from "lucide-react";
+import { useProject, useCatalogCategories, useSegmentDino, useRenderRedesign, useUploadProjectImage } from "@/hooks/useKitchenApi";
+import { ArrowLeft, Wand2, Paintbrush, Box, FileText, Loader2, Check, Upload, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DesignStudio() {
@@ -18,8 +18,11 @@ export default function DesignStudio() {
   const { data: categories, isLoading: catalogLoading } = useCatalogCategories();
   const segmentMutation = useSegmentDino();
   const renderMutation = useRenderRedesign();
+  const uploadMutation = useUploadProjectImage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedItems, setSelectedItems] = useState<Record<string, string>>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (project?.items) {
@@ -41,6 +44,48 @@ export default function DesignStudio() {
       </div>
     );
   }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !projectId) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be less than 10MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        await uploadMutation.mutateAsync({
+          projectId,
+          imageBase64: base64,
+          mimeType: file.type,
+        });
+        toast.success("Image uploaded successfully");
+        refetch();
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read file");
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error("Failed to upload image");
+      setIsUploading(false);
+    }
+  };
 
   const handleSegment = async () => {
     try {
@@ -159,8 +204,29 @@ export default function DesignStudio() {
                   className="w-full rounded-lg object-cover"
                 />
               ) : (
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-muted-foreground">No image uploaded</p>
+                <div 
+                  className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-12 w-12 text-muted-foreground animate-spin mb-3" />
+                      <p className="text-muted-foreground">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground font-medium">Click to upload kitchen photo</p>
+                      <p className="text-muted-foreground text-sm mt-1">JPG, PNG up to 10MB</p>
+                    </>
+                  )}
                 </div>
               )}
             </CardContent>
