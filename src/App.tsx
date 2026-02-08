@@ -50,6 +50,16 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Marketing from "./pages/Marketing";
 import ClonKitchen from "./pages/ClonKitchen";
 
+// Kitchen Redesign Studio pages (from Manus)
+import KitchenHome from "./pages/KitchenHome";
+import DesignStudio from "./pages/DesignStudio";
+import FloorPlans from "./pages/FloorPlans";
+import Viewer3D from "./pages/Viewer3D";
+import KitchenProposal from "./pages/Proposal";
+import KitchenProjects from "./pages/Projects";
+import KitchenProposals from "./pages/Proposals";
+import Inspiration from "./pages/Inspiration";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -99,6 +109,18 @@ const App = () => (
                   {/* Marketing */}
                   <Route path="/marketing" element={<Marketing />} />
                   <Route path="/clon-kitchen" element={<ClonKitchen />} />
+                  
+                  {/* Kitchen Redesign Studio routes */}
+                  <Route path="/kitchen-studio" element={<KitchenHome />} />
+                  <Route path="/studio/:id" element={<DesignStudio />} />
+                  <Route path="/floor-plans" element={<FloorPlans />} />
+                  <Route path="/floor-plans/:id" element={<FloorPlans />} />
+                  <Route path="/3d-viewer" element={<Viewer3D />} />
+                  <Route path="/3d-viewer/:id" element={<Viewer3D />} />
+                  <Route path="/proposal/:id" element={<KitchenProposal />} />
+                  <Route path="/projects" element={<KitchenProjects />} />
+                  <Route path="/proposals" element={<KitchenProposals />} />
+                  <Route path="/inspiration" element={<Inspiration />} />
                   
                   {/* Backlog */}
                   <Route path="/backlog" element={<Backlog />} />
