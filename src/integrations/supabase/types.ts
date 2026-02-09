@@ -1514,6 +1514,7 @@ export type Database = {
           designer_id: string | null
           id: string
           iteration_count: number | null
+          lead_id: string | null
           management_completed: boolean | null
           pipeline_completed: boolean | null
           project_name: string | null
@@ -1528,6 +1529,7 @@ export type Database = {
           designer_id?: string | null
           id?: string
           iteration_count?: number | null
+          lead_id?: string | null
           management_completed?: boolean | null
           pipeline_completed?: boolean | null
           project_name?: string | null
@@ -1542,6 +1544,7 @@ export type Database = {
           designer_id?: string | null
           id?: string
           iteration_count?: number | null
+          lead_id?: string | null
           management_completed?: boolean | null
           pipeline_completed?: boolean | null
           project_name?: string | null
@@ -1555,6 +1558,13 @@ export type Database = {
             columns: ["designer_id"]
             isOneToOne: false
             referencedRelation: "designer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
