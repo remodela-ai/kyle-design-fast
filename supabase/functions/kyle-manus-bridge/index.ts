@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,10 +21,44 @@ interface KyleBridgeRequest {
   context?: {
     lead_id?: string;
     office_id?: string;
+    team_member_id?: string;
     conversation_transcript?: string;
     additional_context?: string;
   };
   action_type?: 'research' | 'create' | 'analyze' | 'automate';
+}
+
+// Fetch active connectors for a team member
+async function getConnectorsForUser(teamMemberId: string): Promise<string[]> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data: connectors, error } = await supabase
+    .from('kyle_connectors')
+    .select('connector_uuid')
+    .eq('team_member_id', teamMemberId)
+    .eq('is_active', true);
+  
+  if (error) {
+    console.error('[kyle-manus-bridge] Error fetching connectors:', error);
+    return [];
+  }
+  
+  // Update last_used_at for these connectors
+  if (connectors && connectors.length > 0) {
+    const connectorUuids = connectors.map(c => c.connector_uuid);
+    await supabase
+      .from('kyle_connectors')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('team_member_id', teamMemberId)
+      .eq('is_active', true);
+    
+    return connectorUuids;
+  }
+  
+  return [];
 }
 
 serve(async (req) => {
@@ -72,12 +107,21 @@ serve(async (req) => {
       }
     }
 
-    // Create task in Manus
+    // Get user's active connectors if team_member_id is provided
+    let userConnectors: string[] = [];
+    if (context?.team_member_id) {
+      userConnectors = await getConnectorsForUser(context.team_member_id);
+      console.log(`[kyle-manus-bridge] User connectors: ${userConnectors.length} active`);
+    }
+
+    // Create task in Manus with user's connectors
     const taskPayload: ManusTaskRequest = {
       prompt: enhancedPrompt,
+      connectors: userConnectors.length > 0 ? userConnectors : undefined,
     };
 
     console.log(`[kyle-manus-bridge] Creating Manus task with prompt length: ${enhancedPrompt.length}`);
+    console.log(`[kyle-manus-bridge] Connectors attached: ${userConnectors.length}`);
 
     const taskResponse = await fetch(`${MANUS_API_BASE}/tasks`, {
       method: 'POST',
@@ -101,7 +145,8 @@ serve(async (req) => {
       success: true,
       task_id: taskData.id || taskData.task_id,
       status: taskData.status || 'created',
-      message: 'Task created successfully in Manus',
+      message: 'Task created successfully',
+      connectors_used: userConnectors.length,
       data: taskData,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -623,6 +623,63 @@ export type Database = {
           },
         ]
       }
+      kyle_connectors: {
+        Row: {
+          connected_at: string | null
+          connector_type: Database["public"]["Enums"]["connector_type"]
+          connector_uuid: string
+          created_at: string | null
+          display_name: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          office_id: string
+          team_member_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connected_at?: string | null
+          connector_type: Database["public"]["Enums"]["connector_type"]
+          connector_uuid: string
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          office_id: string
+          team_member_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connected_at?: string | null
+          connector_type?: Database["public"]["Enums"]["connector_type"]
+          connector_uuid?: string
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          office_id?: string
+          team_member_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyle_connectors_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyle_connectors_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_messages: {
         Row: {
           content: string
@@ -2029,6 +2086,13 @@ export type Database = {
         | "design_review"
         | "follow_up"
       client_status: "lead" | "active" | "completed" | "inactive"
+      connector_type:
+        | "gmail"
+        | "google_calendar"
+        | "notion"
+        | "slack"
+        | "github"
+        | "google_drive"
       design_specialization:
         | "residential"
         | "commercial"
@@ -2205,6 +2269,14 @@ export const Constants = {
         "follow_up",
       ],
       client_status: ["lead", "active", "completed", "inactive"],
+      connector_type: [
+        "gmail",
+        "google_calendar",
+        "notion",
+        "slack",
+        "github",
+        "google_drive",
+      ],
       design_specialization: [
         "residential",
         "commercial",

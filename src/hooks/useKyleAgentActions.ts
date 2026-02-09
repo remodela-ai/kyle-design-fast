@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 
 export interface KyleTask {
   id: string;
@@ -9,11 +10,13 @@ export interface KyleTask {
   result?: unknown;
   startedAt: Date;
   completedAt?: Date;
+  connectorsUsed?: number;
 }
 
 interface KyleActionContext {
   lead_id?: string;
   office_id?: string;
+  team_member_id?: string;
   conversation_transcript?: string;
   additional_context?: string;
 }
@@ -30,6 +33,7 @@ export function useKyleAgentActions() {
   const [activeTasks, setActiveTasks] = useState<KyleTask[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { teamMember, office } = useKustrOffice();
   const taskIdCounter = useRef(0);
 
   const detectTaskType = useCallback((command: string): 'research' | 'create' | 'analyze' | 'automate' | null => {
@@ -70,10 +74,17 @@ export function useKyleAgentActions() {
         prev.map(t => t.id === taskId ? { ...t, status: 'working' as const } : t)
       );
 
+      // Automatically inject team_member_id and office_id from context
+      const enrichedContext: KyleActionContext = {
+        ...context,
+        team_member_id: context?.team_member_id || teamMember?.id,
+        office_id: context?.office_id || office?.id,
+      };
+
       const { data, error } = await supabase.functions.invoke('kyle-manus-bridge', {
         body: {
           command,
-          context,
+          context: enrichedContext,
           action_type: actionType || detectTaskType(command) || 'research',
         }
       });
@@ -85,15 +96,20 @@ export function useKyleAgentActions() {
         status: 'completed',
         result: data,
         completedAt: new Date(),
+        connectorsUsed: data?.connectors_used || 0,
       };
 
       setActiveTasks(prev => 
         prev.map(t => t.id === taskId ? completedTask : t)
       );
 
+      const connectorsMsg = completedTask.connectorsUsed 
+        ? ` (${completedTask.connectorsUsed} herramientas usadas)`
+        : '';
+
       toast({
         title: "✅ Tarea completada",
-        description: "Kyle ha terminado de procesar tu solicitud.",
+        description: `Kyle ha terminado de procesar tu solicitud${connectorsMsg}.`,
       });
 
       return completedTask;
@@ -122,7 +138,7 @@ export function useKyleAgentActions() {
     } finally {
       setIsProcessing(false);
     }
-  }, [detectTaskType, toast]);
+  }, [detectTaskType, toast, teamMember?.id, office?.id]);
 
   const shouldTriggerTask = useCallback((transcript: string): boolean => {
     return TASK_TRIGGERS.some(trigger => trigger.pattern.test(transcript));

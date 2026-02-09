@@ -1,13 +1,24 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings } from "lucide-react";
 import { useKyleSkills, KYLE_SKILLS, KyleSkill } from "@/contexts/KyleSkillsContext";
 import { useKyleAgentActions } from "@/hooks/useKyleAgentActions";
 import { useKyleVoiceAgent } from "@/hooks/useKyleVoiceAgent";
+import { useKyleConnectors, ConnectorType } from "@/hooks/useKyleConnectors";
 import { AudioWaves } from "@/components/AudioWaves";
 import kyleAvatar from "@/assets/kyle-avatar.jpeg";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+
+const CONNECTOR_ICONS: Record<ConnectorType, React.ElementType> = {
+  gmail: Mail,
+  google_calendar: Calendar,
+  notion: FileText,
+  slack: MessageSquare,
+  github: () => <span className="text-xs">🐙</span>,
+  google_drive: () => <span className="text-xs">📁</span>,
+};
 
 export function KyleSkillsSidebar() {
   const {
@@ -26,8 +37,12 @@ export function KyleSkillsSidebar() {
     toggleConversation, 
     error 
   } = useKyleVoiceAgent();
+  
+  const { getActiveConnectorTypes, connectors } = useKyleConnectors();
 
   const [pendingCommand, setPendingCommand] = useState<string>("");
+
+  const activeConnectorTypes = getActiveConnectorTypes();
 
   const handleSkillClick = useCallback((skill: KyleSkill) => {
     if (activeSkill?.id === skill.id) {
@@ -97,6 +112,51 @@ export function KyleSkillsSidebar() {
 
         <ScrollArea className="h-[calc(100%-80px)]">
           <div className="p-4 space-y-4">
+            {/* Connected Tools Indicator */}
+            {activeConnectorTypes.length > 0 && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Herramientas:</span>
+                  <div className="flex gap-1">
+                    {activeConnectorTypes.map((type) => {
+                      const Icon = CONNECTOR_ICONS[type];
+                      return (
+                        <div 
+                          key={type}
+                          className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center"
+                          title={type}
+                        >
+                          <Icon className="w-3 h-3 text-primary" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <Link 
+                  to="/kustr-next/kyle-connectors"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Configurar
+                </Link>
+              </div>
+            )}
+
+            {/* No Connectors Warning */}
+            {connectors.length === 0 && (
+              <Link 
+                to="/kustr-next/kyle-connectors"
+                className="block p-3 rounded-lg bg-accent border border-border hover:bg-accent/80 transition-colors"
+              >
+                <div className="flex items-center gap-2 text-foreground">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm font-medium">Conecta tus herramientas</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Kyle puede hacer más cuando conectas Gmail, Calendar, etc.
+                </p>
+              </Link>
+            )}
+
             {/* Skills Grid */}
             <div className="grid grid-cols-2 gap-2">
               {KYLE_SKILLS.map((skill) => (
@@ -247,7 +307,7 @@ export function KyleSkillsSidebar() {
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• Selecciona un skill y habla naturalmente</li>
                   <li>• Kyle procesa tu solicitud automáticamente</li>
-                  <li>• Los resultados aparecerán cuando estén listos</li>
+                  <li>• Conecta herramientas para más capacidades</li>
                 </ul>
               </div>
             )}

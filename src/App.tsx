@@ -36,8 +36,9 @@ import KustrDashboard from "./pages/kustr/KustrDashboard";
 import Leads from "./pages/kustr/Leads";
 import LeadDetail from "./pages/kustr/LeadDetail";
 import Proposal from "./pages/kustr/Proposal";
- import EmbedGenerator from "./pages/kustr/EmbedGenerator";
- import Analytics from "./pages/kustr/Analytics";
+import EmbedGenerator from "./pages/kustr/EmbedGenerator";
+import Analytics from "./pages/kustr/Analytics";
+import KyleConnectors from "./pages/kustr/KyleConnectors";
 
 // Public Kyle page
 import KylePublic from "./pages/KylePublic";
@@ -105,6 +106,7 @@ const App = () => (
                   <Route path="/kustr-next/leads/:leadId/proposal" element={<Proposal />} />
                   <Route path="/kustr-next/embed" element={<EmbedGenerator />} />
                   <Route path="/kustr-next/analytics" element={<Analytics />} />
+                  <Route path="/kustr-next/kyle-connectors" element={<KyleConnectors />} />
                   
                   {/* Public Kyle widget */}
                   <Route path="/kyle" element={<KylePublic />} />
