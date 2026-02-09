@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { KyleProvider } from "@/contexts/KyleContext";
 import { DesignerProfileProvider } from "@/contexts/DesignerProfileContext";
 import { KustrOfficeProvider } from "@/contexts/KustrOfficeContext";
+import { KyleSkillsProvider } from "@/contexts/KyleSkillsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DesignerRoute from "@/components/DesignerRoute";
 import OnboardingRoute from "@/components/OnboardingRoute";
@@ -46,6 +47,7 @@ import BathroomSocialLanding from "./pages/BathroomSocialLanding";
  import Screenshots from "./pages/Screenshots";
 import TestIdeas from "./pages/TestIdeas";
 import { TestGuideFloating } from "./components/TestGuideFloating";
+import { KyleSkillsSidebar } from "./components/KyleSkillsSidebar";
 import ProjectDetail from "./pages/ProjectDetail";
 import IntelligentFolder from "./pages/IntelligentFolder";
 import Marketing from "./pages/Marketing";
@@ -72,8 +74,9 @@ const App = () => (
         <DesignerProfileProvider>
           <KustrOfficeProvider>
             <KyleProvider>
-              <GlobalLayout>
-                <Routes>
+              <KyleSkillsProvider>
+                <GlobalLayout>
+                  <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/blink-design" element={<BlinkDesign />} />
@@ -138,9 +141,11 @@ const App = () => (
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
                   
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-                <TestGuideFloating />
-              </GlobalLayout>
+                  </Routes>
+                  <TestGuideFloating />
+                  <KyleSkillsSidebar />
+                </GlobalLayout>
+              </KyleSkillsProvider>
             </KyleProvider>
           </KustrOfficeProvider>
         </DesignerProfileProvider>
