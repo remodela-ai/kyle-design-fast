@@ -6,13 +6,150 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper: Call AI with timeout and retry
+async function callAIWithRetry(
+  apiKey: string,
+  prompt: string,
+  imageUrl: string,
+  maxRetries = 2,
+  timeoutMs = 90000
+): Promise<string> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      console.log(`AI call attempt ${attempt + 1}/${maxRetries + 1}`);
+      
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: imageUrl } },
+              ],
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 429 && attempt < maxRetries) {
+          console.log("Rate limited, waiting before retry...");
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(`AI error ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || "";
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (error instanceof Error && error.name === "AbortError") {
+        console.error(`Attempt ${attempt + 1} timed out after ${timeoutMs}ms`);
+      } else {
+        console.error(`Attempt ${attempt + 1} failed:`, error);
+      }
+      
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+  
+  throw lastError || new Error("AI call failed after retries");
+}
+
+// Helper: Parse JSON with LLM fallback
+async function parseJsonWithFallback(
+  text: string,
+  apiKey: string
+): Promise<{ parsed: any; usedFallback: boolean }> {
+  // First try regex extraction
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return { parsed, usedFallback: false };
+    }
+  } catch (e) {
+    console.log("Initial JSON parse failed, trying LLM fallback...");
+  }
+  
+  // LLM fallback for corrupted JSON
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: `Extract and fix the JSON from this text. Return ONLY valid JSON, nothing else:\n\n${text.substring(0, 8000)}`,
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      const fixedText = data.choices?.[0]?.message?.content || "";
+      const jsonMatch = fixedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return { parsed: JSON.parse(jsonMatch[0]), usedFallback: true };
+      }
+    }
+  } catch (e) {
+    console.error("LLM fallback also failed:", e);
+  }
+  
+  return { parsed: null, usedFallback: true };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { sessionId, designImageUrl, conversationSummary } = await req.json();
+    const { sessionId, designImageUrl, conversationSummary, prewarm } = await req.json();
+
+    // Pre-warm endpoint for YC demo
+    if (prewarm) {
+      console.log("Pre-warm request received - keeping function hot");
+      return new Response(
+        JSON.stringify({ success: true, message: "Function warmed up" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!sessionId || !designImageUrl) {
       return new Response(
@@ -31,6 +168,30 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Cache check: Return existing completed analysis
+    const { data: existingStep } = await supabase
+      .from("pipeline_steps")
+      .select("*")
+      .eq("session_id", sessionId)
+      .eq("step_number", 1)
+      .eq("status", "completed")
+      .single();
+
+    if (existingStep?.output_data) {
+      console.log("Returning cached spatial analysis for session:", sessionId);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          cached: true,
+          stepNumber: 1,
+          stepName: "Spatial Analysis",
+          output: existingStep.output_data,
+          memory: existingStep.memory_context,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("Starting Spatial Analysis for session:", sessionId);
 
     // Update step status to processing
@@ -43,7 +204,6 @@ serve(async (req) => {
       input_data: { designImageUrl, conversationSummary },
     }, { onConflict: "session_id,step_number" });
 
-    // Call Lovable AI for spatial analysis with element extraction
     const analysisPrompt = `You are an expert interior designer and spatial analyst. Analyze this interior design image and provide a comprehensive spatial analysis with element extraction.
 
 ${conversationSummary ? `Context from conversation: ${conversationSummary}` : ""}
@@ -93,71 +253,32 @@ Provide your analysis in the following JSON format:
 
 Be thorough - extract ALL visible elements including furniture, lamps, rugs, plants, artwork, pillows, etc. Provide realistic measurements in meters.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: analysisPrompt },
-              { type: "image_url", image_url: { url: designImageUrl } },
-            ],
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      await supabase.from("pipeline_steps").update({
-        status: "error",
-        error_message: `AI analysis failed: ${response.status}`,
-        completed_at: new Date().toISOString(),
-      }).eq("session_id", sessionId).eq("step_number", 1);
-
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required, please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error(`AI analysis failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const analysisText = data.choices?.[0]?.message?.content || "";
+    // Call AI with timeout and retry
+    const analysisText = await callAIWithRetry(
+      LOVABLE_API_KEY,
+      analysisPrompt,
+      designImageUrl,
+      2,
+      90000
+    );
     
     console.log("Spatial analysis completed:", analysisText.substring(0, 200));
 
-    // Try to parse JSON from response
-    let analysisJson = null;
-    try {
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        analysisJson = JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      console.log("Could not parse JSON from response, using raw text");
+    // Parse JSON with LLM fallback
+    const { parsed: analysisJson, usedFallback } = await parseJsonWithFallback(
+      analysisText,
+      LOVABLE_API_KEY
+    );
+
+    if (usedFallback) {
+      console.log("Used LLM fallback for JSON parsing");
     }
 
     const outputData = {
       rawAnalysis: analysisText,
       parsedAnalysis: analysisJson,
       timestamp: new Date().toISOString(),
+      usedJsonFallback: usedFallback,
     };
 
     const memoryContext = {
@@ -179,6 +300,7 @@ Be thorough - extract ALL visible elements including furniture, lamps, rugs, pla
     return new Response(
       JSON.stringify({
         success: true,
+        cached: false,
         stepNumber: 1,
         stepName: "Spatial Analysis",
         output: outputData,
