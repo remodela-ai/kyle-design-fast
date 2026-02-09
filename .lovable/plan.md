@@ -1,279 +1,240 @@
 
-# Veredicto CTO: Pipeline Paralelo + Intelligent Project Folder
+# Plan: Kyle Multi-Tenant con Connectors Personalizados
 
-## ✅ IMPLEMENTATION STATUS
+## Resumen Ejecutivo
+Implementar una arquitectura multi-tenant donde cada diseñador puede conectar sus propias cuentas (Gmail, Google Calendar, Notion) y Kyle usará esos connectors automáticamente al ejecutar tareas, sin que el usuario final sepa que está usando un servicio externo.
 
-| Task | Status | Notes |
-|------|--------|-------|
-| Database migration (lead_id) | ✅ Done | Added to project_sessions |
-| useParallelPipeline hook | ✅ Done | Parallel execution with Promise.allSettled |
-| ParallelStepGrid component | ✅ Done | 4x2 grid with live status |
-| ClientDataPanel component | ✅ Done | Shows lead data + insights |
-| DeliverablesThumbnails component | ✅ Done | Expandable thumbnails with download |
-| IntelligentFolder page | ✅ Done | New route at /folder/:sessionId |
-| Route integration | ✅ Done | Added to App.tsx |
+## Arquitectura Propuesta
 
----
-
-## Diagnóstico Técnico Actual
-│                                                                             │
-│  Step 1: Spatial Analysis (48s)                                             │
-│    ↓ ESPERA                                                                 │
-│  Step 2: Architectural Plans (35s)  [nano-planta + nano-elevacion]          │
-│    ↓ ESPERA                                                                 │
-│  Step 3: Items Extraction (12s)                                             │
-│    ↓ ESPERA                                                                 │
-│  Step 4: Moodboard (25s)                                                    │
-│    ↓ ESPERA                                                                 │
-│  Step 5: Flatlay (25s)                                                      │
-│    ↓ ESPERA                                                                 │
-│  Step 6: Colors & Textures (25s)                                            │
-│    ↓ ESPERA                                                                 │
-│  Step 7: Storybook (25s)                                                    │
-│    ↓ ESPERA                                                                 │
-│  Step 8: Video Presentation (25s)                                           │
-│                                                                             │
-│  TOTAL ESTIMADO: ~5-6 minutos (ejecutando 1 a la vez)                       │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Dependencias Reales Identificadas
-
-Analizando el código de cada edge function:
-
-| Step | Edge Function | Depende de | Input Principal |
-|------|--------------|------------|-----------------|
-| 1 | pipeline-spatial-analysis | - | `designImageUrl` (imagen) |
-| 2 | nano-planta + nano-elevacion | Step 1 | `elements`, `spatialAnalysis` |
-| 3 | pipeline-items-extraction | Step 1 | `elements`, `roomType` |
-| 4 | pipeline-moodboard | Step 1 | `elements`, `styleIdentified`, `designImageUrl` |
-| 5 | pipeline-flatlay | Step 1 | `elements`, `styleIdentified` |
-| 6 | pipeline-colors-textures | Step 1 | `elements`, `styleIdentified` |
-| 7 | pipeline-storybook | Step 1 | `elements`, `styleIdentified` |
-| 8 | pipeline-video-presentation | Step 1 | `elements`, `styleIdentified` |
-
-## Veredicto: TIENES RAZÓN
-
-El análisis revela que **Steps 2-8 solo dependen del Step 1 (Spatial Analysis)**, NO entre sí.
-
-El código actual ejecuta secuencialmente por diseño inicial, pero la realidad es:
-- Todos los pasos usan `elements`, `roomType`, `styleIdentified` del Paso 1
-- Ningún paso visual usa el OUTPUT de otro paso visual (excepto Step 1)
-- El único "cuello de botella" real es esperar el análisis espacial
-
-### Arquitectura Propuesta (Paralela)
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    ARQUITECTURA PARALELA PROPUESTA                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Step 1: Spatial Analysis (~48s)                                            │
-│    ↓                                                                        │
-│    ├──────────────────────────────────────────────────────────────────┐    │
-│    │                      PARALLEL EXECUTION                          │    │
-│    ├──────────────────────────────────────────────────────────────────┤    │
-│    │                                                                  │    │
-│    │  [2] Architectural Plans  [3] Items Extract  [4] Moodboard       │    │
-│    │         (35s)                  (12s)             (25s)           │    │
-│    │                                                                  │    │
-│    │  [5] Flatlay   [6] Colors   [7] Storybook   [8] Video            │    │
-│    │      (25s)        (25s)         (25s)          (25s)             │    │
-│    │                                                                  │    │
-│    └──────────────────────────────────────────────────────────────────┘    │
-│                                                                             │
-│  TIEMPO TOTAL: ~48s (Step 1) + ~35s (batch más lento) = ~83 segundos        │
-│  vs. ~5-6 minutos actual = 4-5x MAS RAPIDO                                  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    DISEÑADOR A                              │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐               │
+│  │   Gmail   │  │ Calendar  │  │  Notion   │               │
+│  │ connector │  │ connector │  │ connector │               │
+│  │  uuid-a1  │  │  uuid-a2  │  │  uuid-a3  │               │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘               │
+│        └──────────────┼──────────────┘                      │
+│                       ▼                                     │
+│              ┌────────────────┐                             │
+│              │  Kyle Voice    │                             │
+│              │  (por usuario) │                             │
+│              └────────┬───────┘                             │
+└───────────────────────┼─────────────────────────────────────┘
+                        ▼
+              ┌─────────────────────┐
+              │  kyle-manus-bridge  │
+              │  (lee connectors    │
+              │   del team_member)  │
+              └─────────────────────┘
 ```
 
----
+## Cambios Requeridos
 
-## Concepto: Intelligent Project Folder
+### 1. Base de Datos - Nueva Tabla `kyle_connectors`
 
-El "Intelligent Folder" es una evolución del `ProjectDetail.tsx` actual hacia un concepto de **carpeta viva** donde:
+Crear una tabla para almacenar los connectors de cada team member:
 
-### Visión Conceptual
+```sql
+CREATE TYPE connector_type AS ENUM ('gmail', 'google_calendar', 'notion', 'slack', 'github', 'google_drive');
+
+CREATE TABLE kyle_connectors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_member_id UUID NOT NULL REFERENCES team_members(id) ON DELETE CASCADE,
+    office_id UUID NOT NULL REFERENCES offices(id) ON DELETE CASCADE,
+    connector_type connector_type NOT NULL,
+    connector_uuid TEXT NOT NULL,  -- UUID del connector en el servicio externo
+    display_name TEXT,             -- Ej: "Mi Gmail personal"
+    is_active BOOLEAN DEFAULT true,
+    connected_at TIMESTAMPTZ DEFAULT now(),
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(team_member_id, connector_type)  -- Un connector de cada tipo por usuario
+);
+
+-- RLS Policies
+ALTER TABLE kyle_connectors ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own connectors"
+ON kyle_connectors FOR SELECT
+USING (team_member_id IN (
+    SELECT id FROM team_members WHERE user_id = auth.uid()
+));
+
+CREATE POLICY "Users can manage their own connectors"
+ON kyle_connectors FOR ALL
+USING (team_member_id IN (
+    SELECT id FROM team_members WHERE user_id = auth.uid()
+));
+```
+
+### 2. UI - Panel de Configuración de Connectors
+
+Crear `src/pages/kustr/KyleConnectors.tsx`:
+
+- Lista de connectors disponibles (Gmail, Calendar, Notion, etc.)
+- Estado de conexión de cada uno (conectado/desconectado)
+- Botón para conectar que abre popup de OAuth en el servicio externo
+- Botón para desconectar
+- Campo para ingresar el UUID del connector manualmente
+
+Diseño visual:
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    INTELLIGENT PROJECT FOLDER                               │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────┐  ┌─────────────────────────────────────────────┐  │
-│  │                     │  │  CLIENT DATA                                │  │
-│  │   APPROVED DESIGN   │  │  • Name, Email, Phone                       │  │
-│  │                     │  │  • Budget: $70k-90k                         │  │
-│  │   [Design Image]    │  │  • Style: Modern, Marble                    │  │
-│  │                     │  │  • Conversation Transcript                  │  │
-│  └─────────────────────┘  │  • Extracted Insights (AI)                  │  │
-│                           └─────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  LIVE PROCESSING (Parallel Execution)                               │   │
-│  │                                                                     │   │
-│  │  [●] Spatial     [◐] Plans    [◐] Items    [◐] Moodboard            │   │
-│  │  [◐] Flatlay     [◐] Colors   [◐] Story    [◐] Video                │   │
-│  │                                                                     │   │
-│  │  Progress: 1/8 complete • ETA: 45 seconds                           │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  DELIVERABLES (Completed Steps)                                     │   │
-│  │                                                                     │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            │   │
-│  │  │ FloorPlan│  │ Moodboard│  │ Shopping │  │ Proposal │            │   │
-│  │  │          │  │          │  │   List   │  │          │            │   │
-│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘            │   │
-│  │  Click to expand • Download • Share with client                     │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  KYLE AI ASSISTANT                                                  │   │
-│  │                                                                     │   │
-│  │  [Avatar] "The moodboard is ready! Would you like me to refine     │   │
-│  │           the color palette or proceed with the proposal?"          │   │
-│  │                                                                     │   │
-│  │  [Talk to Kyle]  [Regenerate Step]  [Approve All]                   │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  Conecta tus Herramientas con Kyle          │
+├─────────────────────────────────────────────┤
+│  📧 Gmail                    [✓ Conectado]  │
+│     Kyle puede leer y gestionar tu correo   │
+│                                             │
+│  📅 Google Calendar         [Conectar →]    │
+│     Kyle puede agendar y revisar citas      │
+│                                             │
+│  📝 Notion                  [Conectar →]    │
+│     Kyle accede a tu base de conocimiento   │
+│                                             │
+│  💬 Slack                   [Conectar →]    │
+│     Kyle puede enviar notificaciones        │
+└─────────────────────────────────────────────┘
 ```
 
-### Características del Intelligent Folder
+### 3. Edge Function - Actualizar `kyle-manus-bridge`
 
-1. **Procesamiento Visual en Tiempo Real**
-   - Grid de 8 iconos con estados de procesamiento simultáneo
-   - Barra de progreso global con ETA actualizado
-   - Realtime updates via Supabase subscriptions (ya implementado)
+Modificar para recibir el `team_member_id` y cargar sus connectors:
 
-2. **Data del Cliente Integrada**
-   - Vinculación automática con el Lead de `/kustr/leads`
-   - Información extraída de la conversación de voz
-   - Historial de iteraciones de diseño
-
-3. **Entregables Interactivos**
-   - Thumbnails expandibles para cada paso completado
-   - Opciones de descarga individual o paquete ZIP
-   - Compartir vía email directamente desde la carpeta
-
-4. **Kyle Contextual**
-   - Kyle Avatar siempre visible con contexto del proyecto
-   - Sugerencias inteligentes basadas en el estado del pipeline
-   - Capacidad de regenerar pasos específicos via voz
-
----
-
-## Plan de Implementación
-
-### Fase 1: Refactor del Pipeline a Paralelo
-
-**Archivo: `src/hooks/usePipeline.ts`**
-
-Cambios principales:
-1. Modificar `startPipeline` para que después del Step 1, lance Steps 2-8 en paralelo usando `Promise.allSettled()`
-2. Actualizar el tracking de estado para mostrar múltiples pasos "processing" simultáneamente
-3. Manejar errores individuales sin detener los otros pasos
-4. Calcular ETA basado en el paso más lento del batch paralelo
-
-Lógica nueva:
 ```typescript
-// Después de Step 1 completado:
-const parallelSteps = [
-  runArchitecturalPlans(sessionId, spatialOutput, ...),
-  runItemsExtraction(sessionId, elements, ...),
-  runMoodboard(sessionId, elements, ...),
-  runFlatlay(sessionId, elements, ...),
-  runColorsTextures(sessionId, elements, ...),
-  runStorybook(sessionId, elements, ...),
-  runVideoPresentation(sessionId, elements, ...),
-];
+// Pseudocódigo de la lógica
+async function getConnectorsForUser(teamMemberId: string) {
+  const { data: connectors } = await supabase
+    .from('kyle_connectors')
+    .select('connector_type, connector_uuid')
+    .eq('team_member_id', teamMemberId)
+    .eq('is_active', true);
+  
+  return connectors.map(c => c.connector_uuid);
+}
 
-const results = await Promise.allSettled(parallelSteps);
-// Procesar resultados individuales
+// En el payload a la API externa:
+const taskPayload = {
+  prompt: enhancedPrompt,
+  connectors: await getConnectorsForUser(context.team_member_id),
+};
 ```
 
-### Fase 2: Actualizar Edge Functions
+### 4. Hook - Actualizar `useKyleAgentActions`
 
-Cada edge function necesita:
-1. Remover dependencias innecesarias de pasos anteriores
-2. Asegurar que solo requieren output del Step 1
-3. Agregar logging de inicio/fin para debugging paralelo
+Incluir automáticamente el `team_member_id` del contexto:
 
-### Fase 3: Intelligent Project Folder UI
+```typescript
+// En useKyleAgentActions.ts
+import { useKustrOffice } from "@/contexts/KustrOfficeContext";
 
-**Nuevo archivo: `src/pages/IntelligentFolder.tsx`**
+const { teamMember } = useKustrOffice();
 
-Características:
-1. Layout de 3 columnas: Design | Processing | Client Data
-2. Grid de pasos con estados múltiples simultáneos
-3. Panel de deliverables con thumbnails expandibles
-4. Kyle Avatar contextual con sugerencias
-5. Realtime subscriptions para todos los 16 pasos
+const executeTask = async (command, context, actionType) => {
+  await supabase.functions.invoke('kyle-manus-bridge', {
+    body: {
+      command,
+      context: {
+        ...context,
+        team_member_id: teamMember?.id,
+        office_id: teamMember?.office_id,
+      },
+      action_type: actionType,
+    }
+  });
+};
+```
 
-### Fase 4: Integración con Leads
+### 5. Sidebar - Mostrar Connectors Activos
 
-**Modificar: `src/hooks/useProjectFolder.ts`**
+Agregar indicadores en `KyleSkillsSidebar.tsx`:
 
-1. Agregar campo `lead_id` a `project_sessions`
-2. Fetch automático de lead data cuando existe vínculo
-3. Mostrar info del cliente en el Intelligent Folder
+```typescript
+// Mostrar qué herramientas tiene conectadas el usuario
+{connectedTools.length > 0 && (
+  <div className="flex gap-1">
+    {connectedTools.includes('gmail') && <Mail className="w-4 h-4" />}
+    {connectedTools.includes('google_calendar') && <Calendar className="w-4 h-4" />}
+    {connectedTools.includes('notion') && <FileText className="w-4 h-4" />}
+  </div>
+)}
+```
 
----
+## Flujo de Usuario
 
-## Impacto en Demo YC
-
-| Métrica | Antes | Después | Mejora |
-|---------|-------|---------|--------|
-| Tiempo Visual Pipeline | ~4-5 min | ~1.5 min | 3x |
-| Tiempo Total (16 steps) | ~8-10 min | ~3 min | 3x |
-| Steps visibles procesando | 1 | 7 | 7x |
-| Impresión visual | Serial/Lento | Paralelo/Poderoso | Alto |
-
-Para la demo YC, el efecto visual de ver **7 pasos procesándose simultáneamente** es muchísimo más impactante que ver uno a la vez.
-
----
+1. **Configuración inicial**: El diseñador va a Configuración → Kyle → Conectar Herramientas
+2. **Conexión OAuth**: Clickea "Conectar Gmail" → Se abre ventana de OAuth → Autoriza → Sistema guarda el UUID
+3. **Uso diario**: El diseñador habla con Kyle: "Revisa mi correo y agenda una cita con el cliente"
+4. **Ejecución**: Kyle automáticamente usa los connectors del usuario para acceder a Gmail y Calendar
+5. **Multi-usuario**: Cada diseñador tiene sus propias conexiones, totalmente aisladas
 
 ## Archivos a Crear/Modificar
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `src/hooks/usePipeline.ts` | Modificar | Refactor a ejecución paralela |
-| `src/hooks/useParallelPipeline.ts` | Crear | Hook optimizado para ejecución paralela |
-| `src/pages/IntelligentFolder.tsx` | Crear | Nueva página de carpeta inteligente |
-| `src/hooks/useProjectFolder.ts` | Modificar | Agregar integración con leads |
-| `src/components/ParallelStepGrid.tsx` | Crear | Grid visual de pasos paralelos |
-| `src/components/DeliverablesThumbnails.tsx` | Crear | Thumbnails expandibles |
-| `src/components/ClientDataPanel.tsx` | Crear | Panel de datos del cliente |
+| `supabase/migrations/xxx_kyle_connectors.sql` | Crear | Tabla y políticas RLS |
+| `src/pages/kustr/KyleConnectors.tsx` | Crear | UI para gestionar connectors |
+| `src/hooks/useKyleConnectors.ts` | Crear | Hook para CRUD de connectors |
+| `supabase/functions/kyle-manus-bridge/index.ts` | Modificar | Cargar connectors del usuario |
+| `src/hooks/useKyleAgentActions.ts` | Modificar | Pasar team_member_id |
+| `src/components/KyleSkillsSidebar.tsx` | Modificar | Mostrar connectors activos |
+| `src/App.tsx` | Modificar | Agregar ruta `/kyle-connectors` |
 
----
+## Consideraciones de Seguridad
 
-## Consideraciones Técnicas
+1. **Aislamiento de datos**: RLS asegura que cada usuario solo ve sus propios connectors
+2. **UUIDs del servicio externo**: Se almacenan en la DB pero nunca se exponen al frontend
+3. **Validación en edge function**: Verificar que el team_member_id corresponde al usuario autenticado
+4. **Sin menciones externas**: La UI solo habla de "Kyle" y "herramientas conectadas"
 
-### Rate Limits
-- Replicate permite múltiples requests concurrentes
-- Lovable AI Gateway soporta paralelismo
-- Supabase no tiene límites de inserts paralelos
+## Sección Técnica
 
-### Error Handling
-- `Promise.allSettled` permite que algunos pasos fallen sin detener otros
-- UI muestra estados individuales por paso
-- Retry automático para pasos fallidos
+### Estructura de la tabla `kyle_connectors`
 
-### Database
-- Migration para agregar `lead_id` a `project_sessions`
-- Índice en `session_id` para queries rápidos de pasos
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK |
+| `team_member_id` | UUID | FK → team_members |
+| `office_id` | UUID | FK → offices (para RLS eficiente) |
+| `connector_type` | ENUM | gmail, google_calendar, notion, slack, github, google_drive |
+| `connector_uuid` | TEXT | UUID del connector en el servicio externo |
+| `display_name` | TEXT | Nombre personalizado opcional |
+| `is_active` | BOOLEAN | Para desactivar sin eliminar |
+| `connected_at` | TIMESTAMPTZ | Fecha de conexión original |
+| `last_used_at` | TIMESTAMPTZ | Última vez que Kyle usó este connector |
 
-## Resumen Ejecutivo
+### API del servicio externo - Connectors
 
-**Veredicto: Implementar ejecución paralela es correcto y necesario.**
+```typescript
+// POST /v1/tasks con connectors
+{
+  "prompt": "Revisa mi correo y resume los emails urgentes",
+  "connectors": [
+    "ab7e-450f-9cb9-b9467fb0adda",  // Gmail UUID del usuario
+    "2f4f-4d33-8fcf-51664ea15c00"   // Notion UUID del usuario
+  ]
+}
+```
 
-La arquitectura actual es serial por diseño inicial, no por necesidad técnica. El único paso que realmente bloquea es el Spatial Analysis (Step 1). Todos los demás pueden ejecutarse en paralelo, reduciendo el tiempo total de 5-6 minutos a aproximadamente 1.5 minutos.
+### Hook useKyleConnectors
 
-El "Intelligent Folder" es la evolución natural de `ProjectDetail.tsx` hacia un concepto de carpeta viva que integra:
-- Procesamiento paralelo visible
-- Datos del cliente
-- Entregables interactivos
-- Kyle contextual
+```typescript
+interface Connector {
+  id: string;
+  connector_type: ConnectorType;
+  display_name: string | null;
+  is_active: boolean;
+  connected_at: string;
+}
 
-Esta combinación es perfecta para la demo YC: muestra escala, velocidad y valor de negocio en una sola pantalla.
+function useKyleConnectors() {
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+  
+  const addConnector = async (type: ConnectorType, uuid: string) => { ... };
+  const removeConnector = async (id: string) => { ... };
+  const toggleConnector = async (id: string, active: boolean) => { ... };
+  
+  return { connectors, addConnector, removeConnector, toggleConnector };
+}
+```
