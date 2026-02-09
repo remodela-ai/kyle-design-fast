@@ -47,6 +47,7 @@ import BathroomSocialLanding from "./pages/BathroomSocialLanding";
 import TestIdeas from "./pages/TestIdeas";
 import { TestGuideFloating } from "./components/TestGuideFloating";
 import ProjectDetail from "./pages/ProjectDetail";
+import IntelligentFolder from "./pages/IntelligentFolder";
 import Marketing from "./pages/Marketing";
 import ClonKitchen from "./pages/ClonKitchen";
 
@@ -85,7 +86,8 @@ const App = () => (
                   
                   {/* Designer routes - require auth + profile */}
                   <Route path="/dashboard" element={<DesignerRoute><Dashboard /></DesignerRoute>} />
-                   <Route path="/project/:sessionId" element={<DesignerRoute><ProjectDetail /></DesignerRoute>} />
+                  <Route path="/project/:sessionId" element={<DesignerRoute><ProjectDetail /></DesignerRoute>} />
+                  <Route path="/folder/:sessionId" element={<DesignerRoute><IntelligentFolder /></DesignerRoute>} />
                   
                   {/* Designer onboarding - main route */}
                   <Route path="/onboarding" element={<OnboardingRoute><DesignerOnboarding /></OnboardingRoute>} />
