@@ -1,8 +1,8 @@
 project_id = "smbhkmahxxwichswvgep"
 
- [functions.send-notification]
- verify_jwt = false
- 
+[functions.send-notification]
+verify_jwt = false
+
 [functions.recover-elevenlabs-conversation]
 verify_jwt = false
 
@@ -25,4 +25,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.kyle-send-message]
+verify_jwt = false
+
+[functions.kyle-manus-bridge]
 verify_jwt = false
