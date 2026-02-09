@@ -7,50 +7,103 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
  
- // Persist image from temporary Replicate URL to Supabase Storage
- async function persistImageToStorage(
-   tempImageUrl: string,
-   fileName: string,
-   bucket: string = "designer-assets"
- ): Promise<string> {
-   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-   
-   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-   
-   console.log(`[persist] Downloading image from: ${tempImageUrl.substring(0, 80)}...`);
-   
-   const response = await fetch(tempImageUrl);
-   if (!response.ok) {
-     throw new Error(`Failed to download image: ${response.statusText}`);
-   }
-   
-   const imageBlob = await response.blob();
-   const arrayBuffer = await imageBlob.arrayBuffer();
-   const uint8Array = new Uint8Array(arrayBuffer);
-   
-   const contentType = response.headers.get("content-type") || "image/webp";
-   const extension = contentType.includes("png") ? "png" : 
-                     contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "webp";
-   const uniqueFileName = `${fileName}-${Date.now()}.${extension}`;
-   const filePath = `generated/${uniqueFileName}`;
-   
-   console.log(`[persist] Uploading to storage: ${bucket}/${filePath}`);
-   
-   const { error } = await supabase.storage
-     .from(bucket)
-     .upload(filePath, uint8Array, { contentType, upsert: true });
-   
-   if (error) {
-     console.error("[persist] Storage upload error:", error);
-     throw new Error(`Failed to upload image: ${error.message}`);
-   }
-   
-   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-   
-   console.log(`[persist] ✅ Image persisted to: ${urlData.publicUrl}`);
-   return urlData.publicUrl;
- }
+// Persist image from temporary Replicate URL to Supabase Storage with retry logic
+async function persistImageToStorage(
+  tempImageUrl: string,
+  fileName: string,
+  bucket: string = "designer-assets",
+  maxRetries: number = 3
+): Promise<string> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  console.log(`[persist] Downloading image from: ${tempImageUrl.substring(0, 80)}...`);
+  
+  // Download with timeout
+  const controller = new AbortController();
+  const downloadTimeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  
+  let imageBlob: Blob;
+  try {
+    const response = await fetch(tempImageUrl, { signal: controller.signal });
+    clearTimeout(downloadTimeout);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.statusText}`);
+    }
+    imageBlob = await response.blob();
+  } catch (downloadError) {
+    clearTimeout(downloadTimeout);
+    console.error("[persist] Download failed:", downloadError);
+    throw new Error(`Failed to download image: ${downloadError instanceof Error ? downloadError.message : 'timeout'}`);
+  }
+  
+  const arrayBuffer = await imageBlob.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+  
+  // Log file size for debugging
+  const fileSizeMB = (uint8Array.length / (1024 * 1024)).toFixed(2);
+  console.log(`[persist] Image size: ${fileSizeMB} MB`);
+  
+  const contentType = imageBlob.type || "image/webp";
+  const extension = contentType.includes("png") ? "png" : 
+                    contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "webp";
+  const uniqueFileName = `${fileName}-${Date.now()}.${extension}`;
+  const filePath = `generated/${uniqueFileName}`;
+  
+  console.log(`[persist] Uploading to storage: ${bucket}/${filePath}`);
+  
+  // Retry logic for upload
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[persist] Upload attempt ${attempt}/${maxRetries}...`);
+      
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, uint8Array, { contentType, upsert: true });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      console.log(`[persist] ✅ Image persisted to: ${urlData.publicUrl}`);
+      return urlData.publicUrl;
+      
+    } catch (uploadError) {
+      lastError = uploadError instanceof Error ? uploadError : new Error(String(uploadError));
+      console.error(`[persist] Upload attempt ${attempt} failed:`, lastError.message);
+      
+      if (attempt < maxRetries) {
+        // Wait before retrying (exponential backoff)
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.log(`[persist] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  // All retries failed
+  throw new Error(`Failed to upload image after ${maxRetries} attempts: ${lastError?.message}`);
+}
+
+// Try to persist, but return temp URL as fallback if storage fails
+async function persistImageWithFallback(
+  tempImageUrl: string,
+  fileName: string
+): Promise<{ url: string; persisted: boolean }> {
+  try {
+    const persistedUrl = await persistImageToStorage(tempImageUrl, fileName);
+    return { url: persistedUrl, persisted: true };
+  } catch (error) {
+    console.warn("[persist] ⚠️ Storage persistence failed, returning temporary URL:", error);
+    console.warn("[persist] Note: Temporary URL will expire in ~1 hour");
+    return { url: tempImageUrl, persisted: false };
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -263,10 +316,14 @@ FINAL REMINDER: Change ONLY what is explicitly requested above. Every other elem
     
     console.log("[blink-design] ✅ Image generated, now persisting to storage...");
      
-    // Persist the image to Supabase Storage
-    const imageUrl = await persistImageToStorage(tempImageUrl, "design");
+    // Persist the image to Supabase Storage with fallback to temp URL
+    const { url: imageUrl, persisted } = await persistImageWithFallback(tempImageUrl, "design");
      
-    console.log("[blink-design] ✅ Image persisted successfully");
+    if (persisted) {
+      console.log("[blink-design] ✅ Image persisted successfully");
+    } else {
+      console.log("[blink-design] ⚠️ Using temporary URL (will expire in ~1 hour)");
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -274,7 +331,10 @@ FINAL REMINDER: Change ONLY what is explicitly requested above. Every other elem
         optimizedPrompt: isFullTranscript ? optimizedPrompt : null,
         originalTranscript: originalTranscript,
         usedLLM: isFullTranscript,
-        description: "Design generated with Flux 2 Pro" 
+        persisted,
+        description: persisted 
+          ? "Design generated with Flux 2 Pro" 
+          : "Design generated (temporary URL - will expire in ~1 hour)"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
