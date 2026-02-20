@@ -72,10 +72,17 @@ export function useSkillBuilderVoice(
         const agentText = message.agent_response_event.agent_response;
         setTranscript(prev => [...prev, `Kyle: ${agentText}`]);
         
-        // If Kyle gives his default greeting and we haven't sent context yet, 
-        // send it now (the agent is clearly ready)
+        // After Kyle's first greeting, inject context and nudge him to pivot
         if (!contextSentRef.current && connectionStableRef.current) {
           sendContext();
+          // Send a fake user message to make Kyle respond immediately with the pivot
+          setTimeout(() => {
+            try {
+              conversation.sendUserMessage("Let's build a new skill together!");
+            } catch (e) {
+              console.warn("Could not send nudge message:", e);
+            }
+          }, 500);
         }
       }
     },
