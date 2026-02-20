@@ -12,57 +12,36 @@ export interface SkillBuilderFields {
 
 type SkillBuilderStep = 1 | 2 | 3 | 4;
 
-const STEP_PROMPTS: Record<SkillBuilderStep, string> = {
-  1: `You are Kyle, the AI design assistant. You're helping a designer create a new custom skill through a natural conversation. 
+const FULL_PROMPT = `You are Kyle, the AI design assistant for Kuester Design. You're helping a designer create a new custom skill through a natural, guided conversation.
 
-RIGHT NOW you are on STEP 1: Defining the Role.
+You will guide the user through 4 steps, one at a time. Stay on the current step until you have enough information, then use the "advance_step" tool to move forward. Do NOT skip steps.
 
-Your goal is to naturally discover:
-1. A clear NAME for the skill (short, like "Supplier Comparator" or "Budget Analyzer")
-2. A ROLE DESCRIPTION explaining what this skill does
+## STEP 1: Define the Role
+- Discover a clear NAME for the skill (short, like "Supplier Comparator" or "Budget Analyzer")
+- Discover a ROLE DESCRIPTION explaining what this skill does
+- When you have both, use "update_skill_fields" tool with name and role, then use "advance_step"
 
-Start by warmly greeting the user and asking what kind of tool or skill they'd like to create for their design practice. Be conversational, don't make it feel like a form. 
+## STEP 2: Knowledge Base  
+- Ask what domain knowledge, data, or references this skill needs
+- If they mention files, encourage them to use the upload button on screen
+- When you have enough context, use "update_skill_fields" with knowledgeBase, then "advance_step"
 
-When you've gathered enough info, use the "update_skill_fields" tool to save the name and role. Then tell the user you've captured it and suggest moving to the next step.
+## STEP 3: Instructions & Behavior
+- Ask how the skill should behave: output format (tables, reports, checklists), rules, constraints
+- When captured, use "update_skill_fields" with instructions, then "advance_step"
 
-Keep it brief and natural. Speak like a creative colleague, not a robot.`,
+## STEP 4: Review & Generate
+- Summarize everything you've captured
+- Ask if they want changes or are ready to generate
+- When they confirm, use "generate_skill" tool
 
-  2: `You are Kyle, the AI design assistant, continuing the skill creation conversation.
-
-RIGHT NOW you are on STEP 2: Knowledge Base.
-
-The user already defined the skill name and role in step 1. Now you need to discover:
-- What domain knowledge this skill should have
-- What reference materials, data, or context it needs
-- Whether they want to upload any files (templates, PDFs, etc.)
-
-Ask naturally about what information the skill needs to be effective. If they mention files or templates, encourage them to use the upload button on screen.
-
-When you've gathered enough context, use the "update_skill_fields" tool to save the knowledge base text. Then suggest moving forward.`,
-
-  3: `You are Kyle, the AI design assistant, continuing the skill creation conversation.
-
-RIGHT NOW you are on STEP 3: Instructions & Behavior.
-
-The user already defined the role and knowledge base. Now discover:
-- How the skill should behave and respond
-- What output format it should use (tables, reports, checklists, etc.)
-- Any specific rules or constraints
-
-Ask about their preferred output style, any must-haves, and how they envision using this skill day-to-day.
-
-When you've captured the behavior rules, use the "update_skill_fields" tool. Then tell the user everything looks great and suggest reviewing + generating.`,
-
-  4: `You are Kyle, the AI design assistant. The user has completed all steps!
-
-RIGHT NOW you are on STEP 4: Review & Generate.
-
-Summarize what you've captured: the skill name, role, knowledge base, and instructions. Ask if they want to change anything or if they're ready to generate. 
-
-If they confirm, tell them to hit the Generate button or say "generate" and you'll kick it off.
-
-Be enthusiastic! They're about to create something awesome.`,
-};
+## RULES:
+- Be conversational, warm, brief. Speak like a creative colleague.
+- NEVER make it feel like a form. Guide naturally.
+- Use the tools to save data — the forms on screen will auto-fill.
+- Stay in the current step until you've gathered enough info.
+- The user speaks Spanish primarily, so respond in Spanish unless they speak English.
+- Keep responses SHORT (2-3 sentences max). This is a voice conversation.`;
 
 export function useSkillBuilderVoice(
   onFieldsUpdate: (fields: Partial<SkillBuilderFields>) => void,
@@ -82,8 +61,6 @@ export function useSkillBuilderVoice(
       console.log("Kyle Skill Builder disconnected");
     },
     onMessage: (message: any) => {
-      console.log("Kyle SB message:", message);
-      
       // Capture transcripts for display
       if (message.type === "user_transcript" && message.user_transcription_event?.user_transcript) {
         setTranscript(prev => [...prev, `You: ${message.user_transcription_event.user_transcript}`]);
@@ -105,17 +82,18 @@ export function useSkillBuilderVoice(
         if (params.knowledgeBase || params.knowledge_base) fields.knowledgeBase = params.knowledgeBase || params.knowledge_base;
         if (params.instructions) fields.instructions = params.instructions;
         onFieldsUpdate(fields);
-        return "Fields updated successfully";
+        return "Fields updated successfully. The forms on screen have been auto-filled.";
       },
       advance_step: () => {
         console.log("Kyle advancing step");
+        currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
         onStepAdvance();
-        return "Advanced to next step";
+        return `Advanced to step ${currentStepRef.current}. Continue guiding the user.`;
       },
       generate_skill: () => {
         console.log("Kyle triggering generation");
         onGenerate();
-        return "Generation started";
+        return "Generation started! The skill is being built.";
       },
     },
   });
@@ -127,15 +105,15 @@ export function useSkillBuilderVoice(
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
       // Build context from existing fields
-      let contextPrefix = "";
+      let contextSuffix = "";
       if (existingFields) {
         const parts: string[] = [];
-        if (existingFields.name) parts.push(`The skill name is: "${existingFields.name}"`);
-        if (existingFields.role) parts.push(`The role description is: "${existingFields.role}"`);
-        if (existingFields.knowledgeBase) parts.push(`The knowledge base contains: "${existingFields.knowledgeBase}"`);
-        if (existingFields.instructions) parts.push(`The instructions are: "${existingFields.instructions}"`);
+        if (existingFields.name) parts.push(`Skill name: "${existingFields.name}"`);
+        if (existingFields.role) parts.push(`Role: "${existingFields.role}"`);
+        if (existingFields.knowledgeBase) parts.push(`Knowledge base: "${existingFields.knowledgeBase}"`);
+        if (existingFields.instructions) parts.push(`Instructions: "${existingFields.instructions}"`);
         if (parts.length > 0) {
-          contextPrefix = `\n\nCONTEXT FROM PREVIOUS STEPS:\n${parts.join("\n")}\n`;
+          contextSuffix = `\n\nALREADY CAPTURED:\n${parts.join("\n")}`;
         }
       }
 
@@ -145,16 +123,10 @@ export function useSkillBuilderVoice(
         overrides: {
           agent: {
             prompt: {
-              prompt: STEP_PROMPTS[step] + contextPrefix,
+              prompt: FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix,
             },
-            firstMessage: step === 1 
-              ? "Hey! I'm Kyle. Let's create something awesome together. What kind of tool would help you the most in your design practice? Maybe a calculator, a comparator, a report generator... just tell me what you need!"
-              : step === 2
-              ? "Great, now let's talk about what this skill needs to know. What kind of information, data, or references should it have access to? And feel free to upload any files using the button on screen."
-              : step === 3
-              ? "Awesome! Now the fun part — how should this skill behave? What kind of output do you want? Tables, reports, checklists? Any specific rules?"
-              : "Let me recap everything we've set up. Take a look at the summary on screen — does everything look good? Say 'generate' when you're ready to go!",
-            language: "en",
+            firstMessage: "¡Hola! Soy Kyle. Vamos a crear algo increíble juntos. Cuéntame, ¿qué tipo de herramienta te ayudaría más en tu práctica de diseño?",
+            language: "es",
           },
         },
       });
@@ -162,21 +134,28 @@ export function useSkillBuilderVoice(
       console.error("Failed to start skill builder conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
     }
-  }, [conversation, onFieldsUpdate, onStepAdvance, onGenerate]);
+  }, [conversation]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
   }, [conversation]);
 
-  const restartForStep = useCallback(async (step: SkillBuilderStep, existingFields?: Partial<SkillBuilderFields>) => {
-    if (conversation.status === "connected") {
-      await conversation.endSession();
+  // Send context update without restarting the session
+  const updateContext = useCallback((step: SkillBuilderStep, fields?: Partial<SkillBuilderFields>) => {
+    if (conversation.status !== "connected") return;
+    
+    const parts: string[] = [`The user is now on STEP ${step}.`];
+    if (fields?.name) parts.push(`Skill name: "${fields.name}"`);
+    if (fields?.role) parts.push(`Role: "${fields.role}"`);
+    if (fields?.knowledgeBase) parts.push(`Knowledge base: "${fields.knowledgeBase}"`);
+    if (fields?.instructions) parts.push(`Instructions: "${fields.instructions}"`);
+    
+    try {
+      conversation.sendContextualUpdate(parts.join(" "));
+    } catch (e) {
+      console.warn("Could not send contextual update:", e);
     }
-    // Small delay before reconnecting
-    setTimeout(() => {
-      startConversation(step, existingFields);
-    }, 500);
-  }, [conversation, startConversation]);
+  }, [conversation]);
 
   return {
     status: conversation.status,
@@ -186,6 +165,6 @@ export function useSkillBuilderVoice(
     transcript,
     startConversation,
     stopConversation,
-    restartForStep,
+    updateContext,
   };
 }
