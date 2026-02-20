@@ -76,30 +76,22 @@ export function useSkillBuilderVoice(
         const agentText = message.agent_response_event.agent_response;
         setTranscript(prev => [...prev, `Kyle: ${agentText}`]);
         
-        // Send context on first agent response
+        // On first agent response (greeting), send context then nudge after he finishes speaking
         if (!contextSentRef.current && connectionStableRef.current) {
           sendContext();
-          greetingReceivedRef.current = true;
-        }
-      }
-      
-      // Detect when Kyle stops speaking after greeting — use audio end event
-      // The agent_response fires when audio STARTS, so we need a different signal
-    },
-    onModeChange: (mode: any) => {
-      // When mode changes to "listening" after greeting, Kyle finished speaking
-      // This is our cue to send the nudge
-      if (greetingReceivedRef.current && !nudgeSentRef.current && mode?.mode === "listening") {
-        nudgeSentRef.current = true;
-        console.log("Kyle finished greeting, sending nudge via sendUserMessage");
-        setTimeout(() => {
-          try {
-            conversation.sendUserMessage("I'd like to build a new skill. Let's do it together!");
-            console.log("Kyle nudge user message sent");
-          } catch (e) {
-            console.warn("Could not send nudge user message:", e);
+          // Wait ~4s for Kyle to finish speaking his greeting, then send user message to trigger pivot
+          if (!nudgeSentRef.current) {
+            nudgeSentRef.current = true;
+            setTimeout(() => {
+              try {
+                conversation.sendUserMessage("I want to build a new skill, let's do it!");
+                console.log("Kyle nudge user message sent after greeting");
+              } catch (e) {
+                console.warn("Could not send nudge user message:", e);
+              }
+            }, 4000);
           }
-        }, 300);
+        }
       }
     },
     onError: (errorMessage: any) => {
