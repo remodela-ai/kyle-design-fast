@@ -1,4 +1,4 @@
-import { useConversation } from "@11labs/react";
+import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 

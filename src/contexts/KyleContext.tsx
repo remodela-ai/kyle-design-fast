@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useCallback, useState, useRef } from "react";
-import { useConversation } from "@11labs/react";
+import { useConversation } from "@elevenlabs/react";
 
 const KYLE_AGENT_ID = "agent_1501kbtjqq0pezxrrhkv2hvjync6";
 const KYLE_ITERATION_AGENT_ID = "agent_8001kgg465sff939tkr973cqkesw";

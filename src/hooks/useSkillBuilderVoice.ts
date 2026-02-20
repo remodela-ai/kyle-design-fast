@@ -1,4 +1,4 @@
-import { useConversation } from "@11labs/react";
+import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState, useRef, useEffect } from "react";
 
 const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
