@@ -288,7 +288,23 @@ export function useCustomSkills() {
     setCodeLines([]);
   }, []);
 
+  const deleteSkill = useCallback(async (skillId: string) => {
+    const { error } = await supabase
+      .from("kyle_custom_skills" as any)
+      .delete()
+      .eq("id", skillId);
+
+    if (error) {
+      toast({ title: "Error", description: "No se pudo eliminar la habilidad.", variant: "destructive" });
+      return false;
+    }
+
+    toast({ title: "Habilidad eliminada", description: "La habilidad ha sido eliminada permanentemente." });
+    await fetchSkills();
+    return true;
+  }, [toast, fetchSkills]);
+
   const readySkills = skills.filter((s) => s.status === "ready");
 
-  return { skills, readySkills, loading, createSkill, refetch: fetchSkills, generationPhase, generationLogs, codeLines, resetGeneration };
+  return { skills, readySkills, loading, createSkill, deleteSkill, refetch: fetchSkills, generationPhase, generationLogs, codeLines, resetGeneration };
 }
