@@ -27,7 +27,7 @@ const DocScreenshot = ({ src, alt, caption }: { src: string; alt: string; captio
  
  const Documentation = () => {
    const navigate = useNavigate();
-   const [language, setLanguage] = useState<"es" | "en">("es");
+   const [language, setLanguage] = useState<"es" | "en">("en");
  
    const handleDownloadPDF = () => {
      window.print();

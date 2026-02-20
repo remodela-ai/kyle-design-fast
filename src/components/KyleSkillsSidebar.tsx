@@ -101,7 +101,7 @@ export function KyleSkillsSidebar() {
             <div>
               <h2 className="font-semibold text-foreground">Kyle Skills</h2>
               <p className="text-xs text-muted-foreground">
-                {isSkillMode ? `Modo: ${activeSkill?.name}` : "Selecciona una habilidad"}
+                {isSkillMode ? `Mode: ${activeSkill?.name}` : "Select a skill"}
               </p>
             </div>
           </div>
@@ -116,7 +116,7 @@ export function KyleSkillsSidebar() {
             {activeConnectorTypes.length > 0 && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Herramientas:</span>
+                  <span className="text-xs text-muted-foreground">Tools:</span>
                   <div className="flex gap-1">
                     {activeConnectorTypes.map((type) => {
                       const Icon = CONNECTOR_ICONS[type];
@@ -136,7 +136,7 @@ export function KyleSkillsSidebar() {
                   to="/kustr-next/kyle-connectors"
                   className="text-xs text-primary hover:underline"
                 >
-                  Configurar
+                  Configure
                 </Link>
               </div>
             )}
@@ -149,10 +149,10 @@ export function KyleSkillsSidebar() {
               >
                 <div className="flex items-center gap-2 text-foreground">
                   <Settings className="w-4 h-4" />
-                  <span className="text-sm font-medium">Conecta tus herramientas</span>
+                  <span className="text-sm font-medium">Connect your tools</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Kyle puede hacer más cuando conectas Gmail, Calendar, etc.
+                  Kyle can do more when you connect Gmail, Calendar, etc.
                 </p>
               </Link>
             )}
@@ -189,7 +189,7 @@ export function KyleSkillsSidebar() {
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{activeSkill?.icon}</span>
                     <span className="font-medium text-foreground">
-                      {activeSkill?.name} activo
+                      {activeSkill?.name} active
                     </span>
                   </div>
                   <Button 
@@ -202,7 +202,7 @@ export function KyleSkillsSidebar() {
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Habla con Kyle naturalmente para describir lo que necesitas.
+                  Talk to Kyle naturally to describe what you need.
                 </p>
 
                 {/* Voice Control */}
@@ -235,8 +235,8 @@ export function KyleSkillsSidebar() {
                   
                   <span className="text-xs text-muted-foreground">
                     {isConnected 
-                      ? isSpeaking ? "Kyle habla..." : "Escuchando..." 
-                      : "Toca para hablar"
+                      ? isSpeaking ? "Kyle speaking..." : "Listening..." 
+                      : "Tap to talk"
                     }
                   </span>
                 </div>
@@ -244,12 +244,12 @@ export function KyleSkillsSidebar() {
                 {/* Text Input Alternative */}
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground text-center">
-                    o escribe tu solicitud:
+                    or type your request:
                   </p>
                   <textarea
                     value={pendingCommand}
                     onChange={(e) => setPendingCommand(e.target.value)}
-                    placeholder={`Describe qué quieres ${activeSkill?.name.toLowerCase()}...`}
+                    placeholder={`Describe what you want to ${activeSkill?.name.toLowerCase()}...`}
                     className="w-full h-20 p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <Button 
@@ -260,12 +260,12 @@ export function KyleSkillsSidebar() {
                     {isProcessing ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Procesando...
+                        Processing...
                       </>
                     ) : (
                       <>
                         <span className="mr-2">{activeSkill?.icon}</span>
-                        Ejecutar {activeSkill?.name}
+                        Execute {activeSkill?.name}
                       </>
                     )}
                   </Button>
@@ -282,7 +282,7 @@ export function KyleSkillsSidebar() {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Kyle está trabajando
+                  Kyle is working
                 </h3>
                 {workingTasks.map((task) => (
                   <div
@@ -293,7 +293,7 @@ export function KyleSkillsSidebar() {
                       {task.command}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {task.status === 'pending' ? 'En cola...' : 'Procesando...'}
+                      {task.status === 'pending' ? 'Queued...' : 'Processing...'}
                     </p>
                   </div>
                 ))}
@@ -305,9 +305,9 @@ export function KyleSkillsSidebar() {
               <div className="bg-muted/30 rounded-xl p-4 space-y-2">
                 <h3 className="text-sm font-medium text-foreground">💡 Tips</h3>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Selecciona un skill y habla naturalmente</li>
-                  <li>• Kyle procesa tu solicitud automáticamente</li>
-                  <li>• Conecta herramientas para más capacidades</li>
+                  <li>• Select a skill and talk naturally</li>
+                  <li>• Kyle processes your request automatically</li>
+                  <li>• Connect tools for more capabilities</li>
                 </ul>
               </div>
             )}

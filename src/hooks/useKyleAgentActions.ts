@@ -23,10 +23,10 @@ interface KyleActionContext {
 
 // Command patterns that trigger background tasks
 const TASK_TRIGGERS = [
-  { pattern: /investiga|research|busca información|find out|look up/i, type: 'research' as const },
-  { pattern: /crea|create|genera|generate|diseña|design/i, type: 'create' as const },
-  { pattern: /analiza|analyze|revisa|review|evalua|evaluate/i, type: 'analyze' as const },
-  { pattern: /automatiza|automate|programa|schedule|configura|setup/i, type: 'automate' as const },
+  { pattern: /research|find out|look up|investigate/i, type: 'research' as const },
+  { pattern: /create|generate|design/i, type: 'create' as const },
+  { pattern: /analyze|review|evaluate/i, type: 'analyze' as const },
+  { pattern: /automate|schedule|setup|configure/i, type: 'automate' as const },
 ];
 
 export function useKyleAgentActions() {
@@ -64,8 +64,8 @@ export function useKyleAgentActions() {
 
     // Show abstract message - no mention of external services
     toast({
-      title: "🔄 Kyle está trabajando",
-      description: "Procesando tu solicitud...",
+      title: "🔄 Kyle is working",
+      description: "Processing your request...",
     });
 
     try {
@@ -103,13 +103,13 @@ export function useKyleAgentActions() {
         prev.map(t => t.id === taskId ? completedTask : t)
       );
 
-      const connectorsMsg = completedTask.connectorsUsed 
-        ? ` (${completedTask.connectorsUsed} herramientas usadas)`
+    const connectorsMsg = completedTask.connectorsUsed 
+        ? ` (${completedTask.connectorsUsed} tools used)`
         : '';
 
       toast({
-        title: "✅ Tarea completada",
-        description: `Kyle ha terminado de procesar tu solicitud${connectorsMsg}.`,
+        title: "✅ Task completed",
+        description: `Kyle has finished processing your request${connectorsMsg}.`,
       });
 
       return completedTask;
@@ -131,7 +131,7 @@ export function useKyleAgentActions() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No pude completar la tarea. Intenta de nuevo.",
+        description: "Could not complete the task. Please try again.",
       });
 
       return failedTask;

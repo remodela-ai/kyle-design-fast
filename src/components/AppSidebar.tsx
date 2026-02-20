@@ -33,18 +33,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CAPA 1 - Kyle (Central Orchestrator)
-// El punto de entrada único. Interfaz, memoria, router y supervisor.
+// LAYER 1 - Kyle (Central Orchestrator)
+// The single entry point. Interface, memory, router and supervisor.
 // ═══════════════════════════════════════════════════════════════════════════
 const kyleNavItems = [
-  { icon: Bot, label: "Kyle Home", path: "/kustr-next", description: "Centro de comando" },
-  { icon: Sparkles, label: "Kyle Voice", path: "/shazam", description: "Diseño por voz" },
+  { icon: Bot, label: "Kyle Home", path: "/kustr-next", description: "Command center" },
+  { icon: Sparkles, label: "Kyle Voice", path: "/shazam", description: "Voice design" },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CAPA 2 - Journeys (6 Macro-flujos de negocio)
-// Flujos completos activados por Kyle según contexto e intención del usuario.
-// Cada Journey contiene múltiples micro-agentes especializados (Capa 3).
+// LAYER 2 - Journeys (6 Business Macro-flows)
+// Complete flows activated by Kyle based on context and user intent.
+// Each Journey contains multiple specialized micro-agents (Layer 3).
 // ═══════════════════════════════════════════════════════════════════════════
 const journeyNavItems = [
   { icon: Megaphone, label: "Marketing", path: "/marketing", status: "active", agents: 3 },
@@ -55,7 +55,7 @@ const journeyNavItems = [
   { icon: HardHat, label: "Execution", path: "/execution", status: "coming", agents: 0 },
 ];
 
-// Sales Funnel - Sub-routes del Journey de Sales
+// Sales Funnel - Sub-routes of the Sales Journey
 const salesFunnelItems = [
   { icon: Users, label: "Leads", path: "/kustr-next/leads" },
   { icon: FileSignature, label: "Proposals", path: "/kustr-next/proposal" },
@@ -187,10 +187,10 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {/* CAPA 1 - Kyle (Orquestador Central) */}
+        {/* LAYER 1 - Kyle (Central Orchestrator) */}
           {(!collapsed || mobileOpen) && (
             <span className="text-xs text-primary font-semibold uppercase tracking-wider px-3 mb-2 block flex items-center gap-2">
-              <Bot className="h-3 w-3" /> Capa 1 · Kyle
+              <Bot className="h-3 w-3" /> Layer 1 · Kyle
             </span>
           )}
           <ul className="space-y-1 mb-4 bg-primary/5 rounded-lg p-2">
@@ -207,10 +207,10 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             ))}
           </ul>
 
-          {/* CAPA 2 - Journeys (Macro-flujos de negocio) */}
+          {/* LAYER 2 - Journeys (Business Macro-flows) */}
           {(!collapsed || mobileOpen) && (
             <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
-              Capa 2 · Journeys
+              Layer 2 · Journeys
             </span>
           )}
           <ul className="space-y-1 mb-4">
@@ -237,7 +237,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
             ))}
           </ul>
 
-          {/* Sales Funnel - Expandido del Journey Sales */}
+          {/* Sales Funnel - Expanded from Sales Journey */}
           {isAuthenticated && hasProfile && (
             <>
               {(!collapsed || mobileOpen) && (

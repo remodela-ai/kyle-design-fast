@@ -25,13 +25,13 @@ const ORIEL_GREETINGS_EN = [
   "Hey! Quick check-in. Oriel, what's the most important thing we need to align on?",
 ];
 
-// Random daily greeting messages for Oriel (Spanish)
+// Random daily greeting messages for Oriel (Spanish) - kept for ES language option
 const ORIEL_GREETINGS_ES = [
-  "¡Hola Oriel! Sync rápido - pongámonos todos en la misma página. ¿Cuál es tu prioridad hoy?",
-  "¡Oriel! Vamos directo al grano. ¿Qué lograste desde nuestro último sync?",
-  "Hey Oriel, ¿listo para un standup rápido? ¿Qué te está bloqueando ahora mismo?",
-  "¡Oriel! Hagamos esto rápido y productivo. ¿Cuál es tu foco para hoy?",
-  "¡Hey! Check-in rápido. Oriel, ¿qué es lo más importante que necesitamos alinear?",
+  "Hey Oriel! Quick sync - let's get on the same page. What's your priority today?",
+  "Oriel! Let's get straight to the point. What did you accomplish since our last sync?",
+  "Hey Oriel, ready for a quick standup? What's blocking you right now?",
+  "Oriel! Let's make this quick and productive. What's your focus for today?",
+  "Hey! Quick check-in. Oriel, what's the most important thing we need to align on?",
 ];
 
 // Random daily greeting messages for Carlos
@@ -121,8 +121,8 @@ const DailyOrielCarlos = () => {
           if (prev <= 1) {
             // Time's up - show notification
             toast({
-              title: "⏰ ¡Tiempo!",
-              description: "Los 3 minutos han terminado. Puedes continuar o terminar tu sesión.",
+              title: "⏰ Time's up!",
+              description: "The 3 minutes are over. You can continue or end your session.",
             });
             setIsTimerRunning(false);
             return 0;
@@ -194,25 +194,25 @@ const DailyOrielCarlos = () => {
       let contextParts: string[] = [];
       
       for (const sync of recentSyncs) {
-        const syncDate = new Date(sync.sync_date).toLocaleDateString('es-MX', { 
+        const syncDate = new Date(sync.sync_date).toLocaleDateString('en-US', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
           day: 'numeric' 
         });
         
-        let syncSummary = `\n### Sesión del ${syncDate}:\n`;
+        let syncSummary = `\n### Session from ${syncDate}:\n`;
         
         if (sync.synthesis) {
-          syncSummary += `**Síntesis:** ${sync.synthesis.substring(0, 500)}...\n`;
+          syncSummary += `**Synthesis:** ${sync.synthesis.substring(0, 500)}...\n`;
         }
         
         if (sync.oriel_notes) {
-          syncSummary += `**Temas de Oriel:** ${sync.oriel_notes.substring(0, 300)}...\n`;
+          syncSummary += `**Oriel's topics:** ${sync.oriel_notes.substring(0, 300)}...\n`;
         }
         
         if (sync.james_notes) { // Carlos notes
-          syncSummary += `**Temas de Carlos:** ${sync.james_notes.substring(0, 300)}...\n`;
+          syncSummary += `**Carlos's topics:** ${sync.james_notes.substring(0, 300)}...\n`;
         }
         
         contextParts.push(syncSummary);
@@ -473,15 +473,15 @@ const DailyOrielCarlos = () => {
 
       // Build dynamic prompt with previous context
       const contextInfo = previousContext 
-        ? `\n\n## Contexto de sesiones anteriores:\n${previousContext}` 
+        ? `\n\n## Previous sessions context:\n${previousContext}` 
         : '';
       
       const filesContext = orielFiles.length > 0 
-        ? `\n\n## Archivos de Oriel:\n${orielFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
+        ? `\n\n## Oriel's files:\n${orielFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
         : '';
       
       const kbContext = knowledgeBase 
-        ? `\n\n## Base de conocimiento:\n${knowledgeBase.substring(0, 1000)}` 
+        ? `\n\n## Knowledge base:\n${knowledgeBase.substring(0, 1000)}` 
         : '';
 
       console.log("Starting session with context:", { 
@@ -496,8 +496,8 @@ const DailyOrielCarlos = () => {
       });
 
       toast({
-        title: "⏱️ Sesión de Oriel iniciada",
-        description: "3 minutos para compartir lo que quieras",
+        title: "⏱️ Oriel's session started",
+        description: "3 minutes to share whatever you want",
       });
     } catch (err) {
       console.error("Failed to start Oriel session:", err);
@@ -529,11 +529,11 @@ const DailyOrielCarlos = () => {
       resetAndStartTimer(); // Start 3-minute timer
 
       const filesContext = carlosFiles.length > 0 
-        ? `\n\n## Archivos de Carlos:\n${carlosFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
+        ? `\n\n## Carlos's files:\n${carlosFiles.map(f => `- ${f.name}: ${f.content}`).join('\n')}` 
         : '';
       
       const kbContext = knowledgeBase 
-        ? `\n\n## Base de conocimiento:\n${knowledgeBase.substring(0, 1000)}` 
+        ? `\n\n## Knowledge base:\n${knowledgeBase.substring(0, 1000)}` 
         : '';
 
       await conversation.startSession({
@@ -542,8 +542,8 @@ const DailyOrielCarlos = () => {
       });
 
       toast({
-        title: "⏱️ Sesión de Carlos iniciada",
-        description: "3 minutos para compartir lo que quieras",
+        title: "⏱️ Carlos's session started",
+        description: "3 minutes to share whatever you want",
       });
     } catch (err) {
       console.error("Failed to start Carlos session:", err);
@@ -936,7 +936,7 @@ const DailyOrielCarlos = () => {
               Thought Synthesizer
             </h1>
             <p className="text-muted-foreground mt-2">
-              3 min cada uno → Kyle encuentra patrones → Documento enriquecido
+              3 min each → Kyle finds patterns → Enriched document
             </p>
           </div>
         </div>
@@ -946,8 +946,8 @@ const DailyOrielCarlos = () => {
           {[
             { phase: 'oriel' as ConversationPhase, label: 'Oriel (3 min)', icon: Users },
             { phase: 'carlos' as ConversationPhase, label: 'Carlos (3 min)', icon: Users },
-            { phase: 'synthesis' as ConversationPhase, label: 'Análisis', icon: MessageSquare },
-            { phase: 'complete' as ConversationPhase, label: 'Documento', icon: CheckCircle2 },
+            { phase: 'synthesis' as ConversationPhase, label: 'Analysis', icon: MessageSquare },
+            { phase: 'complete' as ConversationPhase, label: 'Document', icon: CheckCircle2 },
           ].map((step, idx) => (
             <div key={step.phase} className="flex items-center gap-2">
               <div className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
@@ -1002,12 +1002,12 @@ const DailyOrielCarlos = () => {
               )}
               
               <p className="text-sm text-muted-foreground text-center">
-                {isLoadingContext && "Cargando sesiones anteriores..."}
-                {!isLoadingContext && currentPhase === 'idle' && "Listo para comenzar - 3 min cada uno"}
-                {currentPhase === 'oriel' && (conversation.isSpeaking ? "Kyle escuchando..." : "Oriel hablando...")}
-                {currentPhase === 'carlos' && (conversation.isSpeaking ? "Kyle escuchando..." : "Carlos hablando...")}
-                {currentPhase === 'synthesis' && "Analizando patrones y generando documento..."}
-                {currentPhase === 'complete' && "¡Documento enriquecido listo!"}
+                {isLoadingContext && "Loading previous sessions..."}
+                {!isLoadingContext && currentPhase === 'idle' && "Ready to start - 3 min each"}
+                {currentPhase === 'oriel' && (conversation.isSpeaking ? "Kyle listening..." : "Oriel speaking...")}
+                {currentPhase === 'carlos' && (conversation.isSpeaking ? "Kyle listening..." : "Carlos speaking...")}
+                {currentPhase === 'synthesis' && "Analyzing patterns and generating document..."}
+                {currentPhase === 'complete' && "Enriched document ready!"}
               </p>
 
               {/* View Past Syncs */}
@@ -1166,15 +1166,15 @@ const DailyOrielCarlos = () => {
                         className="flex-1 bg-primary hover:bg-primary/90"
                         onClick={startSessionWithOriel}
                       >
-                        <Timer className="w-4 h-4 mr-2" />
-                        Soy Oriel (3 min)
+                         <Timer className="w-4 h-4 mr-2" />
+                        I am Oriel (3 min)
                       </Button>
                       <Button 
                         className="flex-1 bg-primary hover:bg-primary/90"
                         onClick={startSessionWithCarlos}
                       >
                         <Timer className="w-4 h-4 mr-2" />
-                        Soy Carlos (3 min)
+                        I am Carlos (3 min)
                       </Button>
                     </div>
                   </>
@@ -1185,7 +1185,7 @@ const DailyOrielCarlos = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    Terminé mi sesión
+                    I'm done with my session
                   </Button>
                 )}
                 
@@ -1195,7 +1195,7 @@ const DailyOrielCarlos = () => {
                     onClick={startSessionWithCarlos}
                   >
                     <Timer className="w-4 h-4 mr-2" />
-                    Ahora Carlos (3 min)
+                    Now Carlos (3 min)
                   </Button>
                 )}
                 
@@ -1204,7 +1204,7 @@ const DailyOrielCarlos = () => {
                     className="w-full bg-primary hover:bg-primary/90"
                     onClick={endCurrentSession}
                   >
-                    Terminé mi sesión
+                    I'm done with my session
                   </Button>
                 )}
                 
@@ -1217,12 +1217,12 @@ const DailyOrielCarlos = () => {
                     {isGeneratingSynthesis ? (
                       <>
                         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                        Analizando patrones...
+                        Analyzing patterns...
                       </>
                     ) : (
                       <>
                         <MessageSquare className="w-4 h-4 mr-2" />
-                        Generar Documento Enriquecido
+                        Generate Enriched Document
                       </>
                     )}
                   </Button>
@@ -1231,7 +1231,7 @@ const DailyOrielCarlos = () => {
                 {currentPhase === 'synthesis' && (
                   <div className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground">
                     <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    Kyle analizando patrones y generando documento...
+                    Kyle analyzing patterns and generating document...
                   </div>
                 )}
                 
@@ -1241,7 +1241,7 @@ const DailyOrielCarlos = () => {
                     variant="outline"
                     onClick={resetDaily}
                   >
-                    Nueva Sesión
+                    New Session
                   </Button>
                 )}
                 
