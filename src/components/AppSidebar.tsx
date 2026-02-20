@@ -24,9 +24,11 @@ import {
   CreditCard,
   Mail,
   FileSignature,
+  Wand2,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
+import { useCustomSkills } from "@/hooks/useCustomSkills";
 import { useDesignerProfile } from "@/hooks/useDesignerProfile";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +94,7 @@ interface AppSidebarProps {
 export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) {
   const { isSuperAdmin, isAuthenticated, signOut, user } = useAuth();
   const { hasProfile, profile } = useDesignerProfile();
+  const { readySkills } = useCustomSkills();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -254,6 +257,39 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
                       collapsed={collapsed && !mobileOpen}
                       onClick={onMobileClose}
                       path={item.path}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* Custom Skills */}
+          {isAuthenticated && (
+            <>
+              {(!collapsed || mobileOpen) && (
+                <span className="text-xs text-muted-foreground uppercase tracking-wider px-3 mb-2 block">
+                  Custom Skills
+                </span>
+              )}
+              <ul className="space-y-1 mb-4">
+                <li>
+                  <SidebarNavItem
+                    icon={Wand2}
+                    label="Skill Builder"
+                    collapsed={collapsed && !mobileOpen}
+                    onClick={onMobileClose}
+                    path="/skill-builder"
+                  />
+                </li>
+                {readySkills.map((skill) => (
+                  <li key={skill.id}>
+                    <SidebarNavItem
+                      icon={Sparkles}
+                      label={skill.name}
+                      collapsed={collapsed && !mobileOpen}
+                      onClick={onMobileClose}
+                      path={`/skills/${skill.id}`}
                     />
                   </li>
                 ))}
