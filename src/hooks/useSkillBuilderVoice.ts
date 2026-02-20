@@ -150,6 +150,11 @@ export function useSkillBuilderVoice(
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
+        overrides: {
+          agent: {
+            firstMessage: "Hey! Let's build a new skill together. What kind of tool would help you most in your design practice?",
+          },
+        },
       });
 
       // Retry context injection at 1s, 3s, 5s
