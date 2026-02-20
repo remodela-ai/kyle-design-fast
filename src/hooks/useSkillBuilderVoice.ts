@@ -122,12 +122,14 @@ export function useSkillBuilderVoice(
         connectionType: "webrtc",
       });
 
-      // Send context after connection is established
+      // Send skill builder script context after connection
       setTimeout(() => {
         try {
           conversation.sendContextualUpdate(
             FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix +
-            "\n\nRespond in Spanish. Start by greeting the user and asking what kind of tool would help them most in their design practice."
+            "\n\nIMPORTANT: You are NOT a generic assistant. You are Kyle guiding the user through the Skill Builder. " +
+            "Start by saying something like: '¡Perfecto! Vamos a crear un nuevo skill juntos. Primero necesito entender qué herramienta quieres construir. " +
+            "Dime, ¿qué nombre le pondrías a este skill y qué debería hacer?' — Stay focused on STEP 1: capturing the skill name and role description."
           );
         } catch (e) {
           console.warn("Could not send initial context:", e);
