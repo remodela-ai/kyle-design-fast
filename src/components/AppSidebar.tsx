@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useAuth } from "@/hooks/useAuth";
-import { useCustomSkills } from "@/hooks/useCustomSkills";
+import { useCustomSkillsSafe } from "@/hooks/useCustomSkillsSafe";
 import { useDesignerProfile } from "@/hooks/useDesignerProfile";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -94,7 +94,7 @@ interface AppSidebarProps {
 export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: AppSidebarProps) {
   const { isSuperAdmin, isAuthenticated, signOut, user } = useAuth();
   const { hasProfile, profile } = useDesignerProfile();
-  const { readySkills } = useCustomSkills();
+  const { readySkills } = useCustomSkillsSafe();
   const navigate = useNavigate();
   const { toast } = useToast();
 
