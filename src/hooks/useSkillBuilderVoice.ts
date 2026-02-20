@@ -120,16 +120,19 @@ export function useSkillBuilderVoice(
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix,
-            },
-            firstMessage: "¡Hola! Soy Kyle. Vamos a crear algo increíble juntos. Cuéntame, ¿qué tipo de herramienta te ayudaría más en tu práctica de diseño?",
-            language: "es",
-          },
-        },
       });
+
+      // Send context after connection is established
+      setTimeout(() => {
+        try {
+          conversation.sendContextualUpdate(
+            FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix +
+            "\n\nRespond in Spanish. Start by greeting the user and asking what kind of tool would help them most in their design practice."
+          );
+        } catch (e) {
+          console.warn("Could not send initial context:", e);
+        }
+      }, 1000);
     } catch (err) {
       console.error("Failed to start skill builder conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
