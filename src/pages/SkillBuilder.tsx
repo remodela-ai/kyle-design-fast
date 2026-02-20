@@ -469,22 +469,22 @@ IMPORTANT GUIDELINES:
               "border-2 transition-all duration-500",
               voice.isConnected ? "border-primary/40 bg-primary/5 shadow-lg shadow-primary/10" : "border-border"
             )}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-6">
                   {/* Voice toggle button */}
                   <Button
                     variant={voice.isConnected ? "default" : "outline"}
                     size="lg"
                     onClick={handleVoiceToggle}
                     className={cn(
-                      "shrink-0 h-14 w-14 rounded-full transition-all duration-300",
+                      "shrink-0 h-28 w-28 rounded-full transition-all duration-300",
                       voice.isConnected && "animate-pulse shadow-lg shadow-primary/30"
                     )}
                   >
                     {voice.isConnected ? (
-                      <MicOff className="h-6 w-6" />
+                      <MicOff className="h-12 w-12" />
                     ) : (
-                      <Mic className="h-6 w-6" />
+                      <Mic className="h-12 w-12" />
                     )}
                   </Button>
 
