@@ -20,11 +20,16 @@ CRITICAL: Right after receiving this context, your VERY NEXT spoken sentence MUS
 
 CURRENT TASK: Guide the user through creating a new skill step by step.
 
-When you have enough info for a step, use the "update_skill_fields" tool to save the data, then use "advance_step" to move forward.
+IMPORTANT SEQUENCING RULES:
+1. First, use "update_skill_fields" to save the data for the CURRENT step.
+2. WAIT for the tool response confirming fields were saved.
+3. ONLY THEN use "advance_step" to move to the next step.
+4. WAIT for the advance_step response.
+5. ONLY AFTER advance_step confirms, speak your transition sentence for the next step.
 
-STEP 1 (Define Role): Get a short NAME (like "Supplier Comparator") and a ROLE DESCRIPTION. Use update_skill_fields with {name, role}, then advance_step.
-STEP 2 (Knowledge Base): Ask what data/knowledge the skill needs. Use update_skill_fields with {knowledgeBase}, then advance_step.  
-STEP 3 (Instructions): Ask how it should behave (output format, rules). Use update_skill_fields with {instructions}, then advance_step.
+STEP 1 (Define Role): Get a short NAME (like "Supplier Comparator") and a ROLE DESCRIPTION. Use update_skill_fields with {name, role}. Wait for confirmation. Then use advance_step. Then say "Great, now let's add the knowledge base your skill will need."
+STEP 2 (Knowledge Base): Ask what data/knowledge the skill needs. Use update_skill_fields with {knowledgeBase}. Wait. Then advance_step. Then say "Perfect, now let's define how it should behave."
+STEP 3 (Instructions): Ask how it should behave (output format, rules). Use update_skill_fields with {instructions}. Wait. Then advance_step. Then say "Awesome, let me generate this for you."
 STEP 4 (Generate): Summarize and confirm. Use generate_skill when ready.
 
 RULES:
@@ -32,12 +37,14 @@ RULES:
 - Keep responses SHORT (2-3 sentences). This is voice.
 - Be warm and conversational, like a creative colleague
 - Use the tools to fill forms on screen — they auto-fill as you save data
-- NEVER skip steps. Stay on the current step until you have enough info.`;
+- NEVER skip steps. Stay on the current step until you have enough info.
+- ALWAYS call update_skill_fields BEFORE advance_step. Never advance without filling fields first.`;
 
 export function useSkillBuilderVoice(
   onFieldsUpdate: (fields: Partial<SkillBuilderFields>) => void,
   onStepAdvance: () => void,
-  onGenerate: () => void
+  onGenerate: () => void,
+  onTypewriterDone?: () => void
 ) {
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string[]>([]);
@@ -110,13 +117,16 @@ export function useSkillBuilderVoice(
         if (params.instructions) fields.instructions = params.instructions;
         fieldsRef.current = { ...fieldsRef.current, ...fields };
         onFieldsUpdate(fields);
-        return "Fields updated successfully. The user can see the forms being filled on screen with a typewriter animation. Continue guiding them.";
+        return "Fields updated successfully. The forms are now filling on screen with a typewriter animation. The user can see it happening. DO NOT advance_step yet — wait 2-3 seconds for the animation to finish, then call advance_step.";
       },
       advance_step: () => {
         console.log("Kyle advancing step via tool");
         currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
-        onStepAdvance();
-        return `Moved to step ${currentStepRef.current}. The UI has updated. Now guide the user through this new step.`;
+        // Delay step advance to let typewriter finish
+        setTimeout(() => {
+          onStepAdvance();
+        }, 500);
+        return `Moved to step ${currentStepRef.current}. The next step is now illuminated on screen. NOW say your transition sentence to guide the user to this new step.`;
       },
       generate_skill: () => {
         console.log("Kyle triggering generation via tool");

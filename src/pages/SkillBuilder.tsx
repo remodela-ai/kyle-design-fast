@@ -37,6 +37,7 @@ export default function SkillBuilder() {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [lastFilledField, setLastFilledField] = useState<string | null>(null);
+  const [justUnlockedStep, setJustUnlockedStep] = useState<number | null>(null);
 
   // Step 1 - Role
   const [name, setName] = useState("");
@@ -118,8 +119,15 @@ export default function SkillBuilder() {
   }, [typeText]);
 
   const handleVoiceStepAdvance = useCallback(() => {
-    setStep(prev => Math.min(prev + 1, 4) as 1 | 2 | 3 | 4);
-  }, []);
+    const nextStep = Math.min(step + 1, 4);
+    setJustUnlockedStep(nextStep);
+    // Brief glow before actually switching content
+    setTimeout(() => {
+      setStep(prev => Math.min(prev + 1, 4) as 1 | 2 | 3 | 4);
+      // Clear glow after transition
+      setTimeout(() => setJustUnlockedStep(null), 2000);
+    }, 800);
+  }, [step]);
 
   const handleVoiceGenerate = useCallback(() => {
     handleSubmitRef.current?.();
@@ -551,24 +559,25 @@ IMPORTANT GUIDELINES:
             <div className="flex items-center justify-center gap-2">
               {STEPS.map((s, i) => (
                 <div key={s.id} className="flex items-center gap-2">
-                  <button
-                    onClick={() => s.id < step && setStep(s.id)}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                      step === s.id
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : step > s.id
-                        ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {step > s.id ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <s.icon className="w-4 h-4" />
-                    )}
-                    <span className="hidden sm:inline">{s.label}</span>
-                  </button>
+                    <button
+                      onClick={() => s.id < step && setStep(s.id)}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-500",
+                        step === s.id
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : step > s.id
+                          ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                          : "bg-muted text-muted-foreground",
+                        justUnlockedStep === s.id && "ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse bg-primary/20 text-primary scale-105"
+                      )}
+                    >
+                      {step > s.id ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <s.icon className="w-4 h-4" />
+                      )}
+                      <span className="hidden sm:inline">{s.label}</span>
+                    </button>
                   {i < STEPS.length - 1 && (
                     <div className={cn(
                       "w-6 h-0.5 rounded",
