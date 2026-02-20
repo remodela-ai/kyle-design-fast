@@ -5,9 +5,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper, AlertTriangle, RefreshCw, Pencil, SkipForward } from "lucide-react";
 import { useCustomSkills, GENERATION_PHASES } from "@/hooks/useCustomSkills";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   building: "bg-primary/10 text-primary border-primary/30",
@@ -24,9 +27,12 @@ const STEPS = [
 
 export default function SkillBuilder() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { skills, loading, createSkill, generationPhase, generationLogs, codeLines, resetGeneration } = useCustomSkills();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Step 1 - Role
   const [name, setName] = useState("");
@@ -34,7 +40,7 @@ export default function SkillBuilder() {
 
   // Step 2 - Knowledge Base
   const [knowledgeBase, setKnowledgeBase] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: string }[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: string; url?: string; uploading?: boolean; error?: boolean }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Terminal & code editor auto-scroll
@@ -61,17 +67,58 @@ export default function SkillBuilder() {
     return true;
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newFiles = Array.from(files).map(f => ({
-      name: f.name,
-      size: f.size < 1024 * 1024 ? `${(f.size / 1024).toFixed(1)} KB` : `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
-    }));
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-    // Add file names to knowledge base context
-    const fileNames = newFiles.map(f => f.name).join(", ");
-    setKnowledgeBase(prev => prev ? `${prev}\n\n[Uploaded files: ${fileNames}]` : `[Uploaded files: ${fileNames}]`);
+
+    for (const file of Array.from(files)) {
+      const fileEntry = {
+        name: file.name,
+        size: file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        uploading: true,
+        error: false,
+        url: undefined as string | undefined,
+      };
+
+      setUploadedFiles(prev => [...prev, fileEntry]);
+      const fileIndex = uploadedFiles.length;
+
+      try {
+        const filePath = `skills/${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage
+          .from('skill-files')
+          .upload(filePath, file);
+
+        if (error) throw error;
+
+        const { data: urlData } = supabase.storage
+          .from('skill-files')
+          .getPublicUrl(data.path);
+
+        const publicUrl = urlData.publicUrl;
+
+        setUploadedFiles(prev =>
+          prev.map((f, i) => i === fileIndex ? { ...f, uploading: false, url: publicUrl } : f)
+        );
+
+        // Append file URL to knowledge base
+        setKnowledgeBase(prev =>
+          prev ? `${prev}\n\n[Uploaded file: ${file.name} - URL: ${publicUrl}]` : `[Uploaded file: ${file.name} - URL: ${publicUrl}]`
+        );
+
+        toast({ title: "File uploaded", description: `${file.name} uploaded successfully.` });
+      } catch (err) {
+        console.error("File upload error:", err);
+        setUploadedFiles(prev =>
+          prev.map((f, i) => i === fileIndex ? { ...f, uploading: false, error: true } : f)
+        );
+        toast({
+          variant: "destructive",
+          title: "Upload failed",
+          description: `Could not upload ${file.name}. You can continue without it or try again.`,
+        });
+      }
+    }
   };
 
   const removeFile = (index: number) => {
@@ -94,10 +141,34 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setShowErrorDialog(false);
     const prompt = buildPrompt();
     const description = role.slice(0, 200);
-    await createSkill(prompt, name, description);
+    const result = await createSkill(prompt, name, description);
     setIsSubmitting(false);
+    // If creation failed, show recovery dialog
+    if (!result) {
+      setErrorMessage("Kyle couldn't complete the skill generation. This can happen due to a temporary issue.");
+      setShowErrorDialog(true);
+    }
+  };
+
+  const handleRetry = () => {
+    setShowErrorDialog(false);
+    resetGeneration();
+    handleSubmit();
+  };
+
+  const handleEditAndRetry = () => {
+    setShowErrorDialog(false);
+    resetGeneration();
+    setStep(4); // Go back to review step
+  };
+
+  const handleContinueWithout = () => {
+    setShowErrorDialog(false);
+    resetGeneration();
+    handleNewSkill();
   };
 
   const handleNewSkill = () => {
@@ -273,11 +344,23 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
             </Card>
 
             {/* Complete actions */}
-            {(generationPhase === "complete" || generationPhase === "error") && (
+            {generationPhase === "complete" && (
               <div className="flex items-center justify-center">
                 <Button variant="outline" size="sm" onClick={handleNewSkill} className="gap-2">
                   <Wand2 className="w-3 h-3" />
                   Build Another Skill
+                </Button>
+              </div>
+            )}
+            {generationPhase === "error" && (
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="outline" size="sm" onClick={() => setShowErrorDialog(true)} className="gap-2">
+                  <AlertTriangle className="w-3 h-3" />
+                  See Options
+                </Button>
+                <Button size="sm" onClick={handleRetry} className="gap-2">
+                  <RefreshCw className="w-3 h-3" />
+                  Retry
                 </Button>
               </div>
             )}
@@ -395,11 +478,27 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
                       {uploadedFiles.length > 0 && (
                         <div className="space-y-1.5">
                           {uploadedFiles.map((file, i) => (
-                            <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50 border border-border">
+                            <div key={i} className={cn(
+                              "flex items-center justify-between px-3 py-2 rounded-lg border",
+                              file.error ? "bg-destructive/10 border-destructive/30" :
+                              file.uploading ? "bg-muted/30 border-border animate-pulse" :
+                              file.url ? "bg-primary/5 border-primary/20" : "bg-muted/50 border-border"
+                            )}>
                               <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-primary" />
+                                {file.uploading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                ) : file.error ? (
+                                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                                ) : file.url ? (
+                                  <Check className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <FileText className="w-4 h-4 text-primary" />
+                                )}
                                 <span className="text-sm text-foreground">{file.name}</span>
                                 <span className="text-xs text-muted-foreground">{file.size}</span>
+                                {file.error && (
+                                  <span className="text-xs text-destructive">Upload failed</span>
+                                )}
                               </div>
                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(i)}>
                                 <X className="w-3 h-3" />
@@ -560,6 +659,49 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
           )}
         </div>
       </div>
+
+      {/* Error Recovery Dialog */}
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Kyle needs your help
+            </DialogTitle>
+            <DialogDescription>
+              {errorMessage || "Something went wrong during skill generation. Choose how you'd like to proceed."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <Button onClick={handleRetry} className="w-full gap-2 justify-start" variant="outline">
+              <RefreshCw className="w-4 h-4" />
+              <div className="text-left">
+                <div className="font-medium">Try Again</div>
+                <div className="text-xs text-muted-foreground">Retry with the same configuration</div>
+              </div>
+            </Button>
+            <Button onClick={handleEditAndRetry} className="w-full gap-2 justify-start" variant="outline">
+              <Pencil className="w-4 h-4" />
+              <div className="text-left">
+                <div className="font-medium">Edit & Retry</div>
+                <div className="text-xs text-muted-foreground">Go back to review your inputs before retrying</div>
+              </div>
+            </Button>
+            <Button onClick={handleContinueWithout} className="w-full gap-2 justify-start" variant="outline">
+              <SkipForward className="w-4 h-4" />
+              <div className="text-left">
+                <div className="font-medium">Start Fresh</div>
+                <div className="text-xs text-muted-foreground">Reset and create a different skill</div>
+              </div>
+            </Button>
+          </div>
+          <DialogFooter>
+            <p className="text-xs text-muted-foreground text-center w-full">
+              Kyle will keep improving. Temporary issues are normal.
+            </p>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
