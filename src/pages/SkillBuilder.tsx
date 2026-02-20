@@ -102,20 +102,33 @@ export default function SkillBuilder() {
     };
   }, []);
 
-  // Voice-guided field updates with typewriter animation
-  const handleVoiceFieldsUpdate = useCallback((fields: Partial<SkillBuilderFields>) => {
-    if (fields.name) {
-      typeText(setName, fields.name, "name");
+  // Voice-guided field updates with typewriter animation + done() callback
+  const handleVoiceFieldsUpdate = useCallback((fields: Partial<SkillBuilderFields>, done: () => void) => {
+    const fieldEntries: Array<{ setter: React.Dispatch<React.SetStateAction<string>>; value: string; key: string }> = [];
+    
+    if (fields.name) fieldEntries.push({ setter: setName, value: fields.name, key: "name" });
+    if (fields.role) fieldEntries.push({ setter: setRole, value: fields.role, key: "role" });
+    if (fields.knowledgeBase) fieldEntries.push({ setter: setKnowledgeBase, value: fields.knowledgeBase, key: "knowledgeBase" });
+    if (fields.instructions) fieldEntries.push({ setter: setInstructions, value: fields.instructions, key: "instructions" });
+
+    if (fieldEntries.length === 0) {
+      done();
+      return;
     }
-    if (fields.role) {
-      typeText(setRole, fields.role, "role");
-    }
-    if (fields.knowledgeBase) {
-      typeText(setKnowledgeBase, fields.knowledgeBase, "knowledgeBase");
-    }
-    if (fields.instructions) {
-      typeText(setInstructions, fields.instructions, "instructions");
-    }
+
+    // Track how many fields have finished typing
+    let completed = 0;
+    const total = fieldEntries.length;
+
+    fieldEntries.forEach(({ setter, value, key }) => {
+      typeText(setter, value, key, () => {
+        completed++;
+        if (completed >= total) {
+          // All typewriter animations finished — signal done
+          done();
+        }
+      });
+    });
   }, [typeText]);
 
   const handleVoiceStepAdvance = useCallback(() => {
