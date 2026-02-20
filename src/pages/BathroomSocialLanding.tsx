@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil, Plus } from "lucide-react";
+import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil, Plus, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import bathroomHero from "@/assets/bathroom-hero.jpg";
@@ -55,6 +55,7 @@ const BathroomSocialLanding = () => {
   const [showRandomDialog, setShowRandomDialog] = useState(false);
   const [randomPrompt, setRandomPrompt] = useState<string>("");
   const [randomTitle, setRandomTitle] = useState<string>("");
+  const [hoveredImage, setHoveredImage] = useState<GalleryImage | null>(null);
 
   // Load hidden static images from localStorage
   useEffect(() => {
@@ -155,6 +156,7 @@ const BathroomSocialLanding = () => {
         const newHidden = [...hiddenStaticIds, imageId];
         setHiddenStaticIds(newHidden);
         localStorage.setItem("hiddenBathroomInspirationImages", JSON.stringify(newHidden));
+        setHoveredImage(null);
         toast.success("Image removed from gallery");
       } else {
         // Delete from database
@@ -166,6 +168,7 @@ const BathroomSocialLanding = () => {
         if (error) throw error;
         
         setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
+        setHoveredImage(null);
         toast.success("Image removed from gallery");
       }
     } catch (error) {
@@ -377,90 +380,102 @@ const BathroomSocialLanding = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {allImages.map((image) => (
-              <HoverCard openDelay={200} closeDelay={100} key={image.id}>
-                <HoverCardTrigger asChild>
-                  <Card 
-                    className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 relative cursor-pointer"
-                  >
-                    <div className="aspect-square relative overflow-hidden">
-                      <img
-                        src={image.url}
-                        alt={image.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      
-                      {/* AI Generated badge */}
-                      {!image.isStatic && (
-                        <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 z-10">
-                          <Sparkles className="h-3 w-3" />
-                          AI
-                        </div>
-                      )}
-
-
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                        <p className="text-white text-sm font-medium truncate mb-2">{image.title}</p>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="w-full gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog(image);
-                          }}
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          Generate Variations
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </HoverCardTrigger>
-                <HoverCardContent 
-                  className="w-[700px] max-w-[90vw] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
-                  side="top" 
-                  sideOffset={-9999}
+                <Card 
+                  key={image.id}
+                  className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 relative cursor-pointer"
+                  onClick={() => setHoveredImage(image)}
                 >
-                  <div className="relative">
+                  <div className="aspect-square relative overflow-hidden">
                     <img
                       src={image.url}
                       alt={image.title}
-                      className="w-full aspect-[4/3] object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
-                    <button
-                      onClick={() => navigate("/design-review", { 
-                        state: { designImageUrl: image.url, extractedInsights: image.prompt, transcript: "" } 
-                      })}
-                      className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Iterate with Kyle
-                    </button>
-                    {/* Delete button in popup */}
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-3 right-3 h-8 w-8"
-                      onClick={(e) => handleDeleteImage(image.id, !!image.isStatic, e)}
-                      disabled={isDeletingId === image.id}
-                    >
-                      {isDeletingId === image.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
+                    
+                    {!image.isStatic && (
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1 z-10">
+                        <Sparkles className="h-3 w-3" />
+                        AI
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <p className="text-white text-sm font-medium truncate mb-2">{image.title}</p>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(image);
+                        }}
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Generate Variations
+                      </Button>
+                    </div>
                   </div>
-                  <div className="p-4 space-y-2 bg-background">
-                    <h4 className="font-semibold text-base">{image.title}</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-4">{image.prompt}</p>
-                  </div>
-                </HoverCardContent>
-              </HoverCard>
+                </Card>
             ))}
           </div>
+
+          {/* Centered click preview overlay */}
+          {hoveredImage && createPortal(
+            <div 
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+              onClick={() => setHoveredImage(null)}
+            >
+              <div 
+                className="w-[min(600px,90vw)] rounded-md border bg-popover shadow-md overflow-hidden relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-3 right-3 h-8 w-8 z-10 bg-background/80 hover:bg-background"
+                  onClick={() => setHoveredImage(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <div className="relative">
+                  <img
+                    src={hoveredImage.url}
+                    alt={hoveredImage.title}
+                    className="w-full aspect-square object-cover"
+                  />
+                  <button
+                    onClick={() => navigate("/design-review", { 
+                      state: { designImageUrl: hoveredImage.url, extractedInsights: hoveredImage.prompt, transcript: "" } 
+                    })}
+                    className="absolute top-3 left-3 bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Iterate with Kyle
+                  </button>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute bottom-3 right-3 h-8 w-8"
+                    onClick={(e) => handleDeleteImage(hoveredImage.id, !!hoveredImage.isStatic, e)}
+                    disabled={isDeletingId === hoveredImage.id}
+                  >
+                    {isDeletingId === hoveredImage.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="p-4 space-y-2 bg-background">
+                  <h4 className="font-semibold text-base">{hoveredImage.title}</h4>
+                  <p className="text-sm text-muted-foreground line-clamp-4">{hoveredImage.prompt}</p>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
         </div>
       </div>
 
