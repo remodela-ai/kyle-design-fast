@@ -20,31 +20,34 @@ CRITICAL: Right after receiving this context, your VERY NEXT spoken sentence MUS
 
 CURRENT TASK: Guide the user through creating a new skill step by step.
 
-IMPORTANT SEQUENCING RULES:
-1. First, use "update_skill_fields" to save the data for the CURRENT step.
-2. WAIT for the tool response confirming fields were saved.
-3. ONLY THEN use "advance_step" to move to the next step.
-4. WAIT for the advance_step response.
-5. ONLY AFTER advance_step confirms, speak your transition sentence for the next step.
+IMPORTANT: You only have ONE tool: "update_skill_fields". This tool handles EVERYTHING — it fills the form, plays the animation, AND advances to the next step automatically. You just call it once per step and wait.
 
-STEP 1 (Define Role): Get a short NAME (like "Supplier Comparator") and a ROLE DESCRIPTION. Use update_skill_fields with {name, role}. Wait for confirmation. Then use advance_step. Then say "Great, now let's add the knowledge base your skill will need."
-STEP 2 (Knowledge Base): Ask what data/knowledge the skill needs. Use update_skill_fields with {knowledgeBase}. Wait. Then advance_step. Then say "Perfect, now let's define how it should behave."
-STEP 3 (Instructions): Ask how it should behave (output format, rules). Use update_skill_fields with {instructions}. Wait. Then advance_step. Then say "Awesome, let me generate this for you."
-STEP 4 (Generate): Summarize and confirm. Use generate_skill when ready.
+SEQUENCING RULES:
+1. Gather info from the user for the CURRENT step through conversation.
+2. When you have enough info, call "update_skill_fields" with the data.
+3. WAIT for the tool response — the system is playing a typewriter animation on screen.
+4. ONLY AFTER the tool responds, speak your transition sentence for the next step.
+
+STEP 1 (Define Role): Get a short NAME (like "Supplier Comparator") and a ROLE DESCRIPTION. Call update_skill_fields with {name, role}. Wait for response. Then say "Great, now let's add the knowledge base your skill will need."
+STEP 2 (Knowledge Base): Ask what data/knowledge the skill needs. Call update_skill_fields with {knowledgeBase}. Wait for response. Then say "Perfect, now let's define how it should behave."
+STEP 3 (Instructions): Ask how it should behave (output format, rules). Call update_skill_fields with {instructions}. Wait for response. Then say "Awesome, let me generate this for you."
+STEP 4 (Generate): Summarize and confirm. Call generate_skill when ready.
 
 RULES:
 - Respond in English only
 - Keep responses SHORT (2-3 sentences). This is voice.
 - Be warm and conversational, like a creative colleague
-- Use the tools to fill forms on screen — they auto-fill as you save data
 - NEVER skip steps. Stay on the current step until you have enough info.
-- ALWAYS call update_skill_fields BEFORE advance_step. Never advance without filling fields first.`;
+- ALWAYS wait for the tool response before speaking your transition.`;
 
+/**
+ * onFieldsUpdate now receives a `done` callback. The parent MUST call done()
+ * when the typewriter animation finishes, so the async tool can resolve.
+ */
 export function useSkillBuilderVoice(
-  onFieldsUpdate: (fields: Partial<SkillBuilderFields>) => void,
+  onFieldsUpdate: (fields: Partial<SkillBuilderFields>, done: () => void) => void,
   onStepAdvance: () => void,
   onGenerate: () => void,
-  onTypewriterDone?: () => void
 ) {
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string[]>([]);
@@ -54,14 +57,12 @@ export function useSkillBuilderVoice(
   const nudgeSentRef = useRef(false);
   const connectionStableRef = useRef(false);
   const contextRetryRef = useRef<NodeJS.Timeout | null>(null);
-  const greetingReceivedRef = useRef(false);
 
   const conversation = useConversation({
     onConnect: () => {
       console.log("Kyle Skill Builder connected");
       connectionStableRef.current = true;
       setError(null);
-      // Try sending context immediately on connect
       setTimeout(() => sendContext(), 500);
     },
     onDisconnect: () => {
@@ -69,7 +70,6 @@ export function useSkillBuilderVoice(
       contextSentRef.current = false;
       nudgeSentRef.current = false;
       connectionStableRef.current = false;
-      greetingReceivedRef.current = false;
       if (contextRetryRef.current) {
         clearTimeout(contextRetryRef.current);
         contextRetryRef.current = null;
@@ -83,10 +83,9 @@ export function useSkillBuilderVoice(
         const agentText = message.agent_response_event.agent_response;
         setTranscript(prev => [...prev, `Kyle: ${agentText}`]);
         
-        // On first agent response (greeting), send context then nudge after he finishes speaking
+        // On first agent response, send context then nudge
         if (!contextSentRef.current && connectionStableRef.current) {
           sendContext();
-          // Wait ~4s for Kyle to finish speaking his greeting, then send user message to trigger pivot
           if (!nudgeSentRef.current) {
             nudgeSentRef.current = true;
             setTimeout(() => {
@@ -106,8 +105,9 @@ export function useSkillBuilderVoice(
       setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
     },
     clientTools: {
-      update_skill_fields: (params: any) => {
-        console.log("Kyle updating fields via tool:", params);
+      // ASYNC tool: returns a Promise that resolves only after animation completes
+      update_skill_fields: async (params: any): Promise<string> => {
+        console.log("Kyle updating fields via tool (async):", params);
         const fields: Partial<SkillBuilderFields> = {};
         if (params.name) fields.name = params.name;
         if (params.role) fields.role = params.role;
@@ -116,17 +116,18 @@ export function useSkillBuilderVoice(
         }
         if (params.instructions) fields.instructions = params.instructions;
         fieldsRef.current = { ...fieldsRef.current, ...fields };
-        onFieldsUpdate(fields);
-        return "Fields updated successfully. The forms are now filling on screen with a typewriter animation. The user can see it happening. DO NOT advance_step yet — wait 2-3 seconds for the animation to finish, then call advance_step.";
-      },
-      advance_step: () => {
-        console.log("Kyle advancing step via tool");
-        currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
-        // Delay step advance to let typewriter finish
-        setTimeout(() => {
-          onStepAdvance();
-        }, 500);
-        return `Moved to step ${currentStepRef.current}. The next step is now illuminated on screen. NOW say your transition sentence to guide the user to this new step.`;
+
+        // Return a promise that resolves when animation is done
+        return new Promise<string>((resolve) => {
+          // Pass fields + done callback to parent
+          onFieldsUpdate(fields, () => {
+            // Animation finished → advance step
+            currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
+            onStepAdvance();
+            console.log("Animation done, step advanced to", currentStepRef.current);
+            resolve(`Fields saved and animated on screen. Step advanced to ${currentStepRef.current}. NOW say your transition sentence to guide the user to this new step.`);
+          });
+        });
       },
       generate_skill: () => {
         console.log("Kyle triggering generation via tool");
@@ -138,8 +139,6 @@ export function useSkillBuilderVoice(
 
   const sendContext = useCallback(() => {
     if (contextSentRef.current) return;
-    // Don't check conversation.status — it may be stale in closures.
-    // Instead just try/catch the call.
     
     const step = currentStepRef.current;
     const f = fieldsRef.current;
@@ -160,7 +159,6 @@ export function useSkillBuilderVoice(
       console.log("Kyle Skill Builder context injected for step", step);
     } catch (e) {
       console.warn("Could not send skill builder context:", e);
-      // Don't set contextSentRef — allow retry
     }
   }, [conversation]);
 
@@ -170,7 +168,6 @@ export function useSkillBuilderVoice(
       if (existingFields) fieldsRef.current = { ...fieldsRef.current, ...existingFields };
       contextSentRef.current = false;
       nudgeSentRef.current = false;
-      greetingReceivedRef.current = false;
       connectionStableRef.current = false;
       setTranscript([]);
 
@@ -180,13 +177,11 @@ export function useSkillBuilderVoice(
         connectionType: "webrtc",
       });
 
-      // Retry context injection at 1s, 3s, 5s
       const retryTimes = [1000, 3000, 5000];
       retryTimes.forEach((delay) => {
         const timer = setTimeout(() => {
           if (!contextSentRef.current) sendContext();
         }, delay);
-        // Store last timer for cleanup
         contextRetryRef.current = timer;
       });
 
