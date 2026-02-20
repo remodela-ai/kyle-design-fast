@@ -5,31 +5,68 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wand2, ArrowRight, Sparkles } from "lucide-react";
+import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check } from "lucide-react";
 import { useCustomSkills } from "@/hooks/useCustomSkills";
 import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
-  building: "bg-amber-500/20 text-amber-700 border-amber-300",
-  ready: "bg-emerald-500/20 text-emerald-700 border-emerald-300",
+  building: "bg-primary/10 text-primary border-primary/30",
+  ready: "bg-primary/20 text-primary border-primary/40",
   failed: "bg-destructive/20 text-destructive border-destructive/30",
 };
+
+const STEPS = [
+  { id: 1, label: "Define Role", icon: UserCog, description: "What role does this skill play?" },
+  { id: 2, label: "Knowledge Base", icon: BookOpen, description: "What should it know?" },
+  { id: 3, label: "Instructions", icon: ListChecks, description: "How should it behave?" },
+  { id: 4, label: "Generate", icon: Rocket, description: "Review & build" },
+];
 
 export default function SkillBuilder() {
   const navigate = useNavigate();
   const { skills, loading, createSkill } = useCustomSkills();
-  const [prompt, setPrompt] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Step 1 - Role
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+
+  // Step 2 - Knowledge Base
+  const [knowledgeBase, setKnowledgeBase] = useState("");
+
+  // Step 3 - Instructions
+  const [instructions, setInstructions] = useState("");
+
+  const canProceed = () => {
+    if (step === 1) return name.trim().length > 0 && role.trim().length > 0;
+    if (step === 2) return knowledgeBase.trim().length > 0;
+    if (step === 3) return instructions.trim().length > 0;
+    return true;
+  };
+
+  const buildPrompt = () => {
+    return `Create a skill called "${name}".
+
+ROLE: ${role}
+
+KNOWLEDGE BASE:
+${knowledgeBase}
+
+INSTRUCTIONS:
+${instructions}`;
+  };
+
   const handleSubmit = async () => {
-    if (!prompt.trim() || !name.trim()) return;
     setIsSubmitting(true);
-    await createSkill(prompt, name, description || name);
-    setPrompt("");
+    const prompt = buildPrompt();
+    const description = role.slice(0, 200);
+    await createSkill(prompt, name, description);
     setName("");
-    setDescription("");
+    setRole("");
+    setKnowledgeBase("");
+    setInstructions("");
+    setStep(1);
     setIsSubmitting(false);
   };
 
@@ -50,49 +87,173 @@ export default function SkillBuilder() {
           </p>
         </div>
 
-        {/* Builder Form */}
+        {/* Stepper */}
+        <div className="flex items-center justify-center gap-2">
+          {STEPS.map((s, i) => (
+            <div key={s.id} className="flex items-center gap-2">
+              <button
+                onClick={() => s.id < step && setStep(s.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                  step === s.id
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : step > s.id
+                    ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {step > s.id ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <s.icon className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">{s.label}</span>
+              </button>
+              {i < STEPS.length - 1 && (
+                <div className={cn(
+                  "w-6 h-0.5 rounded",
+                  step > s.id ? "bg-primary" : "bg-border"
+                )} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step Content */}
         <Card className="border-2 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-primary" />
-              New Skill
+              {(() => {
+                const StepIcon = STEPS[step - 1].icon;
+                return <StepIcon className="w-5 h-5 text-primary" />;
+              })()}
+              {STEPS[step - 1].label}
             </CardTitle>
+            <p className="text-sm text-muted-foreground">{STEPS[step - 1].description}</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Input
-              placeholder="Skill name (e.g. Supplier Comparator)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              placeholder="Short description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            <Textarea
-              placeholder="Describe the functionality you imagine... e.g. 'I want a tool that compares supplier prices for kitchen materials, shows a table with brands, prices, and lead times, and highlights the best option.'"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[120px]"
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={!prompt.trim() || !name.trim() || isSubmitting}
-              className="w-full"
-              size="lg"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending to Kyle...
-                </>
+
+            {/* Step 1: Define Role */}
+            {step === 1 && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Skill Name</label>
+                  <Input
+                    placeholder="e.g. Supplier Comparator, Budget Analyzer..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Role Description</label>
+                  <Textarea
+                    placeholder="Describe the role this skill plays... e.g. 'Acts as a procurement specialist that helps compare suppliers and negotiate prices for interior design materials.'"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Knowledge Base */}
+            {step === 2 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Knowledge Base</label>
+                <Textarea
+                  placeholder="What information should this skill have access to? e.g. 'It should know about kitchen cabinet brands (IKEA, Kraftmaid, Merillat), countertop materials (quartz, granite, marble), and typical price ranges for each category.'"
+                  value={knowledgeBase}
+                  onChange={(e) => setKnowledgeBase(e.target.value)}
+                  className="min-h-[180px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste documents, URLs, or describe the domain knowledge this skill needs.
+                </p>
+              </div>
+            )}
+
+            {/* Step 3: Instructions */}
+            {step === 3 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Instructions & Behavior</label>
+                <Textarea
+                  placeholder="How should this skill behave? e.g. 'Always present comparisons in a table format. Highlight the best value option. Include lead times and warranty information. Ask clarifying questions if the budget range is not clear.'"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  className="min-h-[180px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Define the behavior, output format, and any rules the skill should follow.
+                </p>
+              </div>
+            )}
+
+            {/* Step 4: Review & Generate */}
+            {step === 4 && (
+              <div className="space-y-4">
+                <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+                  <div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Name</span>
+                    <p className="text-sm text-foreground">{name}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Role</span>
+                    <p className="text-sm text-foreground">{role}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Knowledge Base</span>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{knowledgeBase}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Instructions</span>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{instructions}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setStep((s) => s - 1)}
+                disabled={step === 1}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+
+              {step < 4 ? (
+                <Button
+                  onClick={() => setStep((s) => s + 1)}
+                  disabled={!canProceed()}
+                  className="gap-2"
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               ) : (
-                <>
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Build Skill
-                </>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="gap-2"
+                  size="lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Generate Skill
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
 
