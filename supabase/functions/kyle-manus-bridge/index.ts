@@ -83,8 +83,38 @@ serve(async (req) => {
     console.log(`[kyle-manus-bridge] Action type: ${action_type}`);
     console.log(`[kyle-manus-bridge] Context:`, context);
 
+    // Translate prompt to English via Lovable AI before sending to Manus
+    let translatedCommand = command;
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (LOVABLE_API_KEY) {
+      try {
+        console.log('[kyle-manus-bridge] Translating prompt to English...');
+        const tlRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [
+              { role: "system", content: "You are a translator. Translate the user's text to English. If it is already in English, return it unchanged. Output ONLY the translated text, nothing else." },
+              { role: "user", content: command },
+            ],
+          }),
+        });
+        if (tlRes.ok) {
+          const tlData = await tlRes.json();
+          translatedCommand = tlData.choices?.[0]?.message?.content || command;
+          console.log('[kyle-manus-bridge] Translated prompt:', translatedCommand.substring(0, 200));
+        }
+      } catch (e) {
+        console.error('[kyle-manus-bridge] Translation failed, using original:', e);
+      }
+    }
+
     // Build the enhanced prompt for Manus
-    let enhancedPrompt = command;
+    let enhancedPrompt = translatedCommand;
     
     if (context) {
       const contextParts: string[] = [];
