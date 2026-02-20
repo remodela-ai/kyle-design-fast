@@ -419,7 +419,7 @@ const KyleSocialLanding = () => {
                   </Card>
                 </HoverCardTrigger>
                 <HoverCardContent 
-                  className="w-[700px] max-w-[90vw] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
+                  className="w-[calc(50vw/2)] min-w-[300px] max-w-[600px] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
                   side="top" 
                   sideOffset={-9999}
                 >
@@ -427,7 +427,7 @@ const KyleSocialLanding = () => {
                     <img
                       src={image.url}
                       alt={image.title}
-                      className="w-full aspect-[4/3] object-cover"
+                      className="w-full aspect-square object-cover"
                     />
                     <button
                       onClick={() => navigate("/design-review", { 
