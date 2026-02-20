@@ -190,46 +190,11 @@ IMPORTANT GUIDELINES:
             />
 
             {voice.isConnected ? (
-              <div className="w-full max-w-md space-y-4">
-                <div className="flex items-center justify-center gap-2">
-                  <AudioWaves isActive={true} isSpeaking={voice.isSpeaking} barCount={5} className="h-6" />
-                  <span className="text-sm font-medium text-foreground">
-                    {voice.isSpeaking ? "Kyle is speaking..." : "Kyle is listening..."}
-                  </span>
-                </div>
-
-                {/* Live transcript */}
-                {voice.transcript.length > 0 && (
-                  <div
-                    ref={transcriptRef}
-                    className="max-h-48 overflow-y-auto rounded-lg bg-muted/50 p-3 space-y-1.5"
-                  >
-                    {voice.transcript.map((line, i) => (
-                      <p key={i} className={cn(
-                        "text-xs",
-                        line.startsWith("Kyle:") ? "text-primary font-medium" : "text-muted-foreground"
-                      )}>
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex justify-center gap-3 pt-2">
-                  <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="text-xs text-muted-foreground">
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="kyle"
-                    size="lg"
-                    onClick={handleBuildIt}
-                    disabled={voice.transcript.length < 2}
-                    className="gap-2 text-base"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Let's build it!
-                  </Button>
-                </div>
+              <div className="flex items-center justify-center gap-2">
+                <AudioWaves isActive={true} isSpeaking={voice.isSpeaking} barCount={5} className="h-6" />
+                <span className="text-sm font-medium text-foreground">
+                  {voice.isSpeaking ? "Kyle is speaking..." : "Kyle is listening..."}
+                </span>
               </div>
             ) : (
               <div className="text-center space-y-1">
@@ -239,6 +204,46 @@ IMPORTANT GUIDELINES:
                 </p>
               </div>
             )}
+
+            {/* Live transcript — always visible */}
+            <div
+              ref={transcriptRef}
+              className="w-full max-w-md max-h-56 min-h-[80px] overflow-y-auto rounded-lg bg-muted/50 p-3 space-y-1.5"
+            >
+              {voice.transcript.length > 0 ? (
+                voice.transcript.map((line, i) => (
+                  <p key={i} className={cn(
+                    "text-xs",
+                    line.startsWith("Kyle:") ? "text-primary font-medium" : "text-muted-foreground"
+                  )}>
+                    {line}
+                  </p>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground/50 italic text-center pt-4">
+                  Transcript will appear here...
+                </p>
+              )}
+            </div>
+
+            {/* Action buttons — always visible */}
+            <div className="flex justify-center gap-3">
+              {voice.isConnected && (
+                <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="text-xs text-muted-foreground">
+                  Cancel
+                </Button>
+              )}
+              <Button
+                variant="kyle"
+                size="lg"
+                onClick={handleBuildIt}
+                disabled={voice.transcript.length < 2}
+                className="gap-2 text-base"
+              >
+                <Wand2 className="w-4 h-4" />
+                Let's build it!
+              </Button>
+            </div>
 
             {voice.error && <p className="text-xs text-destructive">{voice.error}</p>}
           </div>
