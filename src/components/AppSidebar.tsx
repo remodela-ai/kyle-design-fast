@@ -73,7 +73,6 @@ const operationsNavItems = [
 // Public Landings
 const landingNavItems = [
   { icon: ExternalLink, label: "Kitchen", path: "/kitchen" },
-  { icon: ExternalLink, label: "Bathroom", path: "/bathroom" },
 ];
 
 // Admin-only nav items
