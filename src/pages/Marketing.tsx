@@ -25,12 +25,12 @@ import {
   Volume2,
   VolumeX,
   ChefHat,
-  Bath,
+  
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type Platform = "instagram" | "facebook" | "linkedin" | "twitter" | "youtube" | "tiktok";
-type DesignType = "kitchen" | "bathroom";
+type DesignType = "kitchen";
 
 interface PlatformConfig {
   id: Platform;
@@ -94,14 +94,14 @@ export default function Marketing() {
   };
 
   const generateCaptionForPlatform = (platform: Platform, topic: string, type: DesignType): string => {
-    const designName = type === "kitchen" ? "kitchen" : "bathroom";
+    const designName = "kitchen";
     const templates: Record<Platform, string> = {
-      instagram: `✨ ${topic}\n\n🔥 Discover our latest ${designName} transformation!\n\n💡 Every detail crafted with passion and precision.\n\n👉 Ready for your dream ${designName}?\n\n#InteriorDesign #${type === "kitchen" ? "KitchenDesign" : "BathroomDesign"} #LuxuryInteriors #HomeRenovation #DesignInspiration`,
+      instagram: `✨ ${topic}\n\n🔥 Discover our latest ${designName} transformation!\n\n💡 Every detail crafted with passion and precision.\n\n👉 Ready for your dream ${designName}?\n\n#InteriorDesign #KitchenDesign #LuxuryInteriors #HomeRenovation #DesignInspiration`,
       facebook: `🏠 ${topic}\n\nOur latest ${designName} project combines functionality and stunning aesthetics.\n\n✅ Custom design\n✅ Premium materials\n✅ Expert craftsmanship\n\n📩 Contact us for a free consultation!`,
-      linkedin: `🎯 ${topic}\n\nExceptional ${designName} design is about understanding how people live and work.\n\nIn this project we focused on:\n• Optimal workflow\n• Quality materials\n• Timeless aesthetics\n\n#InteriorDesign #${type === "kitchen" ? "KitchenDesign" : "BathroomDesign"} #PremiumDesign`,
+      linkedin: `🎯 ${topic}\n\nExceptional ${designName} design is about understanding how people live and work.\n\nIn this project we focused on:\n• Optimal workflow\n• Quality materials\n• Timeless aesthetics\n\n#InteriorDesign #KitchenDesign #PremiumDesign`,
       twitter: `${topic} 🏠✨\n\nAnother stunning ${designName} transformation complete!\n\nYour dream space awaits 👇`,
-      youtube: `${topic} | Complete ${type === "kitchen" ? "Kitchen" : "Bathroom"} Design Tour\n\nWatch the full transformation of this incredible ${designName}. From concept to completion!\n\n🕐 Timestamps:\n00:00 - Overview\n01:30 - Design Concept\n05:00 - Materials & Finishes\n10:00 - Final Reveal`,
-      tiktok: `${topic} ✨🏠\n\nPOV: Your ${designName} goes from boring to STUNNING 🤯\n\n#InteriorDesign #HomeTransformation #DesignTok #${type === "kitchen" ? "KitchenDesign" : "BathroomDesign"}`,
+      youtube: `${topic} | Complete Kitchen Design Tour\n\nWatch the full transformation of this incredible ${designName}. From concept to completion!\n\n🕐 Timestamps:\n00:00 - Overview\n01:30 - Design Concept\n05:00 - Materials & Finishes\n10:00 - Final Reveal`,
+      tiktok: `${topic} ✨🏠\n\nPOV: Your ${designName} goes from boring to STUNNING 🤯\n\n#InteriorDesign #HomeTransformation #DesignTok #KitchenDesign`,
     };
     return templates[platform];
   };
@@ -117,11 +117,9 @@ export default function Marketing() {
 
     try {
       // Generate one base image
-      const edgeFunctionName = designType === "kitchen" ? "generate-random-kitchen" : "generate-random-bathroom";
-      
-      const { data, error } = await supabase.functions.invoke(edgeFunctionName, {
+      const { data, error } = await supabase.functions.invoke('generate-random-kitchen', {
         body: {
-          customPrompt: `Professional marketing photo for social media: ${prompt}. Style: ${designType === "kitchen" ? "modern luxury kitchen" : "spa-like luxury bathroom"}. Ultra high quality, photorealistic, professionally lit, magazine-worthy interior design photography.`,
+          customPrompt: `Professional marketing photo for social media: ${prompt}. Style: modern luxury kitchen. Ultra high quality, photorealistic, professionally lit, magazine-worthy interior design photography.`,
         },
       });
 
@@ -215,17 +213,9 @@ export default function Marketing() {
               </CardHeader>
               <CardContent className="px-4 pb-3">
                 <div className="flex items-center justify-center gap-4">
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${designType === "kitchen" ? "bg-primary/10" : ""}`}>
-                    <ChefHat className={`h-4 w-4 ${designType === "kitchen" ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className={`text-sm font-medium ${designType === "kitchen" ? "text-primary" : "text-muted-foreground"}`}>Kitchens</span>
-                  </div>
-                  <Switch
-                    checked={designType === "bathroom"}
-                    onCheckedChange={(checked) => setDesignType(checked ? "bathroom" : "kitchen")}
-                  />
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${designType === "bathroom" ? "bg-primary/10" : ""}`}>
-                    <Bath className={`h-4 w-4 ${designType === "bathroom" ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className={`text-sm font-medium ${designType === "bathroom" ? "text-primary" : "text-muted-foreground"}`}>Bathrooms</span>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10">
+                    <ChefHat className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">Kitchens</span>
                   </div>
                 </div>
               </CardContent>

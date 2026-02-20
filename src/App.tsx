@@ -43,7 +43,7 @@ import KyleConnectors from "./pages/kustr/KyleConnectors";
 // Public Kyle page
 import KylePublic from "./pages/KylePublic";
 import KyleSocialLanding from "./pages/KyleSocialLanding";
-import BathroomSocialLanding from "./pages/BathroomSocialLanding";
+
  import Documentation from "./pages/Documentation";
  import Screenshots from "./pages/Screenshots";
 import TestIdeas from "./pages/TestIdeas";
@@ -111,7 +111,7 @@ const App = () => (
                   {/* Public Kyle widget */}
                   <Route path="/kyle" element={<KylePublic />} />
                   <Route path="/kitchen" element={<KyleSocialLanding />} />
-                  <Route path="/bathroom" element={<BathroomSocialLanding />} />
+                  
                   
                   {/* Marketing */}
                   <Route path="/marketing" element={<Marketing />} />
