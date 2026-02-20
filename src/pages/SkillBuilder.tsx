@@ -63,29 +63,59 @@ export default function SkillBuilder() {
   // Step 3 - Instructions
   const [instructions, setInstructions] = useState("");
 
-  // Voice-guided field updates with highlight animation
+  // Typewriter effect: types text character by character at ~3x human speed (~30ms per char)
+  const typewriterRef = useRef<Record<string, NodeJS.Timeout | null>>({});
+
+  const typeText = useCallback((
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    text: string,
+    fieldKey: string,
+    onComplete?: () => void
+  ) => {
+    // Clear any existing typewriter for this field
+    if (typewriterRef.current[fieldKey]) {
+      clearInterval(typewriterRef.current[fieldKey]!);
+    }
+
+    let index = 0;
+    setter(""); // Reset field
+    setLastFilledField(fieldKey);
+
+    typewriterRef.current[fieldKey] = setInterval(() => {
+      if (index < text.length) {
+        setter(prev => prev + text[index]);
+        index++;
+      } else {
+        clearInterval(typewriterRef.current[fieldKey]!);
+        typewriterRef.current[fieldKey] = null;
+        setTimeout(() => setLastFilledField(null), 1000);
+        onComplete?.();
+      }
+    }, 30); // ~30ms per char = ~3x human typing speed
+  }, []);
+
+  // Cleanup typewriters on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(typewriterRef.current).forEach(t => t && clearInterval(t));
+    };
+  }, []);
+
+  // Voice-guided field updates with typewriter animation
   const handleVoiceFieldsUpdate = useCallback((fields: Partial<SkillBuilderFields>) => {
     if (fields.name) {
-      setName(fields.name);
-      setLastFilledField("name");
-      setTimeout(() => setLastFilledField(null), 2000);
+      typeText(setName, fields.name, "name");
     }
     if (fields.role) {
-      setRole(fields.role);
-      setLastFilledField("role");
-      setTimeout(() => setLastFilledField(null), 2000);
+      typeText(setRole, fields.role, "role");
     }
     if (fields.knowledgeBase) {
-      setKnowledgeBase(fields.knowledgeBase);
-      setLastFilledField("knowledgeBase");
-      setTimeout(() => setLastFilledField(null), 2000);
+      typeText(setKnowledgeBase, fields.knowledgeBase, "knowledgeBase");
     }
     if (fields.instructions) {
-      setInstructions(fields.instructions);
-      setLastFilledField("instructions");
-      setTimeout(() => setLastFilledField(null), 2000);
+      typeText(setInstructions, fields.instructions, "instructions");
     }
-  }, []);
+  }, [typeText]);
 
   const handleVoiceStepAdvance = useCallback(() => {
     setStep(prev => Math.min(prev + 1, 4) as 1 | 2 | 3 | 4);
