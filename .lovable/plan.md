@@ -1,61 +1,76 @@
 
 
-## Problem
+# Skill Builder Redesign: Simple Voice-First Flow
 
-Kyle calls `update_skill_fields` and `advance_step` almost simultaneously because the tool returns instantly. The LLM doesn't truly "wait" -- it fires both tools in quick succession and keeps talking. The typewriter animation runs in the background but Kyle has already moved on.
+## Current Problems
+- The page has too many phases and states (conversation, analyzing, documentation, building, complete, error)
+- The conversation + form hybrid is confusing
+- Kyle's Computer terminal shows fake code snippets that don't correspond to anything real
+- The "Done -- Build it" button only appears after 4 transcript lines, which is arbitrary
 
-## Root Cause
-
-The `update_skill_fields` client tool returns a synchronous string immediately. Even though the return message says "wait for animation," the ElevenLabs agent treats the tool call as complete and proceeds to call `advance_step` and speak the transition line right away.
-
-## Solution: Async Client Tool with Built-in Delay
-
-Make `update_skill_fields` an **async function** that returns a Promise resolving only after the typewriter animation completes. ElevenLabs agents natively support async client tools -- when "Wait for response" is enabled in the ElevenLabs tool config, the agent pauses all speech until the Promise resolves.
-
-Additionally, merge `advance_step` into the resolution of `update_skill_fields` so there's a single, atomic operation: fill form, wait for animation, advance step, then let Kyle speak.
-
-### Sequence
+## New Flow (3 screens only)
 
 ```text
-User describes role
-      |
-Kyle calls update_skill_fields({name, role})
-      |
-[Agent PAUSES - waiting for async response]
-      |
-Typewriter animation plays on screen (~2-4 seconds)
-      |
-Animation completes -> step advances -> UI glows
-      |
-Promise resolves with "Step advanced. Say your transition."
-      |
-[Agent RESUMES speaking]
-      |
-Kyle says "Great, now let's add the knowledge base..."
+Screen 1: CONVERSATION
+  - Kyle avatar centered, tap to start
+  - Live transcript scrolls below
+  - Kyle naturally wraps up after 3-5 exchanges
+  - User taps "Let's build it" button (visible once conversation has content)
+
+Screen 2: KYLE'S COMPUTER (building)
+  - Transcript is sent to analyze-skill-transcript edge function
+  - Documentation (bullets) appears at the top as a summary card
+  - Below: Kyle's Computer terminal streams code + 4-step pipeline
+  - Pipeline: Analyzing -> Coding -> Testing -> Deploying
+  - No separate "documentation review" screen -- bullets are shown inline above the terminal
+
+Screen 3: COMPLETE
+  - Success message with the skill name
+  - Bullet summary stays visible
+  - "Build Another" button
 ```
 
 ## Technical Changes
 
-### 1. `src/hooks/useSkillBuilderVoice.ts`
+### 1. Simplify page phases
+Reduce from 6 phases to 3:
+- `conversation` -- talking to Kyle
+- `building` -- analyzing transcript + generating documentation + Kyle's Computer all in one
+- `complete` -- done
 
-- **Make `update_skill_fields` async**: Return a `Promise<string>` that resolves only when `onFieldsUpdate` signals completion via a callback.
-- **Remove `advance_step` as a separate tool**: Merge step advancement into the resolution of `update_skill_fields`. After animation completes, auto-advance and return the combined response.
-- **Add completion callback pattern**: The `onFieldsUpdate` callback receives a `done()` function. The parent component calls `done()` when all typewriter animations for that step finish.
-- **Update the system prompt**: Simplify instructions since the agent now only needs to call one tool (`update_skill_fields`), and the sequencing is enforced by code.
+### 2. Merge "analyzing" + "documentation" + "building" into one screen
+When user clicks "Let's build it":
+1. Stop conversation
+2. Show Kyle's Computer immediately
+3. First pipeline step ("Analyzing") calls `analyze-skill-transcript` to get bullets + prompt
+4. Bullets appear in a card above the terminal as they're ready
+5. Pipeline continues with Coding -> Testing -> Deploying (calls `createSkill`)
+6. Transcript is collapsed at the bottom
 
-### 2. `src/pages/SkillBuilder.tsx`
+### 3. Update `SkillBuilder.tsx`
+- Remove `documentation` and `analyzing` as separate phases
+- Single `handleBuildIt` function that:
+  1. Stops voice
+  2. Sets phase to `building`
+  3. Calls analyze-skill-transcript (during "Analyzing" pipeline step)
+  4. Sets the skillDoc state (bullets appear)
+  5. Calls createSkill (starts Coding -> Testing -> Deploying)
+  6. On complete, sets phase to `complete`
+- Conversation screen: simpler layout, just avatar + transcript + "Let's build it" button
+- Building screen: skill summary card (once ready) + Kyle's Computer terminal + pipeline
 
-- **Update `handleVoiceFieldsUpdate`**: Accept a `done` callback parameter. Track active typewriter animations and call `done()` only when all animations for the current batch complete.
-- **Wire up `onComplete` in `typeText`**: Each typewriter call tracks completion. When all fields in a batch finish typing, trigger step advance + glow, then call `done()`.
+### 4. Voice hook -- no changes needed
+`useSkillBuilderVoice.ts` already works correctly with the agent ID `agent_2801khy9cgzfehzr50j4bwnpejwj`.
 
-### 3. ElevenLabs Dashboard (Manual Step)
+### 5. Edge function -- no changes needed
+`analyze-skill-transcript` already returns the right format.
 
-- Ensure the `update_skill_fields` tool has **"Wait for response"** enabled in the ElevenLabs agent configuration UI. Without this, the agent won't actually pause while waiting for the Promise.
+### 6. `useCustomSkills` -- no changes needed
+The existing `simulateGeneration` and `createSkill` flow works fine.
 
-## Key Benefits
-
-- Sequencing is enforced by code (async/await), not by hoping the LLM follows instructions
-- Single tool call instead of two removes the race condition entirely
-- Typewriter animation gets full visual time before Kyle speaks again
-- Step unlock glow happens at exactly the right moment
+## Result
+- Tap Kyle -> talk -> tap "Let's build it" -> watch Kyle's Computer -> done
+- No manual form, no multi-step review, no separate documentation screen
+- Bullets from transcript analysis appear naturally as part of the build process
+- Maximum 2 clicks: start conversation + build it
 
