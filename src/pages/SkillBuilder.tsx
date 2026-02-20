@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal } from "lucide-react";
+import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper } from "lucide-react";
 import { useCustomSkills, GENERATION_PHASES } from "@/hooks/useCustomSkills";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ const STEPS = [
 
 export default function SkillBuilder() {
   const navigate = useNavigate();
-  const { skills, loading, createSkill, generationPhase, generationLogs, resetGeneration } = useCustomSkills();
+  const { skills, loading, createSkill, generationPhase, generationLogs, codeLines, resetGeneration } = useCustomSkills();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,13 +37,17 @@ export default function SkillBuilder() {
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Terminal auto-scroll
+  // Terminal & code editor auto-scroll
   const terminalRef = useRef<HTMLDivElement>(null);
+  const codeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-  }, [generationLogs]);
+    if (codeRef.current) {
+      codeRef.current.scrollTop = codeRef.current.scrollHeight;
+    }
+  }, [generationLogs, codeLines]);
 
   // Step 3 - Instructions
   const [instructions, setInstructions] = useState("");
@@ -132,98 +136,152 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
 
         {/* Generation Terminal - shown when generating */}
         {(isGenerating || generationPhase === "complete" || generationPhase === "error") && (
-          <Card className="border-2 border-primary/30 overflow-hidden">
-            <CardHeader className="bg-muted/50 py-3 px-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-foreground">Kyle is building: {name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                  {generationPhase === "complete" && <Check className="w-4 h-4 text-primary" />}
-                  {generationPhase === "error" && <X className="w-4 h-4 text-destructive" />}
-                </div>
+          <div className="space-y-4">
+            {/* Hero message */}
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold animate-pulse">
+                <Code2 className="w-4 h-4" />
+                Kyle is writing his own code for this new skill
               </div>
-              {/* Progress bar */}
-              <div className="w-full bg-border rounded-full h-1.5 mt-2">
-                <div
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-700 ease-out",
-                    generationPhase === "error" ? "bg-destructive" : "bg-primary"
-                  )}
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </CardHeader>
-
-            {/* Phase Steps */}
-            <div className="px-4 py-3 border-b border-border bg-muted/20">
-              <div className="flex items-center gap-3">
-                {GENERATION_PHASES.map((p, i) => {
-                  const isDone = currentPhaseIndex > i || generationPhase === "complete";
-                  const isCurrent = currentPhaseIndex === i && isGenerating;
-                  return (
-                    <div key={p.phase} className="flex items-center gap-1.5">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full transition-all",
-                        isDone ? "bg-primary" : isCurrent ? "bg-primary animate-pulse" : "bg-border"
-                      )} />
-                      <span className={cn(
-                        "text-xs transition-colors",
-                        isDone ? "text-primary font-medium" : isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
-                      )}>
-                        {p.label}
-                      </span>
-                      {i < GENERATION_PHASES.length - 1 && <span className="text-border">→</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Terminal Output */}
-            <div
-              ref={terminalRef}
-              className="bg-card p-4 font-mono text-xs max-h-64 overflow-y-auto space-y-0.5"
-            >
-              <div className="text-muted-foreground mb-2">$ kyle build --skill="{name}"</div>
-              {generationLogs.map((log, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "transition-opacity duration-300",
-                    log.startsWith("▸") ? "text-primary font-semibold mt-1" 
-                    : log.startsWith("  ✓") ? "text-muted-foreground"
-                    : log.startsWith("  →") ? "text-primary"
-                    : log.startsWith("✗") ? "text-destructive"
-                    : "text-foreground"
-                  )}
-                >
-                  {log}
+              {generationPhase === "complete" && (
+                <div className="flex items-center justify-center gap-2 text-primary font-bold text-lg animate-in fade-in">
+                  <PartyPopper className="w-5 h-5" />
+                  Congrats! You are becoming a vibe interior designer!
+                  <PartyPopper className="w-5 h-5" />
                 </div>
-              ))}
-              {isGenerating && (
-                <div className="text-primary animate-pulse mt-1">█</div>
               )}
             </div>
 
+            {/* Manus-style code editor */}
+            <Card className="border-2 border-primary/30 overflow-hidden shadow-[0_0_40px_hsl(var(--primary)/0.1)]">
+              {/* Title bar - browser-like */}
+              <div className="flex items-center justify-between px-4 py-2 bg-[#1e1e2e] border-b border-white/5">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <span className="text-xs text-white/40 ml-2 font-mono">kyle-skill-{name.toLowerCase().replace(/\s+/g, '-')}.html</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isGenerating && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                  {generationPhase === "complete" && <Check className="w-4 h-4 text-green-400" />}
+                  {generationPhase === "error" && <X className="w-4 h-4 text-red-400" />}
+                  <span className="text-[10px] text-white/30 font-mono">
+                    {codeLines.length} lines
+                  </span>
+                </div>
+              </div>
+
+              {/* Code editor area */}
+              <div
+                ref={codeRef}
+                className="bg-[#1e1e2e] p-0 font-mono text-[13px] leading-6 max-h-[400px] overflow-y-auto"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                {codeLines.map((line, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex transition-opacity duration-200",
+                      i === codeLines.length - 1 && isGenerating ? "bg-white/[0.03]" : ""
+                    )}
+                  >
+                    {/* Line number */}
+                    <span className="inline-block w-12 text-right pr-4 text-white/20 select-none flex-shrink-0">
+                      {i + 1}
+                    </span>
+                    {/* Code content with syntax highlighting */}
+                    <span className={cn(
+                      "flex-1 pr-4",
+                      line.trim().startsWith('//') || line.trim().startsWith('<!--') ? "text-white/30 italic" :
+                      line.trim().startsWith('<') ? "text-[#7dd3fc]" :
+                      line.trim().startsWith('.') || line.trim().startsWith(':root') || line.includes('{') && !line.includes('(') ? "text-[#c4b5fd]" :
+                      line.includes('function') || line.includes('const') || line.includes('async') ? "text-[#fbbf24]" :
+                      line.includes(':') && !line.includes('//') && !line.includes('<') ? "text-[#a5f3fc]" :
+                      "text-white/80"
+                    )}>
+                      {line || '\u00A0'}
+                    </span>
+                  </div>
+                ))}
+                {isGenerating && (
+                  <div className="flex">
+                    <span className="inline-block w-12 text-right pr-4 text-white/20 select-none">
+                      {codeLines.length + 1}
+                    </span>
+                    <span className="text-primary animate-pulse">█</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom status bar */}
+              <div className="flex items-center justify-between px-4 py-1.5 bg-[#1e1e2e] border-t border-white/5">
+                <div className="flex items-center gap-3">
+                  {GENERATION_PHASES.map((p, i) => {
+                    const isDone = currentPhaseIndex > i || generationPhase === "complete";
+                    const isCurrent = currentPhaseIndex === i && isGenerating;
+                    return (
+                      <div key={p.phase} className="flex items-center gap-1">
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full transition-all",
+                          isDone ? "bg-green-400" : isCurrent ? "bg-primary animate-pulse" : "bg-white/10"
+                        )} />
+                        <span className={cn(
+                          "text-[10px] font-mono transition-colors",
+                          isDone ? "text-green-400/70" : isCurrent ? "text-white/60" : "text-white/20"
+                        )}>
+                          {p.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="text-[10px] text-white/30 font-mono">
+                  Kyle AI • {generationPhase === "complete" ? "Done" : generationPhase === "error" ? "Error" : "Building..."}
+                </div>
+              </div>
+            </Card>
+
+            {/* Mini terminal log */}
+            <Card className="border border-border/50 overflow-hidden">
+              <div className="px-3 py-1.5 bg-muted/50 flex items-center gap-2 border-b border-border">
+                <Terminal className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[11px] font-mono text-muted-foreground">Build Log</span>
+              </div>
+              <div
+                ref={terminalRef}
+                className="p-3 font-mono text-[11px] max-h-32 overflow-y-auto space-y-0.5 bg-card"
+              >
+                <div className="text-muted-foreground">$ kyle build --skill="{name}"</div>
+                {generationLogs.map((log, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      log.startsWith("▸") ? "text-primary font-semibold mt-1" 
+                      : log.startsWith("  ✓") ? "text-muted-foreground"
+                      : log.startsWith("  →") ? "text-primary"
+                      : log.startsWith("✗") ? "text-destructive"
+                      : "text-foreground"
+                    )}
+                  >
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             {/* Complete actions */}
             {(generationPhase === "complete" || generationPhase === "error") && (
-              <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {generationPhase === "complete" 
-                    ? "Skill created. It will appear in your skills once Kyle finishes processing."
-                    : "Something went wrong. Try again."
-                  }
-                </p>
+              <div className="flex items-center justify-center">
                 <Button variant="outline" size="sm" onClick={handleNewSkill} className="gap-2">
                   <Wand2 className="w-3 h-3" />
-                  New Skill
+                  Build Another Skill
                 </Button>
               </div>
             )}
-          </Card>
+          </div>
         )}
 
         {/* Stepper - hidden during generation */}
