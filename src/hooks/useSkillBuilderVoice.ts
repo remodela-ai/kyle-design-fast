@@ -1,5 +1,5 @@
 import { useConversation } from "@11labs/react";
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 
 const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
 
@@ -12,36 +12,26 @@ export interface SkillBuilderFields {
 
 type SkillBuilderStep = 1 | 2 | 3 | 4;
 
-const SKILL_BUILDER_PROMPT = `You are Kyle, the AI design assistant for Kuester Design. You're helping a designer create a new custom skill through a natural, guided conversation.
+const SKILL_BUILDER_CONTEXT = `IMPORTANT CONTEXT UPDATE: You are now in SKILL BUILDER MODE. Ignore your default greeting. 
 
-You will guide the user through 4 steps, one at a time. Stay on the current step until you have enough information, then use the "advance_step" tool to move forward. Do NOT skip steps.
+Your job right now is to guide the user through building a new custom skill in 4 steps. You are Kyle, the AI design assistant for Kuester Design.
 
-## STEP 1: Define the Role
-- Discover a clear NAME for the skill (short, like "Supplier Comparator" or "Budget Analyzer")
-- Discover a ROLE DESCRIPTION explaining what this skill does
-- When you have both, use "update_skill_fields" tool with name and role, then use "advance_step"
+CURRENT TASK: Guide the user through creating a new skill step by step.
 
-## STEP 2: Knowledge Base  
-- Ask what domain knowledge, data, or references this skill needs
-- If they mention files, encourage them to use the upload button on screen
-- When you have enough context, use "update_skill_fields" with knowledgeBase, then "advance_step"
+When you have enough info for a step, use the "update_skill_fields" tool to save the data, then use "advance_step" to move forward.
 
-## STEP 3: Instructions & Behavior
-- Ask how the skill should behave: output format (tables, reports, checklists), rules, constraints
-- When captured, use "update_skill_fields" with instructions, then "advance_step"
+STEP 1 (Define Role): Get a short NAME (like "Supplier Comparator") and a ROLE DESCRIPTION. Use update_skill_fields with {name, role}, then advance_step.
+STEP 2 (Knowledge Base): Ask what data/knowledge the skill needs. Use update_skill_fields with {knowledgeBase}, then advance_step.  
+STEP 3 (Instructions): Ask how it should behave (output format, rules). Use update_skill_fields with {instructions}, then advance_step.
+STEP 4 (Generate): Summarize and confirm. Use generate_skill when ready.
 
-## STEP 4: Review & Generate
-- Summarize everything you've captured
-- Ask if they want changes or are ready to generate
-- When they confirm, use "generate_skill" tool
-
-## RULES:
-- Be conversational, warm, brief. Speak like a creative colleague.
-- NEVER make it feel like a form. Guide naturally.
-- Use the tools to save data — the forms on screen will auto-fill.
-- Stay in the current step until you've gathered enough info.
-- Always respond in English.
-- Keep responses SHORT (2-3 sentences max). This is a voice conversation.`;
+RULES:
+- Respond in English only
+- Keep responses SHORT (2-3 sentences). This is voice.
+- Be warm and conversational, like a creative colleague
+- Use the tools to fill forms on screen — they auto-fill as you save data
+- NEVER skip steps. Stay on the current step until you have enough info.
+- After your default greeting, IMMEDIATELY pivot to: "How about we build a new skill together? What kind of tool would help you most in your design practice?"`;
 
 export function useSkillBuilderVoice(
   onFieldsUpdate: (fields: Partial<SkillBuilderFields>) => void,
@@ -53,15 +43,80 @@ export function useSkillBuilderVoice(
   const currentStepRef = useRef<SkillBuilderStep>(1);
   const fieldsRef = useRef<Partial<SkillBuilderFields>>({});
   const contextSentRef = useRef(false);
+  const connectionStableRef = useRef(false);
+  const contextRetryRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Phase 2: Send skill builder script once connection is stable
-  const sendSkillBuilderContext = useCallback((conv: any) => {
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log("Kyle Skill Builder connected");
+      connectionStableRef.current = true;
+      setError(null);
+    },
+    onDisconnect: () => {
+      console.log("Kyle Skill Builder disconnected");
+      contextSentRef.current = false;
+      connectionStableRef.current = false;
+      if (contextRetryRef.current) {
+        clearTimeout(contextRetryRef.current);
+        contextRetryRef.current = null;
+      }
+    },
+    onMessage: (message: any) => {
+      if (message.type === "user_transcript" && message.user_transcription_event?.user_transcript) {
+        setTranscript(prev => [...prev, `You: ${message.user_transcription_event.user_transcript}`]);
+      }
+      if (message.type === "agent_response" && message.agent_response_event?.agent_response) {
+        const agentText = message.agent_response_event.agent_response;
+        setTranscript(prev => [...prev, `Kyle: ${agentText}`]);
+        
+        // If Kyle gives his default greeting and we haven't sent context yet, 
+        // send it now (the agent is clearly ready)
+        if (!contextSentRef.current && connectionStableRef.current) {
+          sendContext();
+        }
+      }
+    },
+    onError: (errorMessage: any) => {
+      console.error("Kyle SB error:", errorMessage);
+      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
+    },
+    clientTools: {
+      update_skill_fields: (params: any) => {
+        console.log("Kyle updating fields via tool:", params);
+        const fields: Partial<SkillBuilderFields> = {};
+        if (params.name) fields.name = params.name;
+        if (params.role) fields.role = params.role;
+        if (params.knowledgeBase || params.knowledge_base) {
+          fields.knowledgeBase = params.knowledgeBase || params.knowledge_base;
+        }
+        if (params.instructions) fields.instructions = params.instructions;
+        fieldsRef.current = { ...fieldsRef.current, ...fields };
+        onFieldsUpdate(fields);
+        return "Fields updated successfully. The user can see the forms being filled on screen with a typewriter animation. Continue guiding them.";
+      },
+      advance_step: () => {
+        console.log("Kyle advancing step via tool");
+        currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
+        onStepAdvance();
+        return `Moved to step ${currentStepRef.current}. The UI has updated. Now guide the user through this new step.`;
+      },
+      generate_skill: () => {
+        console.log("Kyle triggering generation via tool");
+        onGenerate();
+        return "Generation started! The skill is being built. Let the user know it's cooking.";
+      },
+    },
+  });
+
+  const sendContext = useCallback(() => {
     if (contextSentRef.current) return;
+    if (conversation.status !== "connected") return;
+    
     contextSentRef.current = true;
-
     const step = currentStepRef.current;
     const f = fieldsRef.current;
-    let context = SKILL_BUILDER_PROMPT + `\n\nYou are currently on STEP ${step}.`;
+    
+    let context = SKILL_BUILDER_CONTEXT + `\n\nYou are currently on STEP ${step}.`;
     const parts: string[] = [];
     if (f.name) parts.push(`Skill name: "${f.name}"`);
     if (f.role) parts.push(`Role: "${f.role}"`);
@@ -72,96 +127,63 @@ export function useSkillBuilderVoice(
     }
 
     try {
-      conv.sendContextualUpdate(context);
-      console.log("Kyle Skill Builder context sent for step", step);
+      conversation.sendContextualUpdate(context);
+      console.log("Kyle Skill Builder context injected for step", step);
     } catch (e) {
       console.warn("Could not send skill builder context:", e);
+      contextSentRef.current = false; // Allow retry
     }
-  }, []);
-
-  // Phase 1: Clean connection with NO overrides
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log("Kyle Skill Builder connected — waiting to send context...");
-      setError(null);
-    },
-    onDisconnect: () => {
-      console.log("Kyle Skill Builder disconnected");
-      contextSentRef.current = false;
-    },
-    onMessage: (message: any) => {
-      if (message.type === "user_transcript" && message.user_transcription_event?.user_transcript) {
-        setTranscript(prev => [...prev, `You: ${message.user_transcription_event.user_transcript}`]);
-      }
-      if (message.type === "agent_response" && message.agent_response_event?.agent_response) {
-        setTranscript(prev => [...prev, `Kyle: ${message.agent_response_event.agent_response}`]);
-      }
-    },
-    onError: (errorMessage: any) => {
-      console.error("Kyle SB error:", errorMessage);
-      setError(typeof errorMessage === "string" ? errorMessage : "Error connecting to Kyle");
-    },
-    clientTools: {
-      update_skill_fields: (params: any) => {
-        console.log("Kyle updating fields:", params);
-        const fields: Partial<SkillBuilderFields> = {};
-        if (params.name) fields.name = params.name;
-        if (params.role) fields.role = params.role;
-        if (params.knowledgeBase || params.knowledge_base) fields.knowledgeBase = params.knowledgeBase || params.knowledge_base;
-        if (params.instructions) fields.instructions = params.instructions;
-        fieldsRef.current = { ...fieldsRef.current, ...fields };
-        onFieldsUpdate(fields);
-        return "Fields updated successfully. The forms on screen have been auto-filled.";
-      },
-      advance_step: () => {
-        console.log("Kyle advancing step");
-        currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
-        onStepAdvance();
-        return `Advanced to step ${currentStepRef.current}. Continue guiding the user.`;
-      },
-      generate_skill: () => {
-        console.log("Kyle triggering generation");
-        onGenerate();
-        return "Generation started! The skill is being built.";
-      },
-    },
-  });
+  }, [conversation]);
 
   const startConversation = useCallback(async (step: SkillBuilderStep, existingFields?: Partial<SkillBuilderFields>) => {
     try {
       currentStepRef.current = step;
       if (existingFields) fieldsRef.current = { ...fieldsRef.current, ...existingFields };
       contextSentRef.current = false;
+      connectionStableRef.current = false;
       setTranscript([]);
 
-      // Phase 1: Get mic and establish clean connection
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
       });
 
-      // Phase 2: Wait for connection to stabilize, then inject script
-      setTimeout(() => {
-        sendSkillBuilderContext(conversation);
+      // Send context after connection stabilizes (2s), 
+      // and retry at 4s if first attempt failed
+      contextRetryRef.current = setTimeout(() => {
+        sendContext();
+        // Second attempt if first didn't stick
+        contextRetryRef.current = setTimeout(() => {
+          if (!contextSentRef.current) {
+            sendContext();
+          }
+        }, 2000);
       }, 2000);
+
     } catch (err) {
       console.error("Failed to start skill builder conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
     }
-  }, [conversation, sendSkillBuilderContext]);
+  }, [conversation, sendContext]);
 
   const stopConversation = useCallback(async () => {
+    if (contextRetryRef.current) {
+      clearTimeout(contextRetryRef.current);
+      contextRetryRef.current = null;
+    }
     await conversation.endSession();
   }, [conversation]);
 
-  // Send context update without restarting the session
   const updateContext = useCallback((step: SkillBuilderStep, fields?: Partial<SkillBuilderFields>) => {
     if (conversation.status !== "connected") return;
     currentStepRef.current = step;
     if (fields) fieldsRef.current = { ...fieldsRef.current, ...fields };
 
-    const parts: string[] = [`The user is now on STEP ${step}.`];
+    const parts: string[] = [
+      `STEP UPDATE: The user is now on STEP ${step}.`,
+      "Continue guiding them through this step using the tools."
+    ];
     if (fields?.name) parts.push(`Skill name: "${fields.name}"`);
     if (fields?.role) parts.push(`Role: "${fields.role}"`);
     if (fields?.knowledgeBase) parts.push(`Knowledge base: "${fields.knowledgeBase}"`);
