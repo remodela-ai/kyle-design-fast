@@ -1,7 +1,7 @@
 import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState, useRef } from "react";
 
-const KYLE_AGENT_ID = "agent_7901k7fa0g8dfhft7a2v69ejya4m";
+const KYLE_AGENT_ID = "agent_2801khy9cgzfehzr50j4bwnpejwj";
 
 const SKILL_BUILDER_CONTEXT = `IMPORTANT CONTEXT UPDATE: You are now in SKILL BUILDER MODE.
 
