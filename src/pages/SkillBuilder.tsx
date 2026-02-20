@@ -183,6 +183,7 @@ IMPORTANT GUIDELINES:
           <div className="flex flex-col items-center gap-6">
             <KyleAvatar
               size="lg"
+              standalone
               onClickOverride={voice.isConnected ? () => voice.stopConversation() : () => voice.startConversation()}
               isConnectedOverride={voice.isConnected}
               isSpeakingOverride={voice.isSpeaking}
