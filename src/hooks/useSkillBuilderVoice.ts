@@ -75,14 +75,17 @@ export function useSkillBuilderVoice(
         // After Kyle's first greeting, inject context and nudge him to pivot
         if (!contextSentRef.current && connectionStableRef.current) {
           sendContext();
-          // Send a fake user message to make Kyle respond immediately with the pivot
+          // After context is sent, send a follow-up nudge to make Kyle speak the pivot
           setTimeout(() => {
             try {
-              conversation.sendUserMessage("Let's build a new skill together!");
+              conversation.sendContextualUpdate(
+                "The user just connected and is waiting. DO NOT WAIT for the user to speak. Immediately say out loud: 'How about we build a new skill together? What kind of tool would help you most in your design practice?' — say it NOW as your next utterance."
+              );
+              console.log("Kyle nudge sent");
             } catch (e) {
-              console.warn("Could not send nudge message:", e);
+              console.warn("Could not send nudge:", e);
             }
-          }, 500);
+          }, 1500);
         }
       }
     },
