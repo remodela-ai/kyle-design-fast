@@ -419,9 +419,11 @@ const KyleSocialLanding = () => {
                   </Card>
                 </HoverCardTrigger>
                 <HoverCardContent 
-                  className="w-[calc(50vw/2)] min-w-[300px] max-w-[600px] p-0 overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50" 
+                  className="!fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 w-[min(600px,90vw)] p-0 overflow-hidden z-50" 
                   side="top" 
-                  sideOffset={-9999}
+                  sideOffset={0}
+                  avoidCollisions={false}
+                  style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
                 >
                   <div className="relative">
                     <img
