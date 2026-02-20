@@ -52,7 +52,35 @@ export function useSkillBuilderVoice(
   const [transcript, setTranscript] = useState<string[]>([]);
   const currentStepRef = useRef<SkillBuilderStep>(1);
 
+  const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
+  const stepRef = useRef<SkillBuilderStep>(1);
+  const fieldsRef = useRef<Partial<SkillBuilderFields>>({});
+
+  // Build the dynamic prompt based on current step and fields
+  const buildPrompt = useCallback(() => {
+    let prompt = FULL_PROMPT + `\n\nYou are currently on STEP ${stepRef.current}.`;
+    const f = fieldsRef.current;
+    const parts: string[] = [];
+    if (f.name) parts.push(`Skill name: "${f.name}"`);
+    if (f.role) parts.push(`Role: "${f.role}"`);
+    if (f.knowledgeBase) parts.push(`Knowledge base: "${f.knowledgeBase}"`);
+    if (f.instructions) parts.push(`Instructions: "${f.instructions}"`);
+    if (parts.length > 0) {
+      prompt += `\n\nALREADY CAPTURED:\n${parts.join("\n")}`;
+    }
+    return prompt;
+  }, []);
+
   const conversation = useConversation({
+    overrides: {
+      agent: {
+        prompt: {
+          prompt: buildPrompt(),
+        },
+        firstMessage: "Hey! I'm Kyle. Let's build a new skill together. First, tell me — what kind of tool would help you most in your design practice? What would you call it?",
+        language: "en",
+      },
+    },
     onConnect: () => {
       console.log("Kyle Skill Builder connected");
       setError(null);
@@ -61,7 +89,6 @@ export function useSkillBuilderVoice(
       console.log("Kyle Skill Builder disconnected");
     },
     onMessage: (message: any) => {
-      // Capture transcripts for display
       if (message.type === "user_transcript" && message.user_transcription_event?.user_transcript) {
         setTranscript(prev => [...prev, `You: ${message.user_transcription_event.user_transcript}`]);
       }
@@ -81,12 +108,14 @@ export function useSkillBuilderVoice(
         if (params.role) fields.role = params.role;
         if (params.knowledgeBase || params.knowledge_base) fields.knowledgeBase = params.knowledgeBase || params.knowledge_base;
         if (params.instructions) fields.instructions = params.instructions;
+        fieldsRef.current = { ...fieldsRef.current, ...fields };
         onFieldsUpdate(fields);
         return "Fields updated successfully. The forms on screen have been auto-filled.";
       },
       advance_step: () => {
         console.log("Kyle advancing step");
         currentStepRef.current = Math.min(currentStepRef.current + 1, 4) as SkillBuilderStep;
+        stepRef.current = currentStepRef.current;
         onStepAdvance();
         return `Advanced to step ${currentStepRef.current}. Continue guiding the user.`;
       },
@@ -101,37 +130,15 @@ export function useSkillBuilderVoice(
   const startConversation = useCallback(async (step: SkillBuilderStep, existingFields?: Partial<SkillBuilderFields>) => {
     try {
       currentStepRef.current = step;
+      stepRef.current = step;
+      if (existingFields) fieldsRef.current = { ...fieldsRef.current, ...existingFields };
       setTranscript([]);
       await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Build context from existing fields
-      let contextSuffix = "";
-      if (existingFields) {
-        const parts: string[] = [];
-        if (existingFields.name) parts.push(`Skill name: "${existingFields.name}"`);
-        if (existingFields.role) parts.push(`Role: "${existingFields.role}"`);
-        if (existingFields.knowledgeBase) parts.push(`Knowledge base: "${existingFields.knowledgeBase}"`);
-        if (existingFields.instructions) parts.push(`Instructions: "${existingFields.instructions}"`);
-        if (parts.length > 0) {
-          contextSuffix = `\n\nALREADY CAPTURED:\n${parts.join("\n")}`;
-        }
-      }
 
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
       });
-
-      // Send skill builder context after connection stabilizes
-      const contextMessage = FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix +
-        "\n\nYou just connected. Greet the user briefly and start guiding them through Step 1: ask what they want to build and what name they'd give the skill.";
-      setTimeout(() => {
-        try {
-          conversation.sendContextualUpdate(contextMessage);
-        } catch (e) {
-          console.warn("Could not send initial context:", e);
-        }
-      }, 1500);
     } catch (err) {
       console.error("Failed to start skill builder conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
