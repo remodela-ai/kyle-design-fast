@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings } from "lucide-react";
+import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings, Wand2 } from "lucide-react";
 import { useKyleSkills, KYLE_SKILLS, KyleSkill } from "@/contexts/KyleSkillsContext";
 import { useCustomSkills } from "@/hooks/useCustomSkills";
 import { useNavigate } from "react-router-dom";
@@ -116,6 +116,15 @@ export function KyleSkillsSidebar() {
 
         <ScrollArea className="h-[calc(100%-80px)]">
           <div className="p-4 space-y-4">
+            {/* Skill Builder Button */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 border-primary/30 hover:bg-primary/10"
+              onClick={() => { navigate("/skill-builder"); toggleSidebar(); }}
+            >
+              <Wand2 className="w-4 h-4 text-primary" />
+              Skill Builder
+            </Button>
             {/* Connected Tools Indicator */}
             {activeConnectorTypes.length > 0 && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
