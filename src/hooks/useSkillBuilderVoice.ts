@@ -51,6 +51,8 @@ export function useSkillBuilderVoice(
       console.log("Kyle Skill Builder connected");
       connectionStableRef.current = true;
       setError(null);
+      // Try sending context immediately on connect
+      setTimeout(() => sendContext(), 500);
     },
     onDisconnect: () => {
       console.log("Kyle Skill Builder disconnected");
@@ -110,9 +112,9 @@ export function useSkillBuilderVoice(
 
   const sendContext = useCallback(() => {
     if (contextSentRef.current) return;
-    if (conversation.status !== "connected") return;
+    // Don't check conversation.status — it may be stale in closures.
+    // Instead just try/catch the call.
     
-    contextSentRef.current = true;
     const step = currentStepRef.current;
     const f = fieldsRef.current;
     
@@ -128,10 +130,11 @@ export function useSkillBuilderVoice(
 
     try {
       conversation.sendContextualUpdate(context);
+      contextSentRef.current = true;
       console.log("Kyle Skill Builder context injected for step", step);
     } catch (e) {
       console.warn("Could not send skill builder context:", e);
-      contextSentRef.current = false; // Allow retry
+      // Don't set contextSentRef — allow retry
     }
   }, [conversation]);
 
@@ -149,17 +152,15 @@ export function useSkillBuilderVoice(
         connectionType: "webrtc",
       });
 
-      // Send context after connection stabilizes (2s), 
-      // and retry at 4s if first attempt failed
-      contextRetryRef.current = setTimeout(() => {
-        sendContext();
-        // Second attempt if first didn't stick
-        contextRetryRef.current = setTimeout(() => {
-          if (!contextSentRef.current) {
-            sendContext();
-          }
-        }, 2000);
-      }, 2000);
+      // Retry context injection at 1s, 3s, 5s
+      const retryTimes = [1000, 3000, 5000];
+      retryTimes.forEach((delay) => {
+        const timer = setTimeout(() => {
+          if (!contextSentRef.current) sendContext();
+        }, delay);
+        // Store last timer for cleanup
+        contextRetryRef.current = timer;
+      });
 
     } catch (err) {
       console.error("Failed to start skill builder conversation:", err);
