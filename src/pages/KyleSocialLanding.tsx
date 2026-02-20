@@ -156,6 +156,7 @@ const KyleSocialLanding = () => {
         const newHidden = [...hiddenStaticIds, imageId];
         setHiddenStaticIds(newHidden);
         localStorage.setItem("hiddenInspirationImages", JSON.stringify(newHidden));
+        setHoveredImage(null);
         toast.success("Image removed from gallery");
       } else {
         // Delete from database
@@ -167,6 +168,7 @@ const KyleSocialLanding = () => {
         if (error) throw error;
         
         setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
+        setHoveredImage(null);
         toast.success("Image removed from gallery");
       }
     } catch (error) {
