@@ -215,16 +215,20 @@ IMPORTANT GUIDELINES:
                   </div>
                 )}
 
-                <div className="flex justify-center gap-3">
+                <div className="flex justify-center gap-3 pt-2">
                   <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="text-xs text-muted-foreground">
                     Cancel
                   </Button>
-                  {voice.transcript.length >= 2 && (
-                    <Button size="sm" onClick={handleBuildIt} className="gap-2">
-                      <Wand2 className="w-3 h-3" />
-                      Let's build it!
-                    </Button>
-                  )}
+                  <Button
+                    variant="kyle"
+                    size="lg"
+                    onClick={handleBuildIt}
+                    disabled={voice.transcript.length < 2}
+                    className="gap-2 text-base"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Let's build it!
+                  </Button>
                 </div>
               </div>
             ) : (
