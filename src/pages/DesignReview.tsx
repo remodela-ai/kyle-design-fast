@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { KyleAvatar } from "@/components/KyleAvatar";
 import { AudioWaves } from "@/components/AudioWaves";
-import { useConversation } from "@11labs/react";
+import { useConversation } from "@elevenlabs/react";
 import { useDesignerSessions } from "@/hooks/useDesignerSessions";
 
 // Kyle Iteration Agent - specialized for design refinement
