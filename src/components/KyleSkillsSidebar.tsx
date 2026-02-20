@@ -231,7 +231,7 @@ export function KyleSkillsSidebar() {
                           setSkillToDelete({ id: skill.id, name: skill.name });
                         }}
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive"
-                        title="Eliminar habilidad"
+                        title="Delete skill"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -386,13 +386,13 @@ export function KyleSkillsSidebar() {
       <AlertDialog open={!!skillToDelete} onOpenChange={(open) => !open && setSkillToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar habilidad?</AlertDialogTitle>
+            <AlertDialogTitle>Delete skill?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción es irreversible. Perderás la habilidad <strong>"{skillToDelete?.name}"</strong> y toda su configuración permanentemente.
+              This action is irreversible. You will permanently lose the skill <strong>"{skillToDelete?.name}"</strong> and all its configuration.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
@@ -402,7 +402,7 @@ export function KyleSkillsSidebar() {
                 }
               }}
             >
-              Eliminar
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

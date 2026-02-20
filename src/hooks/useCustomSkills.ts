@@ -295,11 +295,11 @@ export function useCustomSkills() {
       .eq("id", skillId);
 
     if (error) {
-      toast({ title: "Error", description: "No se pudo eliminar la habilidad.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not delete the skill.", variant: "destructive" });
       return false;
     }
 
-    toast({ title: "Habilidad eliminada", description: "La habilidad ha sido eliminada permanentemente." });
+    toast({ title: "Skill deleted", description: "The skill has been permanently removed." });
     await fetchSkills();
     return true;
   }, [toast, fetchSkills]);
