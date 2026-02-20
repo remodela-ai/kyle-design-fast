@@ -40,7 +40,7 @@ You will guide the user through 4 steps, one at a time. Stay on the current step
 - NEVER make it feel like a form. Guide naturally.
 - Use the tools to save data — the forms on screen will auto-fill.
 - Stay in the current step until you've gathered enough info.
-- The user speaks Spanish primarily, so respond in Spanish unless they speak English.
+- Always respond in English.
 - Keep responses SHORT (2-3 sentences max). This is a voice conversation.`;
 
 export function useSkillBuilderVoice(
@@ -120,16 +120,18 @@ export function useSkillBuilderVoice(
       await conversation.startSession({
         agentId: KYLE_AGENT_ID,
         connectionType: "webrtc",
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix,
-            },
-            firstMessage: "¡Perfecto! Vamos a crear un nuevo skill juntos. Primero necesito entender qué herramienta quieres construir. Dime, ¿qué nombre le pondrías a este skill y qué debería hacer?",
-            language: "es",
-          },
-        },
       });
+
+      // Send skill builder context after connection stabilizes
+      const contextMessage = FULL_PROMPT + `\n\nYou are currently on STEP ${step}.` + contextSuffix +
+        "\n\nYou just connected. Greet the user briefly and start guiding them through Step 1: ask what they want to build and what name they'd give the skill.";
+      setTimeout(() => {
+        try {
+          conversation.sendContextualUpdate(contextMessage);
+        } catch (e) {
+          console.warn("Could not send initial context:", e);
+        }
+      }, 1500);
     } catch (err) {
       console.error("Failed to start skill builder conversation:", err);
       setError(err instanceof Error ? err.message : "Failed to start conversation");
