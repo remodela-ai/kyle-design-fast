@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MANUS_API_BASE = "https://api.manus.im/v1";
+const MANUS_API_BASE = "https://api.manus.ai/v1";
 
 interface ManusTaskRequest {
   prompt: string;
@@ -126,8 +126,9 @@ serve(async (req) => {
     const taskResponse = await fetch(`${MANUS_API_BASE}/tasks`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MANUS_API_KEY}`,
+        'API_KEY': MANUS_API_KEY,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify(taskPayload),
     });
