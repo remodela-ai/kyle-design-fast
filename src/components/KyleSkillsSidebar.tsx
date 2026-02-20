@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings, Wand2 } from "lucide-react";
+import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings, Wand2, Trash2 } from "lucide-react";
 import { useKyleSkills, KYLE_SKILLS, KyleSkill } from "@/contexts/KyleSkillsContext";
 import { useCustomSkills } from "@/hooks/useCustomSkills";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,16 @@ import { AudioWaves } from "@/components/AudioWaves";
 import kyleAvatar from "@/assets/kyle-avatar.jpeg";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const CONNECTOR_ICONS: Record<ConnectorType, React.ElementType> = {
   gmail: Mail,
@@ -41,8 +51,9 @@ export function KyleSkillsSidebar() {
   } = useKyleVoiceAgent();
   
   const { getActiveConnectorTypes, connectors } = useKyleConnectors();
-  const { readySkills } = useCustomSkills();
+  const { readySkills, deleteSkill } = useCustomSkills();
   const navigate = useNavigate();
+  const [skillToDelete, setSkillToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const [pendingCommand, setPendingCommand] = useState<string>("");
 
@@ -201,19 +212,30 @@ export function KyleSkillsSidebar() {
                 <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Custom</p>
                 <div className="grid grid-cols-2 gap-2">
                   {readySkills.map((skill) => (
-                    <button
-                      key={skill.id}
-                      onClick={() => navigate(`/skills/${skill.id}`)}
-                      className="p-4 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all text-left hover:shadow-md hover:scale-[1.02]"
-                    >
-                      <span className="text-2xl block mb-2">{skill.icon}</span>
-                      <span className="font-medium text-sm text-foreground block">
-                        {skill.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground line-clamp-2">
-                        {skill.description}
-                      </span>
-                    </button>
+                    <div key={skill.id} className="relative group">
+                      <button
+                        onClick={() => navigate(`/skills/${skill.id}`)}
+                        className="w-full p-4 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all text-left hover:shadow-md hover:scale-[1.02]"
+                      >
+                        <span className="text-2xl block mb-2">{skill.icon}</span>
+                        <span className="font-medium text-sm text-foreground block">
+                          {skill.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground line-clamp-2">
+                          {skill.description}
+                        </span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSkillToDelete({ id: skill.id, name: skill.name });
+                        }}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive"
+                        title="Eliminar habilidad"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -359,6 +381,32 @@ export function KyleSkillsSidebar() {
           onClick={toggleSidebar}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!skillToDelete} onOpenChange={(open) => !open && setSkillToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar habilidad?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible. Perderás la habilidad <strong>"{skillToDelete?.name}"</strong> y toda su configuración permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (skillToDelete) {
+                  await deleteSkill(skillToDelete.id);
+                  setSkillToDelete(null);
+                }
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
