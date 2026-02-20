@@ -424,9 +424,8 @@ const KyleSocialLanding = () => {
           {hoveredImage && createPortal(
             <div 
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-              onMouseEnter={() => setHoveredImage(null)}
             >
-              <div className="w-[min(600px,90vw)] rounded-md border bg-popover shadow-md overflow-hidden pointer-events-auto">
+              <div className="w-[min(600px,90vw)] rounded-md border bg-popover shadow-md overflow-hidden pointer-events-none">
                 <div className="relative">
                   <img
                     src={hoveredImage.url}
