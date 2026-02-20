@@ -25,13 +25,13 @@ const ORIEL_GREETINGS_EN = [
   "Hey! Quick GTM check-in. Oriel, what's the most important thing we need to align on?",
 ];
 
-// Random daily greeting messages for Oriel (Spanish)
+// Random daily greeting messages for Oriel (Spanish) - kept for ES language option
 const ORIEL_GREETINGS_ES = [
-  "¡Hola Oriel! Sync rápido - pongámonos todos en la misma página. ¿Cuál es tu prioridad hoy?",
-  "¡Oriel! Vamos directo al grano. ¿Qué lograste desde nuestro último sync?",
-  "Hey Oriel, ¿listo para un standup rápido? ¿Qué te está bloqueando ahora mismo?",
-  "¡Oriel! Hagamos esto rápido y productivo. ¿Cuál es tu foco para hoy?",
-  "¡Hey! Check-in rápido de GTM. Oriel, ¿qué es lo más importante que necesitamos alinear?",
+  "Hey Oriel! Quick sync - let's get on the same page. What's your priority today?",
+  "Oriel! Let's get straight to the point. What did you accomplish since our last sync?",
+  "Hey Oriel, ready for a quick standup? What's blocking you right now?",
+  "Oriel! Let's make this quick and productive. What's your focus for today?",
+  "Hey! Quick GTM check-in. Oriel, what's the most important thing we need to align on?",
 ];
 
 // Random daily greeting messages for James

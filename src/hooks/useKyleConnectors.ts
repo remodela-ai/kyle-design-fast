@@ -37,37 +37,37 @@ export const AVAILABLE_CONNECTORS: ConnectorConfig[] = [
     type: 'gmail',
     name: 'Gmail',
     icon: '📧',
-    description: 'Kyle puede leer y gestionar tu correo electrónico',
+    description: 'Kyle can read and manage your email',
   },
   {
     type: 'google_calendar',
     name: 'Google Calendar',
     icon: '📅',
-    description: 'Kyle puede agendar citas y revisar tu calendario',
+    description: 'Kyle can schedule appointments and check your calendar',
   },
   {
     type: 'notion',
     name: 'Notion',
     icon: '📝',
-    description: 'Kyle accede a tu base de conocimiento y documentos',
+    description: 'Kyle accesses your knowledge base and documents',
   },
   {
     type: 'slack',
     name: 'Slack',
     icon: '💬',
-    description: 'Kyle puede enviar notificaciones y mensajes',
+    description: 'Kyle can send notifications and messages',
   },
   {
     type: 'github',
     name: 'GitHub',
     icon: '🐙',
-    description: 'Kyle puede revisar repositorios y código',
+    description: 'Kyle can review repositories and code',
   },
   {
     type: 'google_drive',
     name: 'Google Drive',
     icon: '📁',
-    description: 'Kyle accede a tus archivos en la nube',
+    description: 'Kyle accesses your cloud files',
   },
 ];
 
@@ -100,7 +100,7 @@ export function useKyleConnectors() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudieron cargar las conexiones",
+        description: "Could not load connections",
       });
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ export function useKyleConnectors() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Debes iniciar sesión para conectar herramientas",
+        description: "You must sign in to connect tools",
       });
       return false;
     }
@@ -135,8 +135,8 @@ export function useKyleConnectors() {
       if (error) throw error;
 
       toast({
-        title: "✓ Conectado",
-        description: `${AVAILABLE_CONNECTORS.find(c => c.type === type)?.name} conectado exitosamente`,
+        title: "✓ Connected",
+        description: `${AVAILABLE_CONNECTORS.find(c => c.type === type)?.name} connected successfully`,
       });
 
       await fetchConnectors();
@@ -147,14 +147,14 @@ export function useKyleConnectors() {
       if (error.code === '23505') {
         toast({
           variant: "destructive",
-          title: "Ya conectado",
-          description: "Esta herramienta ya está conectada a tu cuenta",
+          title: "Already connected",
+          description: "This tool is already connected to your account",
         });
       } else {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "No se pudo conectar la herramienta",
+          description: "Could not connect the tool",
         });
       }
       return false;
@@ -171,8 +171,8 @@ export function useKyleConnectors() {
       if (error) throw error;
 
       toast({
-        title: "Desconectado",
-        description: "La herramienta ha sido desconectada",
+        title: "Disconnected",
+        description: "The tool has been disconnected",
       });
 
       await fetchConnectors();
@@ -182,7 +182,7 @@ export function useKyleConnectors() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo desconectar la herramienta",
+        description: "Could not disconnect the tool",
       });
       return false;
     }
@@ -201,8 +201,8 @@ export function useKyleConnectors() {
       if (error) throw error;
 
       toast({
-        title: isActive ? "Activado" : "Desactivado",
-        description: `La herramienta ha sido ${isActive ? 'activada' : 'desactivada'}`,
+        title: isActive ? "Activated" : "Deactivated",
+        description: `The tool has been ${isActive ? 'activated' : 'deactivated'}`,
       });
 
       await fetchConnectors();
@@ -212,7 +212,7 @@ export function useKyleConnectors() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: "Could not update the status",
       });
       return false;
     }

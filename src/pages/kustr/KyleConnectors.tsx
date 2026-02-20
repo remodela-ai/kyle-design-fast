@@ -72,7 +72,7 @@ export default function KyleConnectors() {
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
+          Back
         </Button>
         
         <div className="flex items-center gap-4">
@@ -83,10 +83,10 @@ export default function KyleConnectors() {
           />
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Conecta tus Herramientas con Kyle
+              Connect Your Tools with Kyle
             </h1>
             <p className="text-muted-foreground mt-1">
-              Kyle utilizará estas conexiones para ejecutar tareas en tu nombre
+              Kyle will use these connections to execute tasks on your behalf
             </p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function KyleConnectors() {
       {/* Connected Count */}
       <div className="mb-6">
         <Badge variant="secondary" className="text-sm">
-          {connectors.filter(c => c.is_active).length} de {AVAILABLE_CONNECTORS.length} herramientas conectadas
+          {connectors.filter(c => c.is_active).length} of {AVAILABLE_CONNECTORS.length} tools connected
         </Badge>
       </div>
 
@@ -150,7 +150,7 @@ export default function KyleConnectors() {
                           }
                         />
                         <span className="text-sm text-muted-foreground">
-                          {connector?.is_active ? 'Activo' : 'Pausado'}
+                          {connector?.is_active ? 'Active' : 'Paused'}
                         </span>
                       </div>
                       
@@ -161,7 +161,7 @@ export default function KyleConnectors() {
                         onClick={() => connector && handleDisconnect(connector.id)}
                       >
                         <Unlink className="w-4 h-4 mr-1" />
-                        Desconectar
+                        Disconnect
                       </Button>
                     </div>
                   </div>
@@ -172,7 +172,7 @@ export default function KyleConnectors() {
                     onClick={() => openConnectDialog(config.type)}
                   >
                     <Link2 className="w-4 h-4 mr-2" />
-                    Conectar
+                     Connect
                   </Button>
                 )}
               </CardContent>
@@ -187,32 +187,32 @@ export default function KyleConnectors() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <span className="text-2xl">{selectedConfig?.icon}</span>
-              Conectar {selectedConfig?.name}
+              Connect {selectedConfig?.name}
             </DialogTitle>
             <DialogDescription>
-              Ingresa el identificador de conexión para que Kyle pueda acceder a {selectedConfig?.name}.
+              Enter the connection identifier so Kyle can access {selectedConfig?.name}.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="connector-uuid">ID de Conexión *</Label>
+              <Label htmlFor="connector-uuid">Connection ID *</Label>
               <Input
                 id="connector-uuid"
-                placeholder="Ej: ab7e-450f-9cb9-b9467fb0adda"
+                placeholder="E.g.: ab7e-450f-9cb9-b9467fb0adda"
                 value={connectorUuid}
                 onChange={(e) => setConnectorUuid(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Este identificador lo obtienes al autorizar la aplicación
+                You get this identifier when authorizing the application
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="display-name">Nombre personalizado (opcional)</Label>
+              <Label htmlFor="display-name">Custom name (optional)</Label>
               <Input
                 id="display-name"
-                placeholder={`Mi ${selectedConfig?.name}`}
+                placeholder={`My ${selectedConfig?.name}`}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
@@ -224,7 +224,7 @@ export default function KyleConnectors() {
               variant="outline" 
               onClick={() => setConnectDialogOpen(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button 
               onClick={handleConnect}
@@ -233,12 +233,12 @@ export default function KyleConnectors() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Conectando...
+                  Connecting...
                 </>
               ) : (
                 <>
                   <Link2 className="w-4 h-4 mr-2" />
-                  Conectar
+                  Connect
                 </>
               )}
             </Button>
@@ -248,10 +248,10 @@ export default function KyleConnectors() {
 
       {/* Info Footer */}
       <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-        <h3 className="font-medium text-foreground mb-2">🔒 Seguridad</h3>
+        <h3 className="font-medium text-foreground mb-2">🔒 Security</h3>
         <p className="text-sm text-muted-foreground">
-          Tus conexiones son privadas y solo Kyle puede usarlas para ejecutar tareas en tu nombre. 
-          Otros miembros de tu equipo no tienen acceso a tus herramientas conectadas.
+          Your connections are private and only Kyle can use them to execute tasks on your behalf. 
+          Other team members do not have access to your connected tools.
         </p>
       </div>
     </div>

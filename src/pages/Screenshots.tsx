@@ -27,15 +27,15 @@
    const [loading, setLoading] = useState(true);
    const [uploading, setUploading] = useState(false);
    const [selectedFile, setSelectedFile] = useState<File | null>(null);
- 
+
    const fetchScreenshots = async () => {
      try {
        const { data, error } = await supabase.storage
          .from(BUCKET_NAME)
          .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
- 
+
        if (error) throw error;
- 
+
        const screenshotsWithUrls = (data || [])
          .filter(file => file.name !== '.emptyFolderPlaceholder')
          .map(file => ({
@@ -43,43 +43,43 @@
            url: supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name).data.publicUrl,
            created_at: file.created_at || '',
          }));
- 
+
        setScreenshots(screenshotsWithUrls);
      } catch (error) {
        console.error('Error fetching screenshots:', error);
        toast({
          title: 'Error',
-         description: 'No se pudieron cargar los screenshots',
+         description: 'Could not load screenshots',
          variant: 'destructive',
        });
      } finally {
        setLoading(false);
      }
    };
- 
+
    useEffect(() => {
      fetchScreenshots();
    }, []);
- 
+
    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
      const file = e.target.files?.[0];
      if (file) {
        setSelectedFile(file);
      }
    };
- 
+
    const handleUpload = async () => {
      if (!selectedFile) return;
- 
+
      if (!isAuthenticated) {
        toast({
          title: 'Error',
-         description: 'Debes iniciar sesión para subir screenshots',
+         description: 'You must sign in to upload screenshots',
          variant: 'destructive',
        });
        return;
      }
- 
+
      setUploading(true);
      try {
        const fileName = `${Date.now()}-${selectedFile.name.replace(/\s+/g, '-')}`;
@@ -87,14 +87,14 @@
        const { error } = await supabase.storage
          .from(BUCKET_NAME)
          .upload(fileName, selectedFile);
- 
+
        if (error) throw error;
- 
+
        toast({
-         title: 'Éxito',
-         description: 'Screenshot subido correctamente',
+         title: 'Success',
+         description: 'Screenshot uploaded successfully',
        });
- 
+
        setSelectedFile(null);
        if (fileInputRef.current) {
          fileInputRef.current.value = '';
@@ -104,54 +104,54 @@
        console.error('Error uploading:', error);
        toast({
          title: 'Error',
-         description: error.message || 'No se pudo subir el screenshot',
+         description: error.message || 'Could not upload the screenshot',
          variant: 'destructive',
        });
      } finally {
        setUploading(false);
      }
    };
- 
+
    const handleDelete = async (fileName: string) => {
      if (!isAuthenticated) {
        toast({
          title: 'Error',
-         description: 'Debes iniciar sesión para eliminar screenshots',
+         description: 'You must sign in to delete screenshots',
          variant: 'destructive',
        });
        return;
      }
- 
+
      try {
        const { error } = await supabase.storage
          .from(BUCKET_NAME)
          .remove([fileName]);
- 
+
        if (error) throw error;
- 
+
        toast({
-         title: 'Éxito',
-         description: 'Screenshot eliminado',
+         title: 'Success',
+         description: 'Screenshot deleted',
        });
        fetchScreenshots();
      } catch (error: any) {
        console.error('Error deleting:', error);
        toast({
          title: 'Error',
-         description: error.message || 'No se pudo eliminar el screenshot',
+         description: error.message || 'Could not delete the screenshot',
          variant: 'destructive',
        });
      }
    };
- 
+
    const copyUrl = (url: string) => {
      navigator.clipboard.writeText(url);
      toast({
-       title: 'Copiado',
-       description: 'URL copiada al portapapeles',
+       title: 'Copied',
+       description: 'URL copied to clipboard',
      });
    };
- 
+
    return (
      <div className="min-h-screen bg-background">
        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -162,7 +162,7 @@
                  <ArrowLeft className="h-5 w-5" />
                </Button>
                <h1 className="text-xl font-semibold text-foreground">
-                 Screenshots de Documentación
+                 Documentation Screenshots
                </h1>
              </div>
            </div>
@@ -176,14 +176,14 @@
              <CardHeader>
                <CardTitle className="flex items-center gap-2">
                  <Upload className="h-5 w-5" />
-                 Subir Screenshot
+                 Upload Screenshot
                </CardTitle>
              </CardHeader>
              <CardContent>
                <div className="flex flex-col sm:flex-row gap-4">
                  <div className="flex-1">
                    <Label htmlFor="screenshot" className="sr-only">
-                     Seleccionar archivo
+                     Select file
                    </Label>
                    <Input
                      ref={fileInputRef}
@@ -201,19 +201,19 @@
                    {uploading ? (
                      <>
                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                       Subiendo...
+                       Uploading...
                      </>
                    ) : (
                      <>
                        <Upload className="h-4 w-4 mr-2" />
-                       Subir
+                       Upload
                      </>
                    )}
                  </Button>
                </div>
                {selectedFile && (
                  <p className="text-sm text-muted-foreground mt-2">
-                   Archivo seleccionado: {selectedFile.name}
+                   Selected file: {selectedFile.name}
                  </p>
                )}
              </CardContent>
@@ -225,7 +225,7 @@
            <CardHeader>
              <CardTitle className="flex items-center gap-2">
                <Image className="h-5 w-5" />
-               Galería de Screenshots ({screenshots.length})
+               Screenshot Gallery ({screenshots.length})
              </CardTitle>
            </CardHeader>
            <CardContent>
@@ -236,8 +236,8 @@
              ) : screenshots.length === 0 ? (
                <div className="text-center py-12 text-muted-foreground">
                  <Image className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                 <p>No hay screenshots todavía</p>
-                 <p className="text-sm mt-1">Sube tu primer screenshot para comenzar</p>
+                 <p>No screenshots yet</p>
+                 <p className="text-sm mt-1">Upload your first screenshot to get started</p>
                </div>
              ) : (
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,7 +265,7 @@
                            onClick={() => copyUrl(screenshot.url)}
                          >
                            <Download className="h-3 w-3 mr-1" />
-                           Copiar URL
+                           Copy URL
                          </Button>
                          {isAuthenticated && (
                            <Button
@@ -288,21 +288,21 @@
          {/* Instructions */}
          <Card className="mt-8">
            <CardHeader>
-             <CardTitle>Instrucciones de Uso</CardTitle>
+             <CardTitle>Usage Instructions</CardTitle>
            </CardHeader>
            <CardContent className="prose prose-sm dark:prose-invert max-w-none">
              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-               <li>Inicia sesión para poder subir y eliminar screenshots</li>
-               <li>Sube screenshots de las secciones de la aplicación</li>
-               <li>Copia la URL del screenshot usando el botón "Copiar URL"</li>
-               <li>Usa la URL en el código de documentación reemplazando las imágenes actuales</li>
+               <li>Sign in to be able to upload and delete screenshots</li>
+               <li>Upload screenshots of application sections</li>
+               <li>Copy the screenshot URL using the "Copy URL" button</li>
+               <li>Use the URL in documentation code replacing current images</li>
              </ol>
              <div className="mt-4 p-4 bg-muted rounded-lg">
                <p className="text-sm font-mono">
-                 Ejemplo de uso en código:
+                 Example usage in code:
                </p>
                <pre className="text-xs mt-2 overflow-x-auto">
-                 {`<img src="URL_DEL_SCREENSHOT" alt="Dashboard" />`}
+                 {`<img src="SCREENSHOT_URL" alt="Dashboard" />`}
                </pre>
              </div>
            </CardContent>
