@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { KyleAvatar } from "@/components/KyleAvatar";
-import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil, Plus } from "lucide-react";
+import { ChevronUp, Sparkles, Loader2, Wand2, Trash2, Pencil, Plus, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -381,8 +381,7 @@ const KyleSocialLanding = () => {
                 <Card 
                   key={image.id}
                   className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 relative cursor-pointer"
-                  onMouseEnter={() => setHoveredImage(image)}
-                  onMouseLeave={() => setHoveredImage(null)}
+                  onClick={() => setHoveredImage(image)}
                 >
                   <div className="aspect-square relative overflow-hidden">
                     <img
@@ -420,12 +419,24 @@ const KyleSocialLanding = () => {
             ))}
           </div>
 
-          {/* Centered hover preview overlay */}
+          {/* Centered click preview overlay */}
           {hoveredImage && createPortal(
             <div 
-              className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+              onClick={() => setHoveredImage(null)}
             >
-              <div className="w-[min(600px,90vw)] rounded-md border bg-popover shadow-md overflow-hidden pointer-events-none">
+              <div 
+                className="w-[min(600px,90vw)] rounded-md border bg-popover shadow-md overflow-hidden relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-3 right-3 h-8 w-8 z-10 bg-background/80 hover:bg-background"
+                  onClick={() => setHoveredImage(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
                 <div className="relative">
                   <img
                     src={hoveredImage.url}
@@ -444,7 +455,7 @@ const KyleSocialLanding = () => {
                   <Button
                     size="icon"
                     variant="destructive"
-                    className="absolute top-3 right-3 h-8 w-8"
+                    className="absolute bottom-3 right-3 h-8 w-8"
                     onClick={(e) => handleDeleteImage(hoveredImage.id, !!hoveredImage.isStatic, e)}
                     disabled={isDeletingId === hoveredImage.id}
                   >
