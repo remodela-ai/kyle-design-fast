@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper, AlertTriangle, RefreshCw, Pencil, SkipForward } from "lucide-react";
+import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper, AlertTriangle, RefreshCw, Pencil, SkipForward, Mic, MicOff } from "lucide-react";
 import { useCustomSkills, GENERATION_PHASES } from "@/hooks/useCustomSkills";
+import { useSkillBuilderVoice, type SkillBuilderFields } from "@/hooks/useSkillBuilderVoice";
+import { AudioWaves } from "@/components/AudioWaves";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +35,7 @@ export default function SkillBuilder() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [lastFilledField, setLastFilledField] = useState<string | null>(null);
 
   // Step 1 - Role
   const [name, setName] = useState("");
@@ -46,6 +49,7 @@ export default function SkillBuilder() {
   // Terminal & code editor auto-scroll
   const terminalRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLDivElement>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -57,6 +61,77 @@ export default function SkillBuilder() {
 
   // Step 3 - Instructions
   const [instructions, setInstructions] = useState("");
+
+  // Voice-guided field updates with highlight animation
+  const handleVoiceFieldsUpdate = useCallback((fields: Partial<SkillBuilderFields>) => {
+    if (fields.name) {
+      setName(fields.name);
+      setLastFilledField("name");
+      setTimeout(() => setLastFilledField(null), 2000);
+    }
+    if (fields.role) {
+      setRole(fields.role);
+      setLastFilledField("role");
+      setTimeout(() => setLastFilledField(null), 2000);
+    }
+    if (fields.knowledgeBase) {
+      setKnowledgeBase(fields.knowledgeBase);
+      setLastFilledField("knowledgeBase");
+      setTimeout(() => setLastFilledField(null), 2000);
+    }
+    if (fields.instructions) {
+      setInstructions(fields.instructions);
+      setLastFilledField("instructions");
+      setTimeout(() => setLastFilledField(null), 2000);
+    }
+  }, []);
+
+  const handleVoiceStepAdvance = useCallback(() => {
+    setStep(prev => Math.min(prev + 1, 4) as 1 | 2 | 3 | 4);
+  }, []);
+
+  const handleVoiceGenerate = useCallback(() => {
+    handleSubmitRef.current?.();
+  }, []);
+
+  const handleSubmitRef = useRef<(() => void) | null>(null);
+
+  // Voice agent
+  const voice = useSkillBuilderVoice(
+    handleVoiceFieldsUpdate,
+    handleVoiceStepAdvance,
+    handleVoiceGenerate
+  );
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [voice.transcript]);
+
+  // Get current fields for context
+  const getCurrentFields = useCallback((): Partial<SkillBuilderFields> => ({
+    name: name || undefined,
+    role: role || undefined,
+    knowledgeBase: knowledgeBase || undefined,
+    instructions: instructions || undefined,
+  }), [name, role, knowledgeBase, instructions]);
+
+  const handleVoiceToggle = useCallback(async () => {
+    if (voice.isConnected) {
+      await voice.stopConversation();
+    } else {
+      await voice.startConversation(step as 1 | 2 | 3 | 4, getCurrentFields());
+    }
+  }, [voice, step, getCurrentFields]);
+
+  // When step changes and voice is connected, restart with new context
+  useEffect(() => {
+    if (voice.isConnected) {
+      voice.restartForStep(step as 1 | 2 | 3 | 4, getCurrentFields());
+    }
+  }, [step]);
 
   const isGenerating = generationPhase !== "idle" && generationPhase !== "complete" && generationPhase !== "error";
 
@@ -154,6 +229,9 @@ IMPORTANT GUIDELINES:
 - Include sample/placeholder data so the skill is immediately usable and demonstrable.
 - Use professional typography and spacing. No generic or amateur-looking output.`;
   };
+
+  // Assign ref for voice trigger
+  handleSubmitRef.current = () => handleSubmit();
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -386,6 +464,79 @@ IMPORTANT GUIDELINES:
         {/* Stepper - hidden during generation */}
         {generationPhase === "idle" && (
           <>
+            {/* Kyle Voice Companion */}
+            <Card className={cn(
+              "border-2 transition-all duration-500",
+              voice.isConnected ? "border-primary/40 bg-primary/5 shadow-lg shadow-primary/10" : "border-border"
+            )}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Voice toggle button */}
+                  <Button
+                    variant={voice.isConnected ? "default" : "outline"}
+                    size="lg"
+                    onClick={handleVoiceToggle}
+                    className={cn(
+                      "shrink-0 h-14 w-14 rounded-full transition-all duration-300",
+                      voice.isConnected && "animate-pulse shadow-lg shadow-primary/30"
+                    )}
+                  >
+                    {voice.isConnected ? (
+                      <MicOff className="h-6 w-6" />
+                    ) : (
+                      <Mic className="h-6 w-6" />
+                    )}
+                  </Button>
+
+                  <div className="flex-1 min-w-0">
+                    {voice.isConnected ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AudioWaves isActive={true} isSpeaking={voice.isSpeaking} barCount={5} className="h-6" />
+                          <span className="text-sm font-medium text-foreground">
+                            {voice.isSpeaking ? "Kyle is speaking..." : "Kyle is listening..."}
+                          </span>
+                        </div>
+                        {/* Live transcript */}
+                        {voice.transcript.length > 0 && (
+                          <div
+                            ref={transcriptRef}
+                            className="max-h-24 overflow-y-auto rounded-lg bg-muted/50 p-2 space-y-1"
+                          >
+                            {voice.transcript.slice(-4).map((line, i) => (
+                              <p key={i} className={cn(
+                                "text-xs",
+                                line.startsWith("Kyle:") ? "text-primary font-medium" : "text-muted-foreground"
+                              )}>
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Talk to Kyle</p>
+                        <p className="text-xs text-muted-foreground">
+                          Let Kyle guide you through each step. Just talk naturally — he'll fill in the forms for you.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {voice.isConnected && (
+                    <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="shrink-0 text-xs text-muted-foreground">
+                      End
+                    </Button>
+                  )}
+                </div>
+
+                {voice.error && (
+                  <p className="mt-2 text-xs text-destructive">{voice.error}</p>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="flex items-center justify-center gap-2">
               {STEPS.map((s, i) => (
                 <div key={s.id} className="flex items-center gap-2">
@@ -434,18 +585,24 @@ IMPORTANT GUIDELINES:
                 {/* Step 1: Define Role */}
                 {step === 1 && (
                   <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Skill Name</label>
+                    <div className={cn("space-y-2 transition-all duration-500 rounded-lg p-2 -m-2", lastFilledField === "name" && "bg-primary/10 ring-2 ring-primary/30")}>
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Skill Name
+                        {lastFilledField === "name" && <Badge variant="outline" className="text-[10px] text-primary border-primary/30 animate-fade-in">✨ Kyle filled this</Badge>}
+                      </label>
                       <Input
                         placeholder="e.g. Supplier Comparator, Budget Analyzer..."
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Role Description</label>
+                    <div className={cn("space-y-2 transition-all duration-500 rounded-lg p-2 -m-2", lastFilledField === "role" && "bg-primary/10 ring-2 ring-primary/30")}>
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Role Description
+                        {lastFilledField === "role" && <Badge variant="outline" className="text-[10px] text-primary border-primary/30 animate-fade-in">✨ Kyle filled this</Badge>}
+                      </label>
                       <Textarea
-                        placeholder="Describe the role this skill plays... e.g. 'Acts as a procurement specialist that helps compare suppliers and negotiate prices for interior design materials.'"
+                        placeholder="Describe the role this skill plays..."
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         className="min-h-[120px]"
@@ -457,8 +614,11 @@ IMPORTANT GUIDELINES:
                 {/* Step 2: Knowledge Base */}
                 {step === 2 && (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Knowledge Base</label>
+                    <div className={cn("space-y-2 transition-all duration-500 rounded-lg p-2 -m-2", lastFilledField === "knowledgeBase" && "bg-primary/10 ring-2 ring-primary/30")}>
+                      <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                        Knowledge Base
+                        {lastFilledField === "knowledgeBase" && <Badge variant="outline" className="text-[10px] text-primary border-primary/30 animate-fade-in">✨ Kyle filled this</Badge>}
+                      </label>
                       <Textarea
                         placeholder="What information should this skill have access to? Paste text, describe the domain, or upload files below."
                         value={knowledgeBase}
@@ -529,8 +689,11 @@ IMPORTANT GUIDELINES:
 
                 {/* Step 3: Instructions */}
                 {step === 3 && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Instructions & Behavior</label>
+                  <div className={cn("space-y-2 transition-all duration-500 rounded-lg p-2 -m-2", lastFilledField === "instructions" && "bg-primary/10 ring-2 ring-primary/30")}>
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      Instructions & Behavior
+                      {lastFilledField === "instructions" && <Badge variant="outline" className="text-[10px] text-primary border-primary/30 animate-fade-in">✨ Kyle filled this</Badge>}
+                    </label>
                     <Textarea
                       placeholder="How should this skill behave? e.g. 'Always present comparisons in a table format. Highlight the best value option. Include lead times and warranty information.'"
                       value={instructions}
