@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper, AlertTriangle, RefreshCw, Pencil, SkipForward, Mic, MicOff } from "lucide-react";
+import { Loader2, Wand2, ArrowRight, ArrowLeft, Sparkles, UserCog, BookOpen, ListChecks, Rocket, Check, Upload, FileText, X, Terminal, Code2, PartyPopper, AlertTriangle, RefreshCw, Pencil, SkipForward } from "lucide-react";
+import { KyleAvatar } from "@/components/KyleAvatar";
 import { useCustomSkills, GENERATION_PHASES } from "@/hooks/useCustomSkills";
 import { useSkillBuilderVoice, type SkillBuilderFields } from "@/hooks/useSkillBuilderVoice";
 import { AudioWaves } from "@/components/AudioWaves";
@@ -465,77 +466,57 @@ IMPORTANT GUIDELINES:
         {generationPhase === "idle" && (
           <>
             {/* Kyle Voice Companion */}
-            <Card className={cn(
-              "border-2 transition-all duration-500",
-              voice.isConnected ? "border-primary/40 bg-primary/5 shadow-lg shadow-primary/10" : "border-border"
-            )}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-6">
-                  {/* Voice toggle button */}
-                  <Button
-                    variant={voice.isConnected ? "default" : "outline"}
-                    size="lg"
-                    onClick={handleVoiceToggle}
-                    className={cn(
-                      "shrink-0 h-28 w-28 rounded-full transition-all duration-300",
-                      voice.isConnected && "animate-pulse shadow-lg shadow-primary/30"
-                    )}
-                  >
-                    {voice.isConnected ? (
-                      <MicOff className="h-12 w-12" />
-                    ) : (
-                      <Mic className="h-12 w-12" />
-                    )}
-                  </Button>
+            <div className="flex flex-col items-center gap-4">
+              <KyleAvatar 
+                size="lg" 
+                onClickOverride={handleVoiceToggle}
+                isConnectedOverride={voice.isConnected}
+                isSpeakingOverride={voice.isSpeaking}
+              />
 
-                  <div className="flex-1 min-w-0">
-                    {voice.isConnected ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <AudioWaves isActive={true} isSpeaking={voice.isSpeaking} barCount={5} className="h-6" />
-                          <span className="text-sm font-medium text-foreground">
-                            {voice.isSpeaking ? "Kyle is speaking..." : "Kyle is listening..."}
-                          </span>
-                        </div>
-                        {/* Live transcript */}
-                        {voice.transcript.length > 0 && (
-                          <div
-                            ref={transcriptRef}
-                            className="max-h-24 overflow-y-auto rounded-lg bg-muted/50 p-2 space-y-1"
-                          >
-                            {voice.transcript.slice(-4).map((line, i) => (
-                              <p key={i} className={cn(
-                                "text-xs",
-                                line.startsWith("Kyle:") ? "text-primary font-medium" : "text-muted-foreground"
-                              )}>
-                                {line}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Talk to Kyle</p>
-                        <p className="text-xs text-muted-foreground">
-                          Let Kyle guide you through each step. Just talk naturally — he'll fill in the forms for you.
-                        </p>
-                      </div>
-                    )}
+              {voice.isConnected ? (
+                <div className="w-full max-w-md space-y-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <AudioWaves isActive={true} isSpeaking={voice.isSpeaking} barCount={5} className="h-6" />
+                    <span className="text-sm font-medium text-foreground">
+                      {voice.isSpeaking ? "Kyle is speaking..." : "Kyle is listening..."}
+                    </span>
                   </div>
-
-                  {voice.isConnected && (
-                    <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="shrink-0 text-xs text-muted-foreground">
-                      End
-                    </Button>
+                  {/* Live transcript */}
+                  {voice.transcript.length > 0 && (
+                    <div
+                      ref={transcriptRef}
+                      className="max-h-24 overflow-y-auto rounded-lg bg-muted/50 p-2 space-y-1"
+                    >
+                      {voice.transcript.slice(-4).map((line, i) => (
+                        <p key={i} className={cn(
+                          "text-xs",
+                          line.startsWith("Kyle:") ? "text-primary font-medium" : "text-muted-foreground"
+                        )}>
+                          {line}
+                        </p>
+                      ))}
+                    </div>
                   )}
+                  <div className="flex justify-center">
+                    <Button variant="ghost" size="sm" onClick={() => voice.stopConversation()} className="text-xs text-muted-foreground">
+                      End conversation
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground">Talk to Kyle</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tap Kyle to start. He'll guide you through each step.
+                  </p>
+                </div>
+              )}
 
-                {voice.error && (
-                  <p className="mt-2 text-xs text-destructive">{voice.error}</p>
-                )}
-              </CardContent>
-            </Card>
+              {voice.error && (
+                <p className="text-xs text-destructive">{voice.error}</p>
+              )}
+            </div>
 
             <div className="flex items-center justify-center gap-2">
               {STEPS.map((s, i) => (
