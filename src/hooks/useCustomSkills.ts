@@ -19,9 +19,29 @@ export interface CustomSkill {
   updated_at: string;
 }
 
+export type GenerationPhase = 
+  | "idle"
+  | "analyzing"
+  | "designing"
+  | "coding"
+  | "testing"
+  | "deploying"
+  | "complete"
+  | "error";
+
+export const GENERATION_PHASES: { phase: GenerationPhase; label: string; detail: string; duration: number }[] = [
+  { phase: "analyzing", label: "Analyzing requirements", detail: "Reading your role definition, knowledge base, and instructions...", duration: 3000 },
+  { phase: "designing", label: "Designing architecture", detail: "Planning components, data flow, and UI layout...", duration: 4000 },
+  { phase: "coding", label: "Writing code", detail: "Generating HTML, CSS, and interactive logic...", duration: 8000 },
+  { phase: "testing", label: "Running tests", detail: "Validating output matches your specifications...", duration: 3000 },
+  { phase: "deploying", label: "Deploying skill", detail: "Making your skill available as a new page...", duration: 2000 },
+];
+
 export function useCustomSkills() {
   const [skills, setSkills] = useState<CustomSkill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>("idle");
+  const [generationLogs, setGenerationLogs] = useState<string[]>([]);
   const { toast } = useToast();
 
   const fetchSkills = useCallback(async () => {
@@ -43,8 +63,38 @@ export function useCustomSkills() {
     fetchSkills();
   }, [fetchSkills]);
 
+  const simulateGeneration = useCallback(async () => {
+    setGenerationLogs([]);
+
+    for (const { phase, label, detail, duration } of GENERATION_PHASES) {
+      setGenerationPhase(phase);
+      setGenerationLogs((prev) => [...prev, `▸ ${label}`]);
+
+      // Add sub-logs for coding phase
+      if (phase === "coding") {
+        const codingSteps = [
+          "  Creating base HTML template...",
+          "  Applying brand styles and layout...",
+          "  Building interactive components...",
+          "  Integrating data bindings...",
+          "  Optimizing for responsiveness...",
+        ];
+        for (const step of codingSteps) {
+          await new Promise((r) => setTimeout(r, duration / codingSteps.length));
+          setGenerationLogs((prev) => [...prev, step]);
+        }
+      } else {
+        await new Promise((r) => setTimeout(r, duration));
+        setGenerationLogs((prev) => [...prev, `  ✓ ${detail}`]);
+      }
+    }
+  }, []);
+
   const createSkill = useCallback(async (prompt: string, name: string, description: string) => {
-    // 1. Call kyle-manus-bridge
+    // Start visual generation simulation
+    const simulationPromise = simulateGeneration();
+
+    // 1. Call kyle-manus-bridge in parallel
     const { data: fnData, error: fnError } = await supabase.functions.invoke("kyle-manus-bridge", {
       body: {
         command: prompt,
@@ -54,6 +104,8 @@ export function useCustomSkills() {
     });
 
     if (fnError) {
+      setGenerationPhase("error");
+      setGenerationLogs((prev) => [...prev, `✗ Error: ${fnError.message}`]);
       toast({ title: "Error", description: fnError.message, variant: "destructive" });
       return null;
     }
@@ -76,16 +128,29 @@ export function useCustomSkills() {
       .single();
 
     if (error) {
+      setGenerationPhase("error");
+      setGenerationLogs((prev) => [...prev, `✗ Error: ${error.message}`]);
       toast({ title: "Error saving skill", description: error.message, variant: "destructive" });
       return null;
     }
 
+    // Wait for simulation to finish
+    await simulationPromise;
+
+    setGenerationPhase("complete");
+    setGenerationLogs((prev) => [...prev, "▸ Skill created successfully!", `  → Task ID: ${taskId || "pending"}`]);
+
     toast({ title: "Skill building started!", description: "Kyle is creating your new skill." });
     await fetchSkills();
     return data as unknown as CustomSkill;
-  }, [toast, fetchSkills]);
+  }, [toast, fetchSkills, simulateGeneration]);
+
+  const resetGeneration = useCallback(() => {
+    setGenerationPhase("idle");
+    setGenerationLogs([]);
+  }, []);
 
   const readySkills = skills.filter((s) => s.status === "ready");
 
-  return { skills, readySkills, loading, createSkill, refetch: fetchSkills };
+  return { skills, readySkills, loading, createSkill, refetch: fetchSkills, generationPhase, generationLogs, resetGeneration };
 }
