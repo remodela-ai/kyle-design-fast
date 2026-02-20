@@ -7,19 +7,40 @@ interface KyleAvatarProps {
   onClickOverride?: () => void;
   isConnectedOverride?: boolean;
   isSpeakingOverride?: boolean;
+  /** When true, skips KyleContext entirely — use for standalone voice agents like Skill Builder */
+  standalone?: boolean;
 }
 
-export function KyleAvatar({ 
+export function KyleAvatar(props: KyleAvatarProps) {
+  if (props.standalone) {
+    return <KyleAvatarInner {...props} />;
+  }
+  return <KyleAvatarWithContext {...props} />;
+}
+
+/** Variant that connects to KyleContext (design agent) */
+function KyleAvatarWithContext(props: KyleAvatarProps) {
+  const kyle = useKyle();
+  return (
+    <KyleAvatarInner
+      {...props}
+      onClickOverride={props.onClickOverride ?? kyle.toggleConversation}
+      isConnectedOverride={props.isConnectedOverride ?? kyle.isConnected}
+      isSpeakingOverride={props.isSpeakingOverride ?? kyle.isSpeaking}
+    />
+  );
+}
+
+/** Pure presentational avatar — no context dependency */
+function KyleAvatarInner({ 
   size = "lg", 
   onClickOverride,
   isConnectedOverride,
-  isSpeakingOverride 
+  isSpeakingOverride,
 }: KyleAvatarProps) {
-  const kyle = useKyle();
-  
-  const isConnected = isConnectedOverride ?? kyle.isConnected;
-  const isSpeaking = isSpeakingOverride ?? kyle.isSpeaking;
-  const handleClick = onClickOverride ?? kyle.toggleConversation;
+  const isConnected = isConnectedOverride ?? false;
+  const isSpeaking = isSpeakingOverride ?? false;
+  const handleClick = onClickOverride ?? (() => {});
 
   const sizeClasses = {
     sm: "w-16 h-16",
@@ -49,7 +70,7 @@ export function KyleAvatar({
         )}
       />
       
-      {/* Secondary glow layer for more impact */}
+      {/* Secondary glow layer */}
       <div
         className={cn(
           "absolute inset-0 rounded-full bg-primary/20 blur-xl",
@@ -83,7 +104,6 @@ export function KyleAvatar({
           (speaking || isConnected) && "glow-red"
         )}
       >
-        {/* Kyle's photo */}
         <img 
           src={kylePhoto} 
           alt="Kyle - AI Design Agent" 
