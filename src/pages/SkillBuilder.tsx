@@ -127,10 +127,10 @@ export default function SkillBuilder() {
     }
   }, [voice, step, getCurrentFields]);
 
-  // When step changes and voice is connected, restart with new context
+  // When step changes, send contextual update (no restart)
   useEffect(() => {
     if (voice.isConnected) {
-      voice.restartForStep(step as 1 | 2 | 3 | 4, getCurrentFields());
+      voice.updateContext(step as 1 | 2 | 3 | 4, getCurrentFields());
     }
   }, [step]);
 
