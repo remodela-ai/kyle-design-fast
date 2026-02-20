@@ -53,6 +53,8 @@ import ProjectDetail from "./pages/ProjectDetail";
 import IntelligentFolder from "./pages/IntelligentFolder";
 import Marketing from "./pages/Marketing";
 import ClonKitchen from "./pages/ClonKitchen";
+import SkillBuilder from "./pages/SkillBuilder";
+import CustomSkillPage from "./pages/CustomSkillPage";
 
 // Kitchen Redesign Studio pages (from Manus)
 import KitchenHome from "./pages/KitchenHome";
@@ -129,6 +131,10 @@ const App = () => (
                   <Route path="/projects" element={<KitchenProjects />} />
                   <Route path="/proposals" element={<KitchenProposals />} />
                   <Route path="/inspiration" element={<Inspiration />} />
+                  
+                  {/* Skill Builder */}
+                  <Route path="/skill-builder" element={<SkillBuilder />} />
+                  <Route path="/skills/:skillId" element={<CustomSkillPage />} />
                   
                   {/* Backlog */}
                   <Route path="/backlog" element={<Backlog />} />

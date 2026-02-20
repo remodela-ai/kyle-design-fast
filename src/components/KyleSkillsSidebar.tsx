@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mic, MicOff, X, ChevronLeft, ChevronRight, Loader2, Mail, Calendar, FileText, MessageSquare, Settings } from "lucide-react";
 import { useKyleSkills, KYLE_SKILLS, KyleSkill } from "@/contexts/KyleSkillsContext";
+import { useCustomSkills } from "@/hooks/useCustomSkills";
+import { useNavigate } from "react-router-dom";
 import { useKyleAgentActions } from "@/hooks/useKyleAgentActions";
 import { useKyleVoiceAgent } from "@/hooks/useKyleVoiceAgent";
 import { useKyleConnectors, ConnectorType } from "@/hooks/useKyleConnectors";
@@ -39,6 +41,8 @@ export function KyleSkillsSidebar() {
   } = useKyleVoiceAgent();
   
   const { getActiveConnectorTypes, connectors } = useKyleConnectors();
+  const { readySkills } = useCustomSkills();
+  const navigate = useNavigate();
 
   const [pendingCommand, setPendingCommand] = useState<string>("");
 
@@ -181,6 +185,30 @@ export function KyleSkillsSidebar() {
                 </button>
               ))}
             </div>
+
+            {/* Custom Skills */}
+            {readySkills.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Custom</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {readySkills.map((skill) => (
+                    <button
+                      key={skill.id}
+                      onClick={() => navigate(`/skills/${skill.id}`)}
+                      className="p-4 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all text-left hover:shadow-md hover:scale-[1.02]"
+                    >
+                      <span className="text-2xl block mb-2">{skill.icon}</span>
+                      <span className="font-medium text-sm text-foreground block">
+                        {skill.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground line-clamp-2">
+                        {skill.description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Active Skill Mode */}
             {isSkillMode && (

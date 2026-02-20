@@ -680,6 +680,65 @@ export type Database = {
           },
         ]
       }
+      kyle_custom_skills: {
+        Row: {
+          action_type: string
+          created_at: string
+          created_by: string | null
+          description: string
+          icon: string
+          id: string
+          manus_task_id: string | null
+          name: string
+          office_id: string | null
+          prompt: string
+          result_html: string | null
+          result_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_type?: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          icon?: string
+          id?: string
+          manus_task_id?: string | null
+          name: string
+          office_id?: string | null
+          prompt: string
+          result_html?: string | null
+          result_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          manus_task_id?: string | null
+          name?: string
+          office_id?: string | null
+          prompt?: string
+          result_html?: string | null
+          result_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyle_custom_skills_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_messages: {
         Row: {
           content: string
