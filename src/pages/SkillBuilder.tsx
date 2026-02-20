@@ -126,17 +126,33 @@ export default function SkillBuilder() {
   };
 
   const buildPrompt = () => {
-    return `Create a skill called "${name}".
+    const fileUrls = uploadedFiles
+      .filter(f => f.url)
+      .map(f => `- ${f.name}: ${f.url}`)
+      .join("\n");
+
+    return `Create a professional, production-ready skill called "${name}".
 
 ROLE: ${role}
 
 KNOWLEDGE BASE:
 ${knowledgeBase}
 
+UPLOADED REFERENCE FILES:
+${fileUrls || "None"}
+
 INSTRUCTIONS:
 ${instructions}
 
-IMPORTANT: The output should be a fully functional, self-contained HTML page that can be rendered in an iframe. If a PDF template was provided in the knowledge base, use vision to replicate it as pixel-perfect HTML that produces identical-looking documents every time — like a repeatable template.`;
+IMPORTANT GUIDELINES:
+- The output MUST be a fully functional, self-contained HTML page renderable in an iframe.
+- Use modern CSS (flexbox, grid, variables, animations, gradients) for a polished, professional look.
+- Include interactive JavaScript where appropriate (forms, calculators, dynamic tables, filters, charts, drag-and-drop, etc.).
+- If reference files (PDFs, images, spreadsheets) were uploaded, use vision to replicate their layout, typography, colors, and structure as pixel-perfect HTML — like a repeatable template that produces identical-looking documents every time.
+- Support any type of skill: calculators, dashboards, forms, reports, proposals, estimates, checklists, timelines, presentations, data visualizations, planners, generators, converters, or any other tool an interior designer might need.
+- Make it responsive and print-friendly when applicable.
+- Include sample/placeholder data so the skill is immediately usable and demonstrable.
+- Use professional typography and spacing. No generic or amateur-looking output.`;
   };
 
   const handleSubmit = async () => {
@@ -453,14 +469,14 @@ IMPORTANT: The output should be a fully functional, self-contained HTML page tha
 
                     {/* File Upload */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Upload Documents</label>
+                      <label className="text-sm font-medium text-foreground">Upload Reference Files</label>
                       <p className="text-xs text-muted-foreground">
-                        Upload PDFs, proposals, or estimate templates. Kyle will use vision to replicate them as pixel-perfect, repeatable HTML templates.
+                        Upload any file: PDFs, images, spreadsheets, documents, presentations, etc. Kyle will analyze them to build your skill with pixel-perfect fidelity.
                       </p>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                        accept="*/*"
                         multiple
                         onChange={handleFileUpload}
                         className="hidden"
